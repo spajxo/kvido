@@ -12,7 +12,7 @@ It is **not** a traditional application. There is no compilation, no test suite,
 
 ## Prerequisites (pro uživatelův workspace)
 
-Required: `jq`, `yq`. Optional: `glab` (GitLab monitoring), `acli` (Jira), `gws` (Google Workspace).
+Required: `jq`. Optional: `glab` (GitLab monitoring), `acli` (Jira), `gws` (Google Workspace).
 
 ## Architecture
 
@@ -30,7 +30,7 @@ Claude Code plugin (`.claude-plugin/plugin.json`). Installed via `claude plugin 
 ### Data flow
 
 - **Sources** (`skills/source-*/`) — bash fetch scripts for GitLab, Jira, Slack, Calendar, Gmail, Sessions
-- **Config** — `skills/config.sh '<yq_expression>'` reads YAML frontmatter from `.claude/kvido.local.md`
+- **Config** — `skills/config.sh 'flat.key'` reads flat dot-notation YAML frontmatter from `.claude/kvido.local.md`
 - **State** (`state/`) — ephemeral runtime: `current.md`, `today.md`, `heartbeat-state.json`, `tasks/{triage,todo,in-progress,done,failed,cancelled}/`
 - **Memory** (`memory/`) — persistent: `memory.md`, journals, projects, people, decisions, learnings
 - **Librarian** (`agents/librarian.md`) — memory consolidation, extraction from journals, cleanup, auto-memory sync

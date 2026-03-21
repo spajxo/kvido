@@ -251,9 +251,11 @@ Zahrň do výstupu: `Event: 📊 Stale worker — Task <slug> (<title>) je in-pr
   ```bash
   for f in state/tasks/todo/*.md; do
     [[ -f "$f" ]] || continue
-    priority=$(yq --front-matter=extract '.priority' "$f" 2>/dev/null)
-    created=$(yq --front-matter=extract '.created_at' "$f" 2>/dev/null)
-    [[ "$priority" == "low" ]] && echo "$(basename "$f" .md) created=$created"
+    SLUG=$(basename "$f" .md)
+    TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+    priority=$(echo "$TASK_DATA" | grep '^PRIORITY=' | cut -d= -f2-)
+    created=$(echo "$TASK_DATA" | grep '^CREATED_AT=' | cut -d= -f2-)
+    [[ "$priority" == "low" ]] && echo "$SLUG created=$created"
   done
   ```
 - User-assignee stale reminders → zpracováváno v Step 6b (triage batch)

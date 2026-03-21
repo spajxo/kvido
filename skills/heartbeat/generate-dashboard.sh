@@ -18,12 +18,12 @@ STATE_DIR="${PWD}/state"
 OUTPUT="$STATE_DIR/dashboard.html"
 
 # Check if dashboard is enabled
-DASHBOARD_ENABLED=$($CONFIG '.skills.dashboard.enabled // true' 2>/dev/null || echo "true")
+DASHBOARD_ENABLED=$($CONFIG 'skills.dashboard.enabled' 'true')
 if [[ "$DASHBOARD_ENABLED" == "false" ]]; then
   exit 0
 fi
 
-AUTO_REFRESH=$($CONFIG '.skills.dashboard.auto_refresh // 20' 2>/dev/null || echo 20)
+AUTO_REFRESH=$($CONFIG 'skills.dashboard.auto_refresh' '20')
 NOW=$(date -Iseconds)
 TODAY=$(date -I)
 WARNINGS=()

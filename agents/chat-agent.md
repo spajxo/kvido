@@ -57,9 +57,11 @@ Pokud zpráva je reply na thread worker tasku nebo obsahuje "pipeline"/"brainsto
    # Find pipeline tasks waiting for user input:
    for f in state/tasks/todo/*.md state/tasks/in-progress/*.md; do
      [[ -f "$f" ]] || continue
-     if yq --front-matter=extract '.pipeline' "$f" 2>/dev/null | grep -q 'true'; then
-       SLUG=$(basename "$f" .md)
-       PHASE=$(yq --front-matter=extract '.phase' "$f" 2>/dev/null)
+     SLUG=$(basename "$f" .md)
+     TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+     PIPELINE=$(echo "$TASK_DATA" | grep '^PIPELINE=' | cut -d= -f2-)
+     if [[ "$PIPELINE" == "true" ]]; then
+       PHASE=$(echo "$TASK_DATA" | grep '^PHASE=' | cut -d= -f2-)
        echo "$SLUG phase=$PHASE"
      fi
    done

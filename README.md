@@ -16,7 +16,6 @@ Kvido is a Claude Code plugin — rezidentni asistent ktery bezi ve vlastni work
 | Tool | Required | Purpose |
 |------|----------|---------|
 | jq | Yes | JSON parsing |
-| yq | Yes | YAML parsing (kvido.local.md, task frontmatter) |
 | glab | No | GitLab monitoring (MR status, git activity) |
 | acli | No | Jira integration |
 | gws | No | Google Workspace (Gmail, Calendar) |

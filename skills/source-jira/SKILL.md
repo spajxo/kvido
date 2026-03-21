@@ -29,7 +29,11 @@ Po fetch zkontroluj:
   for d in state/tasks/*/; do
     for f in "$d"*.md; do
       [[ -f "$f" ]] || continue
-      yq --front-matter=extract '. | select(.source == "jira") | .title' "$f" 2>/dev/null
+      SLUG=$(basename "$f" .md)
+      TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+      src=$(echo "$TASK_DATA" | grep '^SOURCE=' | cut -d= -f2-)
+      [[ "$src" == "jira" ]] || continue
+      echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-
     done
   done
   ```

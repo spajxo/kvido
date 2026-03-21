@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
 
 # ── Config ────────────────────────────────────────────────────────────────────
-IDLE_THRESHOLD_MIN=$($CONFIG '.sources.sessions.idle_threshold_min')
+IDLE_THRESHOLD_MIN=$($CONFIG 'sources.sessions.idle_threshold_min')
 IDLE_THRESHOLD_SEC=$(( IDLE_THRESHOLD_MIN * 60 ))
 
 # ── Date argument ──────────────────────────────────────────────────────────────

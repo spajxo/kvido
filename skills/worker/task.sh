@@ -64,13 +64,28 @@ _task_file() {
 
 _read_frontmatter() {
   local file="$1" key="$2"
-  yq --front-matter=extract ".$key" "$file" 2>/dev/null | sed 's/^null$//'
+  awk '/^---$/{c++; next} c==1' "$file" \
+    | awk -v k="$key" '{
+        if (index($0, k ": ") == 1) { print substr($0, length(k) + 3); found=1; exit }
+      } END { if (!found) print "" }'
 }
 
 _update_frontmatter() {
   local file="$1" key="$2" value="$3"
   local tmp="${file}.tmp"
-  VALUE="$value" yq --front-matter=process ".$key = strenv(VALUE)" "$file" > "$tmp" && mv "$tmp" "$file"
+  awk -v k="$key" -v v="$value" '
+    /^---$/ { c++; if (c == 2 && !found) print k ": " v; print; next }
+    c == 1 && index($0, k ": ") == 1 { print k ": " v; found = 1; next }
+    { print }
+  ' "$file" > "$tmp" && mv "$tmp" "$file"
+}
+
+_yaml_val() {
+  local v="$1"
+  case "$v" in
+    *[:\#\[\]\{\},\|]*|true|false|null|"") printf '"%s"' "$v" ;;
+    *) printf '%s' "$v" ;;
+  esac
 }
 
 _now() {
@@ -148,41 +163,39 @@ cmd_create() {
 
   local file="$TASKS_DIR/$STATUS/$slug.md"
 
-  # Generate YAML frontmatter via yq for safe escaping of special characters
-  local frontmatter
-  frontmatter=$(
-    jq -n \
-      --arg title "$TITLE" \
-      --arg priority "$PRIORITY" \
-      --arg size "$SIZE" \
-      --arg source "$SOURCE" \
-      --arg source_ref "$SOURCE_REF" \
-      --argjson pipeline "$PIPELINE" \
-      --arg phase "$PHASE" \
-      --argjson worktree "$WORKTREE" \
-      --arg goal "${GOAL:-null}" \
-      --arg recurring "${RECURRING:-null}" \
-      --arg now "$NOW" \
-      '{
-        title: $title,
-        priority: $priority,
-        size: $size,
-        source: $source,
-        source_ref: $source_ref,
-        pipeline: $pipeline,
-        phase: (if $phase == "null" then null else $phase end),
-        worktree: $worktree,
-        goal: (if $goal == "null" then null else $goal end),
-        recurring: (if $recurring == "null" then null else $recurring end),
-        waiting_on: "",
-        created_at: $now,
-        updated_at: $now,
-        triage_slack_ts: ""
-      }' | yq -P
-  )
+  # Generate frontmatter with safe quoting
+  local phase_val="${PHASE}"
+  [[ "$phase_val" == "null" ]] && phase_val=""
+  local goal_val="${GOAL:-}"
+  [[ "$goal_val" == "null" ]] && goal_val=""
+  local recurring_val="${RECURRING:-}"
+  [[ "$recurring_val" == "null" ]] && recurring_val=""
 
-  printf '%s\n---\n\n## Instruction\n\n%s\n\n## Worker Notes\n\n' "---
-${frontmatter}" "$INSTRUCTION" > "$file"
+  cat > "$file" << EOF
+---
+title: $(_yaml_val "$TITLE")
+priority: $PRIORITY
+size: $SIZE
+source: $SOURCE
+source_ref: $(_yaml_val "$SOURCE_REF")
+pipeline: $PIPELINE
+phase: $phase_val
+worktree: $WORKTREE
+goal: $goal_val
+recurring: $recurring_val
+waiting_on: ""
+created_at: $NOW
+updated_at: $NOW
+triage_slack_ts: ""
+---
+
+## Instruction
+
+$INSTRUCTION
+
+## Worker Notes
+
+EOF
 
   echo "$slug"
 }
@@ -280,9 +293,9 @@ cmd_list() {
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
       slug=$(basename "$f" .md)
-      priority=$(yq --front-matter=extract '.priority' "$f" 2>/dev/null || echo "medium")
-      [[ "$priority" == "null" ]] && priority="medium"
-      created_at=$(yq --front-matter=extract '.created_at' "$f" 2>/dev/null || echo "")
+      priority=$(_read_frontmatter "$f" "priority")
+      [[ -z "$priority" ]] && priority="medium"
+      created_at=$(_read_frontmatter "$f" "created_at")
       weight=$(_priority_weight "$priority")
       entries="${entries}${weight} ${created_at} ${slug}\n"
     done

@@ -55,7 +55,9 @@ echo "$EVENTS" | jq -r '.items[] | @base64' | while read -r ITEM_B64; do
         break 2
       fi
     done
-  done < <($CONFIG '.sources.calendar.categories | to_entries[] | [.key, (.value | join(","))] | @tsv')
+  done < <(for cat_key in $($CONFIG --keys 'sources.calendar.categories'); do
+    printf '%s\t%s\n' "$cat_key" "$($CONFIG "sources.calendar.categories.${cat_key}")"
+  done)
 
   # Format time
   if [[ "$ALL_DAY" == "true" ]]; then

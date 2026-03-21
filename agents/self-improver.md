@@ -23,11 +23,13 @@ Pred generovanim novych navrhu vyhodnot vysledky predchozich.
    ```bash
    for f in state/tasks/done/*.md state/tasks/cancelled/*.md; do
      [[ -f "$f" ]] || continue
-     src=$(yq --front-matter=extract '.source' "$f" 2>/dev/null)
+     SLUG=$(basename "$f" .md)
+     TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+     src=$(echo "$TASK_DATA" | grep '^SOURCE=' | cut -d= -f2-)
      [[ "$src" == "self-improver" ]] || continue
-     updated=$(yq --front-matter=extract '.updated_at' "$f" 2>/dev/null)
+     updated=$(echo "$TASK_DATA" | grep '^UPDATED_AT=' | cut -d= -f2-)
      # Filter last 7 days
-     basename "$f" .md
+     echo "$SLUG"
    done
    ```
 
@@ -66,11 +68,13 @@ Pouzij tento limit misto pevneho "max 5" v dalsich krocich.
   for d in state/tasks/*/; do
     for f in "$d"*.md; do
       [[ -f "$f" ]] || continue
-      src=$(yq --front-matter=extract '.source' "$f" 2>/dev/null)
+      SLUG=$(basename "$f" .md)
+      TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+      src=$(echo "$TASK_DATA" | grep '^SOURCE=' | cut -d= -f2-)
       [[ "$src" == "self-improver" ]] || continue
-      title=$(yq --front-matter=extract '.title' "$f" 2>/dev/null)
-      status=$(basename "$(dirname "$f")")
-      echo "$(basename "$f" .md) | $title | $status"
+      title=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-)
+      status=$(echo "$TASK_DATA" | grep '^STATUS=' | cut -d= -f2-)
+      echo "$SLUG | $title | $status"
     done
   done
   ```
@@ -103,8 +107,10 @@ Analyzuj opakovane task vzory pro identifikaci automatizovatelnych patternu.
    ```bash
    for f in state/tasks/done/*.md; do
      [[ -f "$f" ]] || continue
-     title=$(yq --front-matter=extract '.title' "$f" 2>/dev/null)
-     echo "$(basename "$f" .md) | $title"
+     SLUG=$(basename "$f" .md)
+     TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+     title=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-)
+     echo "$SLUG | $title"
    done
    ```
 

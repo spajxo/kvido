@@ -2,84 +2,133 @@
 # =============================================================================
 # config.sh — Unified config loader for assistant
 # =============================================================================
-# Usage: config.sh '<yq_expression>'
-#   config.sh '.sources.gitlab.repos'
-#   config.sh '.sources.gitlab.repos[] | select(.priority == "high") | .name'
-#   config.sh '.skills.worker.task_timeout_minutes'
+# Usage: config.sh 'key'
+#   config.sh 'sources.gitlab.repos.group-project.path'
+#   config.sh 'skills.worker.task_timeout_minutes'
+#   config.sh 'skills.dashboard.enabled' 'true'    # with default
+#   config.sh --keys 'sources.gitlab.repos'         # list child keys
+#   config.sh --validate                            # check config format
 #
-# Reads YAML frontmatter from kvido.local.md (per-project config).
-# Validates config on first call per session (checks yq + YAML syntax).
+# Reads flat dot-notation YAML frontmatter from kvido.local.md.
 # Exit codes:
 #   0 — success
-#   1 — yq not found
-#   2 — invalid YAML / config not found
-#   3 — invalid expression / yq error
+#   1 — config not found
+#   2 — invalid config format
+#   3 — key not found (no default provided)
 # =============================================================================
 
 set -euo pipefail
 
-# PLUGIN_ROOT — directory where config.sh lives (e.g. <plugin>/skills)
-PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # CONFIG_FILE — kvido.local.md in project's .claude/ directory
 CONFIG_FILE="${PWD}/.claude/kvido.local.md"
 
-# ── Check arguments ──────────────────────────────────────────────────────────
-
-if [[ $# -lt 1 ]]; then
-    echo "Usage: config.sh '<yq_expression>'" >&2
-    echo "Example: config.sh '.sources.gitlab.repos[].name'" >&2
-    exit 3
-fi
-
-EXPRESSION="$1"
-
-# ── Check yq availability ───────────────────────────────────────────────────
-
-YQ_BIN=""
-if command -v yq &>/dev/null; then
-    YQ_BIN="yq"
-elif [[ -x "$HOME/.local/bin/yq" ]]; then
-    YQ_BIN="$HOME/.local/bin/yq"
-else
-    echo "ERROR: yq not found. Install: https://github.com/mikefarah/yq#install" >&2
-    echo "  wget -qO ~/.local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && chmod +x ~/.local/bin/yq" >&2
-    exit 1
-fi
-
-# ── Check config file exists ────────────────────────────────────────────────
-
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "ERROR: Config file not found: $CONFIG_FILE" >&2
-    echo "  Expected at: $CONFIG_FILE" >&2
-    echo "  Copy kvido.local.md.example from the plugin and fill in your data." >&2
-    exit 2
-fi
-
-# ── Extract YAML frontmatter ────────────────────────────────────────────────
+# ── Extract frontmatter ──────────────────────────────────────────────────────
 
 _extract_frontmatter() {
     awk '/^---$/{c++; next} c==1' "$CONFIG_FILE"
 }
 
-# ── Validate YAML (only on explicit --validate flag) ────────────────────────
+# ── Scalar lookup ─────────────────────────────────────────────────────────────
 
-if [[ "$EXPRESSION" == "--validate" ]]; then
-    if _extract_frontmatter | $YQ_BIN eval '.' - >/dev/null 2>&1; then
-        echo "OK: Config is valid YAML"
-        exit 0
-    else
-        echo "ERROR: Invalid YAML frontmatter in $CONFIG_FILE" >&2
-        _extract_frontmatter | $YQ_BIN eval '.' - 2>&1 | head -5 >&2
-        exit 2
+_get_value() {
+    local key="$1" default="${2:-}"
+    local has_default="${3:-false}"
+    local result
+    result=$(_extract_frontmatter | awk -v k="$key" '
+        {
+            # Match key at start of line followed by ": "
+            if (index($0, k ": ") == 1) {
+                print substr($0, length(k) + 3)
+                found = 1
+                exit
+            }
+        }
+        END { if (!found) exit 1 }
+    ') || {
+        if [[ "$has_default" == "true" ]]; then
+            echo "$default"
+            return 0
+        fi
+        return 3
+    }
+    # Strip surrounding double quotes
+    if [[ "${result:0:1}" == '"' && "${result: -1}" == '"' ]]; then
+        result="${result:1:${#result}-2}"
     fi
-fi
-
-# ── Execute yq expression ───────────────────────────────────────────────────
-
-OUTPUT=$(_extract_frontmatter | $YQ_BIN eval "$EXPRESSION" - 2>&1) || {
-    echo "ERROR: yq expression failed: $EXPRESSION" >&2
-    echo "$OUTPUT" >&2
-    exit 3
+    echo "$result"
 }
 
-echo "$OUTPUT"
+# ── Prefix key listing ────────────────────────────────────────────────────────
+
+_list_keys() {
+    local prefix="$1"
+    _extract_frontmatter | awk -v p="$prefix." '
+        substr($0, 1, length(p)) == p {
+            rest = substr($0, length(p) + 1)
+            sub(/:.*/, "", rest)
+            sub(/\..*/, "", rest)
+            if (rest != "" && !(rest in seen)) { seen[rest] = 1; print rest }
+        }'
+}
+
+# ── Validate ──────────────────────────────────────────────────────────────────
+
+_validate() {
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        echo "ERROR: Config file not found: $CONFIG_FILE" >&2
+        return 1
+    fi
+
+    local errors=0
+    local line_num=0
+    while IFS= read -r line; do
+        line_num=$((line_num + 1))
+        # Skip empty lines and comments
+        [[ -z "$line" || "$line" == \#* ]] && continue
+        # Each line must be "key: value"
+        if [[ ! "$line" =~ ^[a-zA-Z0-9._-]+:\ .+ ]]; then
+            echo "ERROR: Invalid line $line_num: $line" >&2
+            errors=$((errors + 1))
+        fi
+    done < <(_extract_frontmatter)
+
+    if [[ $errors -gt 0 ]]; then
+        echo "ERROR: $errors invalid lines in config" >&2
+        return 2
+    fi
+    echo "OK: Config is valid"
+}
+
+# ── Check config file ────────────────────────────────────────────────────────
+
+if [[ "${1:-}" != "--validate" && ! -f "$CONFIG_FILE" ]]; then
+    echo "ERROR: Config file not found: $CONFIG_FILE" >&2
+    echo "  Expected at: $CONFIG_FILE" >&2
+    echo "  Copy kvido.local.md.example from the plugin and fill in your data." >&2
+    exit 1
+fi
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+case "${1:-}" in
+    --validate)
+        _validate
+        ;;
+    --keys)
+        [[ -z "${2:-}" ]] && { echo "Usage: config.sh --keys 'prefix'" >&2; exit 3; }
+        _list_keys "$2"
+        ;;
+    "")
+        echo "Usage: config.sh 'key' [default]" >&2
+        echo "       config.sh --keys 'prefix'" >&2
+        echo "       config.sh --validate" >&2
+        exit 3
+        ;;
+    *)
+        if [[ $# -ge 2 ]]; then
+            _get_value "$1" "$2" "true"
+        else
+            _get_value "$1" "" "false"
+        fi
+        ;;
+esac

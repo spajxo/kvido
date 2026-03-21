@@ -32,11 +32,11 @@ done
 projects=()
 labels=()
 jql_filters=()
-while IFS=$'\t' read -r key label filter; do
-  projects+=("$key")
-  labels+=("${label:-$key}")
-  jql_filters+=("$filter")
-done < <($CONFIG '.sources.jira.projects[] | [.key, .label // "", .filter] | @tsv')
+for proj_key in $($CONFIG --keys 'sources.jira.projects'); do
+  projects+=("$proj_key")
+  labels+=("$($CONFIG "sources.jira.projects.${proj_key}.label" "$proj_key")")
+  jql_filters+=("$($CONFIG "sources.jira.projects.${proj_key}.filter")")
+done
 
 if [[ ${#projects[@]} -eq 0 ]]; then
   echo "ERROR: no projects found in config" >&2

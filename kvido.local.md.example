@@ -3,234 +3,116 @@
 # kvido.local.md — Kvido assistant configuration
 # =============================================================================
 # Copy to .claude/kvido.local.md in your project and fill in your data.
-# Usage: skills/config.sh '<yq_expression>'
-# Example: skills/config.sh '.sources.gitlab.repos[].name'
+# Usage: skills/config.sh 'key' [default]
+# Usage: skills/config.sh --keys 'prefix'
+# Example: skills/config.sh 'sources.gmail.max_results'
+# Example: skills/config.sh --keys 'sources.gitlab.repos'
+#
+# Format: flat dot-notation keys. No nesting. Arrays use named sub-keys.
 # =============================================================================
 
 # =============================================================================
 # SOURCES — data sources
 # =============================================================================
 
-sources:
+# Jira ---
+sources.jira.tool.primary: acli
+sources.jira.tool.fallback: atlassian-mcp
+# sources.jira.projects.PROJ.filter: "assignee = currentUser() AND status != Done ORDER BY updated DESC"
+# sources.jira.projects.PROJ.label: My Project
 
-  # ---------------------------------------------------------------------------
-  # Jira
-  # ---------------------------------------------------------------------------
-  jira:
-    tool:
-      primary: acli
-      fallback: atlassian-mcp
-    projects: []
-    # - key: PROJ
-    #   filter: "assignee = currentUser() AND status != Done ORDER BY updated DESC"
-    #   priority: high
+# GitLab ---
+# sources.gitlab.repos.group-project.path: ~/Projects/path/to/repo
+# sources.gitlab.repos.group-project.branches: main
+# sources.gitlab.repos.group-project.priority: high
+# sources.gitlab.repos.group-kb.path: ~/Projects/path/to/kb
+# sources.gitlab.repos.group-kb.priority: low
+# sources.gitlab.repos.group-kb.type: knowledge-base
 
-  # ---------------------------------------------------------------------------
-  # GitLab
-  # ---------------------------------------------------------------------------
-  gitlab:
-    repo: owner/repo-name  # GitLab repo for assistant/worker work queue (Issues)
-    repos: []
-    # - name: group/project
-    #   path: ~/Projects/path/to/repo
-    #   branches: [main]
-    #   priority: high
-    # - name: group/knowledge-base
-    #   path: ~/Projects/path/to/kb
-    #   branches: [main]
-    #   priority: low
-    #   type: knowledge-base
+# Slack ---
+sources.slack.self_dm_channel.name: assistant
+sources.slack.self_dm_channel.channel_id: ""
+# sources.slack.dm_channels.person-name.user_id: UXXXXXXXXXX
+# sources.slack.dm_channels.person-name.channel_id: DXXXXXXXXXX
+# sources.slack.dm_channels.person-name.priority: normal
+# sources.slack.channels.channel-name.channel_id: CXXXXXXXXXX
+# sources.slack.channels.channel-name.priority: high
 
-  # ---------------------------------------------------------------------------
-  # Slack
-  # ---------------------------------------------------------------------------
-  slack:
-    # Transport rules:
-    #   slack.sh (Bot token) — bot actions: notifications, channel reads, sending as bot
-    #   Slack MCP — fallback for search; sends as user (not bot), no desktop notification
-    #   use_mcp: true on a channel = prefer MCP for that channel (e.g. posting as user)
-    self_dm_channel:
-      name: assistant
-      channel_id: ""
-    dm_channels: []
-    # - name: Person Name
-    #   user_id: UXXXXXXXXXX
-    #   channel_id: DXXXXXXXXXX
-    #   priority: normal
-    channels: []
-    # - name: channel-name
-    #   priority: high
-    #   channel_id: CXXXXXXXXXX
+# Calendar ---
+sources.calendar.categories.standup: standup,daily
+sources.calendar.categories.planning: planning,refinement,grooming
+sources.calendar.categories.one_on_one: "1:1,1on1"
+sources.calendar.categories.focus: "focus,deep work"
+sources.calendar.default_category: meeting
 
-  # ---------------------------------------------------------------------------
-  # Calendar
-  # ---------------------------------------------------------------------------
-  calendar:
-    categories:
-      standup: ["standup", "daily"]
-      planning: ["planning", "refinement", "grooming"]
-      one_on_one: ["1:1", "1on1"]
-      focus: ["focus", "deep work"]
-    default_category: meeting
+# Gmail ---
+sources.gmail.watch_query: "is:unread -category:promotions -category:social"
+sources.gmail.max_results: 20
+# sources.gmail.priority_senders: "*@example.com"
+# sources.gmail.labels_ignore: CATEGORY_PROMOTIONS,CATEGORY_SOCIAL
 
-  # ---------------------------------------------------------------------------
-  # Gmail
-  # ---------------------------------------------------------------------------
-  gmail:
-    watch_query: "is:unread -category:promotions -category:social"
-    priority_senders: []
-    # - "*@example.com"
-    labels_ignore:
-      - CATEGORY_PROMOTIONS
-      - CATEGORY_SOCIAL
-    max_results: 20
-
-  # ---------------------------------------------------------------------------
-  # Sessions
-  # ---------------------------------------------------------------------------
-  sessions:
-    idle_threshold_min: 10
-    default_date: yesterday
+# Sessions ---
+sources.sessions.idle_threshold_min: 10
+sources.sessions.default_date: yesterday
 
 # =============================================================================
 # SKILLS — behavior and feature configuration
 # =============================================================================
 
-skills:
+# Heartbeat ---
+skills.heartbeat.presets.5m: "*/5 * * * *"
+skills.heartbeat.presets.10m: "*/10 * * * *"
+skills.heartbeat.presets.30m: "*/30 * * * *"
+skills.heartbeat.presets.60m: "3 * * * *"
+skills.heartbeat.wh_start: 7
+skills.heartbeat.wh_end: 16
+skills.heartbeat.wh_min_interval: 10m
+skills.heartbeat.wh_after_interaction: 5m
+skills.heartbeat.wh_interaction_window_minutes: 30
+skills.heartbeat.decay.30.preset: 5m
+skills.heartbeat.decay.120.preset: 10m
+skills.heartbeat.decay.240.preset: 30m
+skills.heartbeat.decay.null.preset: 60m
 
-  # ---------------------------------------------------------------------------
-  # Heartbeat
-  # ---------------------------------------------------------------------------
-  heartbeat:
-    presets:
-      - name: "5m"
-        cron: "*/5 * * * *"
-      - name: "10m"
-        cron: "*/10 * * * *"
-      - name: "30m"
-        cron: "*/30 * * * *"
-      - name: "60m"
-        cron: "3 * * * *"
-    adaptive:
-      working_hours:
-        days: "Mon-Fri"
-        start: 7
-        end: 16
-        min_interval: "10m"
-        after_interaction: "5m"
-        interaction_window_minutes: 30
-      off_hours:
-        decay:
-          - max_minutes: 30
-            preset: "5m"
-          - max_minutes: 120
-            preset: "10m"
-          - max_minutes: 240
-            preset: "30m"
-          - max_minutes: null
-            preset: "60m"
+# Planner ---
+skills.planner.planning_interval: 10
 
-  # ---------------------------------------------------------------------------
-  # Planner
-  # ---------------------------------------------------------------------------
-  planner:
-    planning_interval: 10
-    sources:
-      - name: gitlab
-        fetch: "skills/source-gitlab/fetch-activity.sh"
-        fetch_mrs: "skills/source-gitlab/fetch-mrs.sh"
-        always: true
-      - name: jira
-        fetch: "skills/source-jira/fetch.sh"
-        always: true
-      - name: slack
-        script: "skills/slack/slack.sh"
-        always: true
-      - name: calendar
-        fetch: "skills/source-calendar/fetch.sh"
-        always: true
-      - name: gmail
-        fetch: "skills/source-gmail/fetch.sh"
-        always: true
-      - name: sessions
-        fetch: "skills/source-sessions/fetch.sh"
-        eod_only: true
-      - name: interests
-        skill: "skills/interests/SKILL.md"
-        check_interval_hours: 24
-    notification_levels:
-      silent: "log only"
-      desktop: "slack.sh send — DM notification"
-      slack: "slack.sh send — urgent DM"
-    focus_mode:
-      enabled: true
-      calendar_category: "focus"
-      suppress: ["desktop"]
-      after_focus_summary: true
+# Worker ---
+skills.worker.work_dir: state/work
+skills.worker.max_concurrent: 2
+skills.worker.task_timeout_minutes: 8
+skills.worker.stale_lock_minutes: 10
+skills.worker.overflow_threshold: 20
+skills.worker.models.s: claude-sonnet-4-6
+skills.worker.models.m: claude-sonnet-4-6
+skills.worker.models.l: claude-opus-4-6
+skills.worker.models.xl: claude-opus-4-6
+skills.worker.urgent_model: claude-opus-4-6
 
-  # ---------------------------------------------------------------------------
-  # Worker
-  # ---------------------------------------------------------------------------
-  worker:
-    work_dir: state/work
-    max_concurrent: 2
-    task_timeout_minutes: 8
-    stale_lock_minutes: 10
-    overflow_threshold: 20
-    models:
-      s: claude-sonnet-4-6
-      m: claude-sonnet-4-6
-      l: claude-opus-4-6
-      xl: claude-opus-4-6
-    urgent_model: claude-opus-4-6
+# Slack behavior ---
+skills.slack.batching.enabled: true
+skills.slack.batching.window: full_heartbeat
 
-  # ---------------------------------------------------------------------------
-  # Slack (behavior)
-  # ---------------------------------------------------------------------------
-  slack:
-    focus_mode:
-      enabled: true
-      calendar_category: focus
-      suppress: [desktop, slack]
-      after_focus_summary: true
-    batching:
-      enabled: true
-      window: full_heartbeat
+# Triage ---
+skills.triage.wip_limit: 3
+skills.triage.triage_overflow_threshold: 10
+skills.triage.done_rotation: friday
 
-  # ---------------------------------------------------------------------------
-  # Triage
-  # ---------------------------------------------------------------------------
-  triage:
-    wip_limit: 3
-    triage_overflow_threshold: 10
-    done_rotation: friday
+# Dashboard ---
+skills.dashboard.enabled: true
+skills.dashboard.auto_refresh: 20
 
-  # ---------------------------------------------------------------------------
-  # Dashboard
-  # ---------------------------------------------------------------------------
-  dashboard:
-    enabled: true
-    auto_refresh: 20  # seconds
+# Daily Questions ---
+skills.daily_questions.enabled: true
+skills.daily_questions.max_questions: 2
+skills.daily_questions.frequency: weekdays
 
-  # ---------------------------------------------------------------------------
-  # Daily Questions
-  # ---------------------------------------------------------------------------
-  daily_questions:
-    enabled: true
-    max_questions: 2
-    frequency: weekdays
-
-  # ---------------------------------------------------------------------------
-  # Interests
-  # ---------------------------------------------------------------------------
-  interests:
-    topics: []
-    # - slug: example-topic
-    #   name: "Example topic"
-    #   query: "example search query"
-    #   urgency: medium
-    #   check_interval: weekly
-    #   reason: "Why this matters"
+# Interests ---
+# skills.interests.topics.example-topic.name: "Example topic"
+# skills.interests.topics.example-topic.query: "example search query"
+# skills.interests.topics.example-topic.urgency: medium
+# skills.interests.topics.example-topic.check_interval: weekly
+# skills.interests.topics.example-topic.reason: "Why this matters"
 ---
 
 # Custom instructions

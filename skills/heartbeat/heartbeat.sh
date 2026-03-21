@@ -73,21 +73,21 @@ fi
 # Load adaptive rules from centrální kvido.local.md via config.sh
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
 
-WH_START=$($CONFIG '.skills.heartbeat.adaptive.working_hours.start')
-WH_END=$($CONFIG '.skills.heartbeat.adaptive.working_hours.end')
-WH_INTERACTION_WINDOW=$($CONFIG '.skills.heartbeat.adaptive.working_hours.interaction_window_minutes')
-WH_AFTER_INTERACTION=$($CONFIG '.skills.heartbeat.adaptive.working_hours.after_interaction')
-WH_MIN_INTERVAL=$($CONFIG '.skills.heartbeat.adaptive.working_hours.min_interval')
+WH_START=$($CONFIG 'skills.heartbeat.wh_start')
+WH_END=$($CONFIG 'skills.heartbeat.wh_end')
+WH_INTERACTION_WINDOW=$($CONFIG 'skills.heartbeat.wh_interaction_window_minutes')
+WH_AFTER_INTERACTION=$($CONFIG 'skills.heartbeat.wh_after_interaction')
+WH_MIN_INTERVAL=$($CONFIG 'skills.heartbeat.wh_min_interval')
 
-# Parse off_hours decay array via yq JSON output
+# Parse off_hours decay from flat config
 declare -A OH_DECAY_MAX
 declare -A OH_DECAY_PRESET
 OH_DECAY_COUNT=0
-while IFS=$'\t' read -r max_val preset_val; do
-  OH_DECAY_MAX[$OH_DECAY_COUNT]="$max_val"
-  OH_DECAY_PRESET[$OH_DECAY_COUNT]="$preset_val"
+for decay_key in $($CONFIG --keys 'skills.heartbeat.decay'); do
+  OH_DECAY_MAX[$OH_DECAY_COUNT]="$decay_key"
+  OH_DECAY_PRESET[$OH_DECAY_COUNT]=$($CONFIG "skills.heartbeat.decay.${decay_key}.preset")
   OH_DECAY_COUNT=$((OH_DECAY_COUNT + 1))
-done < <($CONFIG '.skills.heartbeat.adaptive.off_hours.decay[] | [(.max_minutes // "null" | tostring), .preset] | @tsv')
+done
 
 DOW=$(date +%u)
 # Sleep mode takes priority over all adaptive rules (including turbo)
@@ -126,7 +126,7 @@ else
 fi
 
 # Planner dispatch check
-PLANNING_INTERVAL=$($CONFIG '.skills.planner.planning_interval')
+PLANNING_INTERVAL=$($CONFIG 'skills.planner.planning_interval')
 if (( ITERATION % PLANNING_INTERVAL == 0 )); then
   PLANNER_DUE="true"
 else
@@ -161,7 +161,7 @@ NEXT_TASK=$("$TASK_SH" list todo --sort priority 2>/dev/null | head -1 || echo "
 "$SCRIPT_DIR/heartbeat-state.sh" set last_quick "$TIMESTAMP"
 
 # Dashboard generation (never fails heartbeat — || true)
-DASH_ENABLED=$($CONFIG '.skills.dashboard.enabled // true' 2>/dev/null || echo "true")
+DASH_ENABLED=$($CONFIG 'skills.dashboard.enabled' 'true')
 if [[ "$DASH_ENABLED" != "false" ]]; then
   "$SCRIPT_DIR/generate-dashboard.sh" 2>/dev/null || true
 fi

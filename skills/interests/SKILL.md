@@ -36,7 +36,8 @@ Nenavrhuj triage item pokud podobný topic už existuje jako úkol:
 for d in state/tasks/*/; do
   for f in "$d"*.md; do
     [[ -f "$f" ]] || continue
-    yq --front-matter=extract '.title' "$f" 2>/dev/null
+    SLUG=$(basename "$f" .md)
+    skills/worker/task.sh read "$SLUG" 2>/dev/null | grep '^TITLE=' | cut -d= -f2-
   done
 done | grep -i "<hledaný výraz>"
 ```

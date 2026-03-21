@@ -9,8 +9,8 @@ SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="$(cd "$SKILL_DIR/.." && pwd)/config.sh"
 
 # Parse config
-WATCH_QUERY=$($CONFIG '.sources.gmail.watch_query')
-MAX_RESULTS=$($CONFIG '.sources.gmail.max_results')
+WATCH_QUERY=$($CONFIG 'sources.gmail.watch_query')
+MAX_RESULTS=$($CONFIG 'sources.gmail.max_results')
 
 WATCH_MODE=false
 if [[ "${1:-}" == "--watch" ]]; then

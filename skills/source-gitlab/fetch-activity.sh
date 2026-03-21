@@ -118,6 +118,8 @@ process_repo() {
 }
 
 # Parse repos from centrální kvido.local.md via config.sh
-while IFS=$'\t' read -r repo_name repo_path repo_priority; do
-  process_repo "$repo_name" "$repo_path" "${repo_priority:-normal}"
-done < <($CONFIG '.sources.gitlab.repos[] | [.name, .path, .priority // "normal"] | @tsv')
+for repo_key in $($CONFIG --keys 'sources.gitlab.repos'); do
+  repo_path=$($CONFIG "sources.gitlab.repos.${repo_key}.path")
+  repo_priority=$($CONFIG "sources.gitlab.repos.${repo_key}.priority" "normal")
+  process_repo "$repo_key" "$repo_path" "$repo_priority"
+done

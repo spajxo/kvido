@@ -11,7 +11,7 @@ Setup a self-healing command. Spouštěj při prvním spuštění, po instalaci 
 ## Step 0: Prerequisites
 
 ```bash
-for cmd in jq yq; do
+for cmd in jq; do
   if command -v "$cmd" &>/dev/null; then
     echo "OK: $cmd $(command -v $cmd)"
   else
@@ -135,7 +135,7 @@ Chybějící nebo prázdné → log warning.
 
 ### Binary check
 ```bash
-for cmd in jq yq glab acli gws; do
+for cmd in jq glab acli gws; do
   command -v "$cmd" &>/dev/null || echo "WARNING: $cmd not found"
 done
 ```
