@@ -1,0 +1,6 @@
+[
+  {"type":"section","text":{"type":"mrkdwn","text":"{{emoji}} *{{title}}*\n{{description}}"}},
+  {"type":"context","elements":[
+    {"type":"mrkdwn","text":"{{source}} · {{reference}} · {{timestamp}}"}
+  ]}
+]

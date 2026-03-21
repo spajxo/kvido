@@ -1,0 +1,6 @@
+[
+  {"type":"section","text":{"type":"mrkdwn","text":"☀️ *Morning — {{date}}*\n━━━━━━━━━━━━━━━━\n{{briefing}}"}},
+  {"type":"context","elements":[
+    {"type":"mrkdwn","text":"📥 {{triage_count}} v triage · {{meeting_time}} meetings · {{deepwork_time}} deep-work"}
+  ]}
+]

@@ -1,0 +1,6 @@
+[
+  {"type":"section","text":{"type":"mrkdwn","text":"🌙 *EOD — {{date}}*\n━━━━━━━━━━━━━━━━\n{{summary}}"}},
+  {"type":"context","elements":[
+    {"type":"mrkdwn","text":"{{session_time}} odpracováno · {{done_count}} hotovo · {{open_count}} otevřeno"}
+  ]}
+]

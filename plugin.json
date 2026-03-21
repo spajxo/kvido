@@ -1,0 +1,10 @@
+{
+  "name": "kvido",
+  "version": "0.1.0",
+  "description": "Personal AI workflow assistant — heartbeat, planner, worker, triage",
+  "main": "CLAUDE.md",
+  "skills": "skills/",
+  "agents": "agents/",
+  "hooks": "hooks/",
+  "commands": "commands/"
+}

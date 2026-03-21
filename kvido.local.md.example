@@ -1,0 +1,238 @@
+---
+# =============================================================================
+# kvido.local.md — Kvido assistant configuration
+# =============================================================================
+# Copy to kvido.local.md in your project root and fill in your data.
+# Usage: skills/config.sh '<yq_expression>'
+# Example: skills/config.sh '.sources.gitlab.repos[].name'
+# =============================================================================
+
+# =============================================================================
+# SOURCES — data sources
+# =============================================================================
+
+sources:
+
+  # ---------------------------------------------------------------------------
+  # Jira
+  # ---------------------------------------------------------------------------
+  jira:
+    tool:
+      primary: acli
+      fallback: atlassian-mcp
+    projects: []
+    # - key: PROJ
+    #   filter: "assignee = currentUser() AND status != Done ORDER BY updated DESC"
+    #   priority: high
+
+  # ---------------------------------------------------------------------------
+  # GitLab
+  # ---------------------------------------------------------------------------
+  gitlab:
+    repo: owner/repo-name  # GitLab repo for assistant/worker work queue (Issues)
+    repos: []
+    # - name: group/project
+    #   path: ~/Projects/path/to/repo
+    #   branches: [main]
+    #   priority: high
+    # - name: group/knowledge-base
+    #   path: ~/Projects/path/to/kb
+    #   branches: [main]
+    #   priority: low
+    #   type: knowledge-base
+
+  # ---------------------------------------------------------------------------
+  # Slack
+  # ---------------------------------------------------------------------------
+  slack:
+    # Transport rules:
+    #   slack.sh (Bot token) — bot actions: notifications, channel reads, sending as bot
+    #   Slack MCP — fallback for search; sends as user (not bot), no desktop notification
+    #   use_mcp: true on a channel = prefer MCP for that channel (e.g. posting as user)
+    self_dm_channel:
+      name: assistant
+      channel_id: ""
+    dm_channels: []
+    # - name: Person Name
+    #   user_id: UXXXXXXXXXX
+    #   channel_id: DXXXXXXXXXX
+    #   priority: normal
+    channels: []
+    # - name: channel-name
+    #   priority: high
+    #   channel_id: CXXXXXXXXXX
+
+  # ---------------------------------------------------------------------------
+  # Calendar
+  # ---------------------------------------------------------------------------
+  calendar:
+    categories:
+      standup: ["standup", "daily"]
+      planning: ["planning", "refinement", "grooming"]
+      one_on_one: ["1:1", "1on1"]
+      focus: ["focus", "deep work"]
+    default_category: meeting
+
+  # ---------------------------------------------------------------------------
+  # Gmail
+  # ---------------------------------------------------------------------------
+  gmail:
+    watch_query: "is:unread -category:promotions -category:social"
+    priority_senders: []
+    # - "*@example.com"
+    labels_ignore:
+      - CATEGORY_PROMOTIONS
+      - CATEGORY_SOCIAL
+    max_results: 20
+
+  # ---------------------------------------------------------------------------
+  # Sessions
+  # ---------------------------------------------------------------------------
+  sessions:
+    idle_threshold_min: 10
+    default_date: yesterday
+
+# =============================================================================
+# SKILLS — behavior and feature configuration
+# =============================================================================
+
+skills:
+
+  # ---------------------------------------------------------------------------
+  # Heartbeat
+  # ---------------------------------------------------------------------------
+  heartbeat:
+    presets:
+      - name: "5m"
+        cron: "*/5 * * * *"
+      - name: "10m"
+        cron: "*/10 * * * *"
+      - name: "30m"
+        cron: "*/30 * * * *"
+      - name: "60m"
+        cron: "3 * * * *"
+    adaptive:
+      working_hours:
+        days: "Mon-Fri"
+        start: 7
+        end: 16
+        min_interval: "10m"
+        after_interaction: "5m"
+        interaction_window_minutes: 30
+      off_hours:
+        decay:
+          - max_minutes: 30
+            preset: "5m"
+          - max_minutes: 120
+            preset: "10m"
+          - max_minutes: 240
+            preset: "30m"
+          - max_minutes: null
+            preset: "60m"
+
+  # ---------------------------------------------------------------------------
+  # Planner
+  # ---------------------------------------------------------------------------
+  planner:
+    planning_interval: 10
+    sources:
+      - name: gitlab
+        fetch: "skills/source-gitlab/fetch-activity.sh"
+        fetch_mrs: "skills/source-gitlab/fetch-mrs.sh"
+        always: true
+      - name: jira
+        fetch: "skills/source-jira/fetch.sh"
+        always: true
+      - name: slack
+        script: "skills/slack/slack.sh"
+        always: true
+      - name: calendar
+        fetch: "skills/source-calendar/fetch.sh"
+        always: true
+      - name: gmail
+        fetch: "skills/source-gmail/fetch.sh"
+        always: true
+      - name: sessions
+        fetch: "skills/source-sessions/fetch.sh"
+        eod_only: true
+      - name: interests
+        skill: "skills/interests/SKILL.md"
+        check_interval_hours: 24
+    notification_levels:
+      silent: "log only"
+      desktop: "slack.sh send — DM notification"
+      slack: "slack.sh send — urgent DM"
+    focus_mode:
+      enabled: true
+      calendar_category: "focus"
+      suppress: ["desktop"]
+      after_focus_summary: true
+
+  # ---------------------------------------------------------------------------
+  # Worker
+  # ---------------------------------------------------------------------------
+  worker:
+    work_dir: state/work
+    max_concurrent: 2
+    task_timeout_minutes: 8
+    stale_lock_minutes: 10
+    overflow_threshold: 20
+    models:
+      s: claude-sonnet-4-6
+      m: claude-sonnet-4-6
+      l: claude-opus-4-6
+      xl: claude-opus-4-6
+    urgent_model: claude-opus-4-6
+
+  # ---------------------------------------------------------------------------
+  # Slack (behavior)
+  # ---------------------------------------------------------------------------
+  slack:
+    focus_mode:
+      enabled: true
+      calendar_category: focus
+      suppress: [desktop, slack]
+      after_focus_summary: true
+    batching:
+      enabled: true
+      window: full_heartbeat
+
+  # ---------------------------------------------------------------------------
+  # Triage
+  # ---------------------------------------------------------------------------
+  triage:
+    wip_limit: 3
+    triage_overflow_threshold: 10
+    done_rotation: friday
+
+  # ---------------------------------------------------------------------------
+  # Dashboard
+  # ---------------------------------------------------------------------------
+  dashboard:
+    enabled: true
+    auto_refresh: 20  # seconds
+
+  # ---------------------------------------------------------------------------
+  # Daily Questions
+  # ---------------------------------------------------------------------------
+  daily_questions:
+    enabled: true
+    max_questions: 2
+    frequency: weekdays
+
+  # ---------------------------------------------------------------------------
+  # Interests
+  # ---------------------------------------------------------------------------
+  interests:
+    topics: []
+    # - slug: example-topic
+    #   name: "Example topic"
+    #   query: "example search query"
+    #   urgency: medium
+    #   check_interval: weekly
+    #   reason: "Why this matters"
+---
+
+# Custom instructions
+
+<!-- Optional markdown body for per-project notes or overrides. -->

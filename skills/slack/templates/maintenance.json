@@ -1,0 +1,6 @@
+[
+  {"type":"section","text":{"type":"mrkdwn","text":"🔧 *Maintenance*\n━━━━━━━━━━━━━━━━\n*librarian* {{librarian}} · *enricher* {{enricher}}\n*self-improver* {{self_improver}} · *health* {{health}}"}},
+  {"type":"context","elements":[
+    {"type":"mrkdwn","text":"{{timestamp}}"}
+  ]}
+]

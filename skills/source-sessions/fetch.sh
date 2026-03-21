@@ -1,0 +1,230 @@
+#!/usr/bin/env bash
+# fetch.sh — Claude Code session parser, pure bash (no Python dependency)
+#
+# Usage: fetch.sh [YYYY-MM-DD]
+# Default: yesterday
+#
+# Dependencies: jq, date, grep
+# Reads idle_threshold_min from centrální kvido.local.md via config.sh
+#
+# Optimizations vs original:
+#   1. Pre-filter files by first/last timestamp date (no jq cost for non-matching files)
+#   2. Single jq pass per file — timestamps + tickets combined, date-filtered in jq
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
+
+# ── Config ────────────────────────────────────────────────────────────────────
+IDLE_THRESHOLD_MIN=$($CONFIG '.sources.sessions.idle_threshold_min')
+IDLE_THRESHOLD_SEC=$(( IDLE_THRESHOLD_MIN * 60 ))
+
+# ── Date argument ──────────────────────────────────────────────────────────────
+TARGET_DATE="${1:-$(date -d 'yesterday' '+%Y-%m-%d')}"
+
+# Validate date format
+if ! date -d "$TARGET_DATE" &>/dev/null 2>&1; then
+  echo "ERROR: invalid date: $TARGET_DATE" >&2
+  exit 1
+fi
+
+SESSIONS_DIR="${HOME}/.claude/projects"
+
+if [[ ! -d "$SESSIONS_DIR" ]]; then
+  echo "No session data available (directory not found: $SESSIONS_DIR)"
+  exit 0
+fi
+
+# ── Per-project accumulators ───────────────────────────────────────────────────
+declare -A proj_sessions
+declare -A proj_minutes
+declare -A proj_tickets
+
+# ── Convert directory name to display name ────────────────────────────────────
+# e.g. -home-user-Projects-git-digital-cz-org-repo → org/repo
+dir_to_display_name() {
+  local dir_name="$1"
+  # Strip leading dash
+  dir_name="${dir_name#-}"
+  # Strip home prefix: home-<user>-Projects-
+  dir_name="${dir_name#home-}"
+  # Strip up to and including Projects-
+  dir_name="${dir_name#*-Projects-}"
+  # Strip optional git-digital-cz- or github-com- prefix
+  dir_name="${dir_name#git-digital-cz-}"
+  dir_name="${dir_name#github-com-}"
+  # Replace first dash with slash (org-repo → org/repo)
+  if [[ "$dir_name" == *-* ]]; then
+    local org="${dir_name%%-*}"
+    local repo="${dir_name#*-}"
+    echo "${org}/${repo}"
+  else
+    echo "$dir_name"
+  fi
+}
+
+# ── Resolve project directory from JSONL path ─────────────────────────────────
+# Session files can be at:
+#   ~/.claude/projects/<project-dir>/<session-id>.jsonl
+#   ~/.claude/projects/<project-dir>/<session-id>/subagents/<agent-id>.jsonl
+# Always resolve to the project-dir level (child of SESSIONS_DIR)
+resolve_project_dir() {
+  local file_path="$1"
+  local rel="${file_path#"$SESSIONS_DIR/"}"
+  # First path component is the project dir
+  echo "${rel%%/*}"
+}
+
+# ── Fast date pre-filter using first/last timestamp line ──────────────────────
+# Extracts YYYY-MM-DD from "timestamp":"..." without invoking jq.
+# Returns 0 if file may contain TARGET_DATE data, 1 to skip.
+file_may_contain_date() {
+  local file="$1"
+  local first_date last_date
+
+  # First timestamp in file (skip lines without timestamp field)
+  first_date=$(grep -m1 '"timestamp":"' "$file" 2>/dev/null \
+    | grep -o '"timestamp":"[0-9-]*' | cut -c14- || true)
+
+  # Last timestamp in file (scan last 20 lines — timestamp is usually at end of line)
+  last_date=$(tail -20 "$file" 2>/dev/null \
+    | grep '"timestamp":"' | tail -1 \
+    | grep -o '"timestamp":"[0-9-]*' | cut -c14- || true)
+
+  # No timestamps found — skip
+  [[ -z "$first_date" && -z "$last_date" ]] && return 1
+
+  # File starts after target date — too new, skip
+  [[ -n "$first_date" && "$first_date" > "$TARGET_DATE" ]] && return 1
+
+  # File ends before target date — too old, skip
+  [[ -n "$last_date" && "$last_date" < "$TARGET_DATE" ]] && return 1
+
+  return 0
+}
+
+# ── Process each JSONL file ────────────────────────────────────────────────────
+while IFS= read -r jsonl_file; do
+  # Optimization 2: skip files whose date range doesn't include target date
+  file_may_contain_date "$jsonl_file" || continue
+
+  dir_name="$(resolve_project_dir "$jsonl_file")"
+  display_name="$(dir_to_display_name "$dir_name")"
+
+  # Single jq pass — filter to target date, convert epoch inside jq, output tickets
+  # EP:<epoch>  — unix epoch for every event on target date (no date subprocess per ts)
+  # TX:<text>   — user message text (for ticket extraction)
+  jq_output=$(jq -r --arg date "$TARGET_DATE" '
+    select(.timestamp != null) |
+    .timestamp as $ts |
+    select($ts[0:10] == $date) |
+    (($ts | split(".")[0] | strptime("%Y-%m-%dT%H:%M:%S") | mktime) | tostring) as $ep |
+    if .type == "user" then
+      "EP:" + $ep,
+      ((.message.content // empty) |
+        if type == "string" then "TX:" + .
+        elif type == "array" then (.[].text? // empty | strings | "TX:" + .)
+        else empty end)
+    else
+      "EP:" + $ep
+    end
+  ' "$jsonl_file" 2>/dev/null || true)
+
+  [[ -z "$jq_output" ]] && continue
+
+  # Extract pre-converted epoch values — no date subprocess per timestamp
+  mapfile -t epochs < <(
+    echo "$jq_output" | grep '^EP:' | cut -c4- | sort -n
+  )
+
+  if [[ "${#epochs[@]}" -eq 0 ]]; then
+    continue
+  fi
+
+  # Count sessions and compute active minutes
+  session_count=1
+  active_seconds=0
+  prev_epoch="${epochs[0]}"
+
+  for (( i=1; i<${#epochs[@]}; i++ )); do
+    curr="${epochs[$i]}"
+    gap=$(( curr - prev_epoch ))
+    if [[ "$gap" -gt "$IDLE_THRESHOLD_SEC" ]]; then
+      session_count=$(( session_count + 1 ))
+    else
+      active_seconds=$(( active_seconds + gap ))
+    fi
+    prev_epoch="$curr"
+  done
+
+  active_minutes=$(( active_seconds / 60 ))
+
+  # Extract Jira ticket references from TX: lines
+  ticket_list=$(
+    echo "$jq_output" | grep '^TX:' | cut -c4- \
+    | grep -oE '[A-Z]{2,10}-[0-9]{3,6}' \
+    | sort -u | tr '\n' ',' | sed 's/,$//' \
+    || true
+  )
+
+  # Accumulate per project
+  if [[ -n "${proj_sessions[$display_name]+_}" ]]; then
+    proj_sessions[$display_name]=$(( proj_sessions[$display_name] + session_count ))
+    proj_minutes[$display_name]=$(( proj_minutes[$display_name] + active_minutes ))
+    if [[ -n "$ticket_list" ]]; then
+      if [[ -n "${proj_tickets[$display_name]}" ]]; then
+        proj_tickets[$display_name]="${proj_tickets[$display_name]},${ticket_list}"
+      else
+        proj_tickets[$display_name]="$ticket_list"
+      fi
+    fi
+  else
+    proj_sessions[$display_name]="$session_count"
+    proj_minutes[$display_name]="$active_minutes"
+    proj_tickets[$display_name]="${ticket_list:-}"
+  fi
+
+done < <(
+    # Scan all JSONL files — mtime is unreliable for cross-day sessions.
+  # Subagent files are included: they contribute to project time via resolve_project_dir.
+  # Date filtering happens via file_may_contain_date (pre-filter) and jq (main filter).
+  find "$SESSIONS_DIR" -name "*.jsonl" 2>/dev/null \
+  | sort
+)
+
+if [[ "${#proj_sessions[@]}" -eq 0 ]]; then
+  echo "No session data for $TARGET_DATE"
+  exit 0
+fi
+
+# ── Output ─────────────────────────────────────────────────────────────────────
+total_minutes=0
+
+for display_name in $(printf '%s\n' "${!proj_sessions[@]}" | sort); do
+  sessions="${proj_sessions[$display_name]}"
+  minutes="${proj_minutes[$display_name]}"
+  hours=$(( minutes / 60 ))
+  mins=$(( minutes % 60 ))
+  total_minutes=$(( total_minutes + minutes ))
+
+  session_suffix="s"
+  if [[ "$sessions" -eq 1 ]]; then
+    session_suffix=""
+  fi
+
+  echo "=== $display_name ($sessions session${session_suffix}, ~${hours}h ${mins}m) ==="
+
+  tickets="${proj_tickets[$display_name]:-}"
+  if [[ -n "$tickets" ]]; then
+    # Deduplicate ticket list
+    deduped=$(echo "$tickets" | tr ',' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')
+    echo "  Tickets: $deduped"
+  fi
+
+  echo ""
+done
+
+total_hours=$(( total_minutes / 60 ))
+total_mins=$(( total_minutes % 60 ))
+echo "Total active time: ${total_hours}h ${total_mins}m"
