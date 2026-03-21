@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# =============================================================================
+# kvido — CLI for kvido assistant plugin
+# =============================================================================
+# Combined launcher + script dispatcher. Resolves plugin install path from
+# the Claude Code plugin registry. Designed to be symlinked to ~/.local/bin/kvido.
+#
+# Usage:
+#   kvido                                     # launch Claude with heartbeat loop
+#   kvido /morning                            # launch Claude with custom prompt
+#   kvido skills/heartbeat/heartbeat.sh       # dispatch to plugin script
+#   kvido skills/worker/task.sh list todo     # dispatch with args
+#   kvido --root                              # print plugin root path
+#   kvido --install                           # symlink to ~/.local/bin/kvido
+#
+# Routing:
+#   --root / --install    → built-in commands
+#   skills/* / agents/*   → script dispatch (resolved to plugin install path)
+#   everything else       → Claude launcher (like assistant.sh)
+# =============================================================================
+
+set -euo pipefail
+
+_resolve_root() {
+  # 1. If running from plugin dir, use SCRIPT_DIR
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [[ -f "$script_dir/.claude-plugin/plugin.json" ]]; then
+    echo "$script_dir"
+    return
+  fi
+
+  # 2. Resolve from registry
+  local registry="$HOME/.claude/plugins/installed_plugins.json"
+  if [[ ! -f "$registry" ]]; then
+    echo "ERROR: Plugin registry not found: $registry" >&2
+    exit 1
+  fi
+
+  local root
+  root=$(jq -r '
+    .plugins | to_entries[]
+    | select(.key | startswith("kvido@"))
+    | .value[0].installPath
+  ' "$registry" 2>/dev/null | head -1)
+
+  if [[ -z "$root" || "$root" == "null" || ! -d "$root" ]]; then
+    echo "ERROR: kvido plugin not found in registry" >&2
+    exit 1
+  fi
+  echo "$root"
+}
+
+KVIDO_ROOT="$(_resolve_root)"
+
+case "${1:-}" in
+  --root)
+    echo "$KVIDO_ROOT"
+    ;;
+  --install)
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$KVIDO_ROOT/kvido" "$HOME/.local/bin/kvido"
+    echo "Installed: ~/.local/bin/kvido -> $KVIDO_ROOT/kvido"
+    ;;
+  skills/*|agents/*)
+    # Script dispatch — resolve to plugin install path
+    TARGET="$KVIDO_ROOT/$1"
+    shift
+    if [[ ! -f "$TARGET" ]]; then
+      echo "ERROR: Script not found: $TARGET" >&2
+      exit 1
+    fi
+    exec bash "$TARGET" "$@"
+    ;;
+  *)
+    # Claude launcher — replaces assistant.sh
+    if [[ -f .env ]]; then
+      set -a; source .env; set +a
+    fi
+
+    MODEL="${CLAUDE_MODEL:-claude-sonnet-4-6}"
+    PROMPT="${*:-/loop 5m /heartbeat}"
+
+    # shellcheck disable=SC2086
+    exec claude \
+      --permission-mode="${CLAUDE_PERMISSION_MODE:-default}" \
+      --model="$MODEL" \
+      --name="${ASSISTANT_NAME:-kvido}" \
+      ${CLAUDE_ADDITIONAL_OPTIONS:-} \
+      "$PROMPT"
+    ;;
+esac

@@ -21,7 +21,7 @@ Read `.claude/kvido.local.md`. For each topic where it is time to check (based o
 2. Compare with previous state in `state/interests.md`
 3. If new relevant info → create a triage task:
    ```bash
-   skills/worker/task.sh create \
+   kvido skills/worker/task.sh create \
      --title "[INTERESTS] description" \
      --instruction "description of finding" \
      --source interests \
@@ -39,7 +39,7 @@ for d in state/tasks/*/; do
   for f in "$d"*.md; do
     [[ -f "$f" ]] || continue
     SLUG=$(basename "$f" .md)
-    skills/worker/task.sh read "$SLUG" 2>/dev/null | grep '^TITLE=' | cut -d= -f2-
+    kvido skills/worker/task.sh read "$SLUG" 2>/dev/null | grep '^TITLE=' | cut -d= -f2-
   done
 done | grep -i "<search term>"
 ```

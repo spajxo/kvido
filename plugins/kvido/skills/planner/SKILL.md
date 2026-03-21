@@ -44,7 +44,7 @@ If `memory/planner.md` does not exist → skip silently.
 Run the discovery script to find installed source plugins:
 
 ```bash
-skills/discover-sources.sh
+kvido skills/discover-sources.sh
 ```
 
 Output: one line per installed source — `name<TAB>install_path`. If empty, no source plugins are installed — skip data gathering.
@@ -134,13 +134,13 @@ Dispatch: eod
 
 Load tasks in triage state:
 ```bash
-skills/worker/task.sh list triage
+kvido skills/worker/task.sh list triage
 ```
 
 **Triage items are NOT auto-approved.** They stay in `triage` until the user explicitly approves.
 
 For each task (max 3 per run):
-1. Read task detail: `skills/worker/task.sh read <slug>` — understand what is requested
+1. Read task detail: `kvido skills/worker/task.sh read <slug>` — understand what is requested
 2. Evaluate relevance and urgency
 3. **Clear request** → add to approval batch:
    - Suggest: title (max 8 words), priority, size, assignee=agent, brief description
@@ -176,7 +176,7 @@ Triage: <slug> '<title>' — <description>. Priority: <priority>. Size: <size>. 
 
 Also write a note on the task indicating the triage item was sent — but WITHOUT a Slack ts (heartbeat will fill that in after delivery):
 ```bash
-skills/worker/task.sh note <slug> "Triage: sent for approval. Awaiting user decision."
+kvido skills/worker/task.sh note <slug> "Triage: sent for approval. Awaiting user decision."
 ```
 
 **Note:** Planner runs as a subagent and does NOT have access to TodoWrite. Heartbeat (main session) will create `triage:<slug>` todo tasks for polling after delivery via `slack.sh`. Planner only writes notes on tasks and returns NL output.

@@ -84,7 +84,7 @@ source_ref: "1773933088.437"
 ### Cancel handling
 At the start of work, verify the task has not been cancelled/completed:
 ```bash
-STATUS=$(skills/worker/task.sh find "$TASK_SLUG")
+STATUS=$(kvido skills/worker/task.sh find "$TASK_SLUG")
 [[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0  # silent — cancel or race condition
 ```
 

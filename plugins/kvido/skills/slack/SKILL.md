@@ -23,25 +23,25 @@ Heartbeat decides whether to send a message immediately, batch it, or just log i
 ### Send a message
 
 ```bash
-skills/slack/slack.sh send <channel> <template> [--var key=value]...
+kvido skills/slack/slack.sh send <channel> <template> [--var key=value]...
 ```
 
 ### Reply to a thread
 
 ```bash
-skills/slack/slack.sh reply <channel> <thread_ts> <template> [--var key=value]...
+kvido skills/slack/slack.sh reply <channel> <thread_ts> <template> [--var key=value]...
 ```
 
 ### Edit a message
 
 ```bash
-skills/slack/slack.sh edit <channel> <message_ts> <template> [--var key=value]...
+kvido skills/slack/slack.sh edit <channel> <message_ts> <template> [--var key=value]...
 ```
 
 ### Read messages
 
 ```bash
-skills/slack/slack.sh read <channel> [--limit N] [--oldest ts] [--thread ts]
+kvido skills/slack/slack.sh read <channel> [--limit N] [--oldest ts] [--thread ts]
 ```
 
 Without `--thread`: reads channel history (`conversations.history`).
@@ -50,7 +50,7 @@ With `--thread <ts>`: reads replies in the given thread (`conversations.replies`
 ### Delete a message
 
 ```bash
-skills/slack/slack.sh delete <channel> <message_ts>
+kvido skills/slack/slack.sh delete <channel> <message_ts>
 ```
 
 ## Templates

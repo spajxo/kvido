@@ -12,10 +12,23 @@ Setup and self-healing command. Run on first launch, after plugin installation, 
 
 ## Step 0: Prerequisites
 
+### kvido CLI
+
+Install the `kvido` CLI wrapper to `~/.local/bin/`:
+
+```bash
+kvido --root 2>/dev/null && echo "OK: kvido CLI available" || {
+  KVIDO_ROOT=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json)
+  bash "$KVIDO_ROOT/kvido" --install
+}
+```
+
+Verify `~/.local/bin` is in PATH. If not, inform the user.
+
 ### Required tools
 
 ```bash
-for cmd in jq; do
+for cmd in jq kvido; do
   if command -v "$cmd" &>/dev/null; then
     echo "OK: $cmd $(command -v $cmd)"
   else
@@ -28,7 +41,7 @@ If a required tool is missing, inform the user and offer installation. Do not pr
 
 ### Source plugins
 
-Run `skills/discover-sources.sh` to list installed source plugins. Show the user what is installed and what is available:
+Run `kvido skills/discover-sources.sh` to list installed source plugins. Show the user what is installed and what is available:
 
 | Source plugin | Prerequisite | Status |
 |---------------|-------------|--------|
@@ -113,15 +126,15 @@ Offer the user a shell alias for quick launching:
 
 ### g) Source plugin config validation
 
-For each installed source plugin (via `skills/discover-sources.sh`), verify that `.claude/kvido.local.md` contains the required config keys. Use `skills/config.sh` to check.
+For each installed source plugin (via `kvido skills/discover-sources.sh`), verify that `.claude/kvido.local.md` contains the required config keys. Use `kvido skills/config.sh` to check.
 
 | Plugin | Required keys | Check |
 |--------|--------------|-------|
-| kvido-gitlab | At least one repo: `sources.gitlab.repos` must have children | `skills/config.sh --keys 'sources.gitlab.repos'` returns non-empty |
-| kvido-jira | At least one project: `sources.jira.projects` must have children with `filter` | `skills/config.sh --keys 'sources.jira.projects'` returns non-empty |
-| kvido-slack | At least one channel or DM config | `skills/config.sh --keys 'sources.slack.channels'` or `skills/config.sh --keys 'sources.slack.dm_channels'` returns non-empty |
+| kvido-gitlab | At least one repo: `sources.gitlab.repos` must have children | `kvido skills/config.sh --keys 'sources.gitlab.repos'` returns non-empty |
+| kvido-jira | At least one project: `sources.jira.projects` must have children with `filter` | `kvido skills/config.sh --keys 'sources.jira.projects'` returns non-empty |
+| kvido-slack | At least one channel or DM config | `kvido skills/config.sh --keys 'sources.slack.channels'` or `kvido skills/config.sh --keys 'sources.slack.dm_channels'` returns non-empty |
 | kvido-calendar | Categories (optional, works without) | No required keys — skip |
-| kvido-gmail | Watch query | `skills/config.sh 'sources.gmail.watch_query'` exists |
+| kvido-gmail | Watch query | `kvido skills/config.sh 'sources.gmail.watch_query'` exists |
 | kvido-sessions | Idle threshold (optional, has default) | No required keys — skip |
 
 For each missing config:
@@ -196,10 +209,10 @@ command -v jq &>/dev/null || echo "WARNING: jq not found"
 ```
 
 ### Config validation
-Run `skills/config.sh --validate` to check config format. For each installed source plugin, verify required keys exist (same checks as Step 1g). Log warnings for missing keys.
+Run `kvido skills/config.sh --validate` to check config format. For each installed source plugin, verify required keys exist (same checks as Step 1g). Log warnings for missing keys.
 
 ### Source health
-Run `skills/discover-sources.sh` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
+Run `kvido skills/discover-sources.sh` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
 
 Skip sources that are not installed or do not define a health capability.
 
