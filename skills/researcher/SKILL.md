@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Read-only research — prohledá codebase, Confluence, git historii pro kontext o projektu. Instrukce pro worker task.
-allowed-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch, mcp__claude_ai_Atlassian__searchAtlassian, mcp__claude_ai_Atlassian__getConfluencePage, mcp__claude_ai_Atlassian__searchAtlassianConfluenceUsingCql
+allowed-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch, mcp__claude_ai_Atlassian__searchAtlassian, mcp__claude_ai_Atlassian__getConfluencePage, mcp__claude_ai_Atlassian__searchConfluenceUsingCql
 user-invocable: false
 ---
 

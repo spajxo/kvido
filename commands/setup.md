@@ -36,9 +36,15 @@ Pokud obojí existuje, přeskoč na Step 2.
 
 ### a) Config soubory
 
-Pokud neexistují, zkopíruj:
-- `kvido.local.md.example` → `.claude/kvido.local.md` (pokud `.claude/kvido.local.md` neexistuje)
-- `.env.example` → `.env` (pokud `.env` neexistuje)
+Pokud neexistují, vytvoř:
+- `.claude/kvido.local.md` — zkopíruj `kvido.local.md.example` z pluginu
+- `.env` — vytvoř s prázdnými hodnotami:
+  ```
+  SLACK_DM_CHANNEL_ID=
+  SLACK_USER_ID=
+  SLACK_USER_NAME=
+  SLACK_BOT_TOKEN=
+  ```
 
 ### b) Persona setup
 
@@ -68,17 +74,6 @@ memory/
 
 Pokud projekt nemá `CLAUDE.md`, zkopíruj `CLAUDE.md.template` z pluginu jako základ.
 
-### f) Shell alias
-
-1. Odvoď název aliasu z jména asistenta v `memory/persona.md` (lowercase, bez diakritiky)
-2. Nabídni uživateli: "Chceš vytvořit shell alias `<jméno>` pro rychlé spouštění?"
-3. Pokud souhlasí:
-   - Detekuj shell: `$SHELL`
-   - Přidej na konec odpovídajícího rc souboru (`~/.bashrc` pro bash, `~/.zshrc` pro zsh):
-     ```
-     alias <jméno>='<absolutní cesta>/assistant.sh'
-     ```
-   - Informuj uživatele že musí restartovat shell nebo spustit `source ~/.bashrc` / `source ~/.zshrc`
 
 ## Step 2: Structure Bootstrap
 
@@ -144,16 +139,8 @@ Pokud `memory/this-week.md` obsahuje předchozí týden:
 ## Step 6: Health Check
 
 ### Env check
-Přečti `.env.example`. Ověř že každý klíč existuje v `.env` a není prázdný.
-Chybějící → log warning.
-
-Porovnej klíče v `.env` s klíči v `.env.example`:
-```bash
-comm -23 \
-  <(grep -oP '^[A-Z_]+(?==)' .env | sort) \
-  <(grep -oP '^[A-Z_]+(?==)' .env.example | sort)
-```
-Pro každý nalezený klíč nabídni přidání do `.env.example`.
+Ověř že `.env` obsahuje všechny požadované klíče (`SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`, `SLACK_USER_NAME`, `SLACK_BOT_TOKEN`) a že nejsou prázdné.
+Chybějící nebo prázdné → log warning.
 
 ### Binary check
 ```bash

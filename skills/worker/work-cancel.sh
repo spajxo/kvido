@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
-REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*[:/]\([^/]*/[^/]*\)\.git$|\1|; s|.*[:/]\([^/]*/[^/]*\)$|\1|')
+REPO=$("$CONFIG" '.sources.gitlab.repo')
 
 ISSUE=""
 REASON="Cancelled by user"

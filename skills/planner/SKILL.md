@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Centrální mozek asistenta — sbírá data, analyzuje, plánuje práci, notifikuje. Voláno heartbeatem každý 10. interval.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, mcp__claude_ai_Atlassian__searchAtlassianJiraIssuesUsingJql, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel, mcp__claude_ai_Google_Calendar__gcal_list_events
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel, mcp__claude_ai_Google_Calendar__gcal_list_events
 user-invocable: false
 ---
 

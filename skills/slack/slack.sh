@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Slack Web API wrapper — Block Kit messaging via curl + jq

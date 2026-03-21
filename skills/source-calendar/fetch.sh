@@ -61,8 +61,8 @@ echo "$EVENTS" | jq -r '.items[] | @base64' | while read -r ITEM_B64; do
   if [[ "$ALL_DAY" == "true" ]]; then
     TIME_STR="celý den"
   else
-    START_TIME=$(echo "$START" | grep -oP '\d{2}:\d{2}' || echo "$START")
-    END_TIME=$(echo "$END" | grep -oP '\d{2}:\d{2}' || echo "$END")
+    START_TIME=$(echo "$START" | grep -oE '[0-9]{2}:[0-9]{2}' || echo "$START")
+    END_TIME=$(echo "$END" | grep -oE '[0-9]{2}:[0-9]{2}' || echo "$END")
     TIME_STR="${START_TIME}–${END_TIME}"
 
     # Calculate duration in minutes (GNU date, no python3 dependency)

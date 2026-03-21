@@ -12,7 +12,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
-REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*[:/]\([^/]*/[^/]*\)\.git$|\1|; s|.*[:/]\([^/]*/[^/]*\)$|\1|')
+REPO=$("$CONFIG" '.sources.gitlab.repo')
 
 ISSUE_NUMBER="${1:-}"
 [[ -z "$ISSUE_NUMBER" ]] && { echo "Usage: work-task-info.sh <ISSUE_NUMBER>" >&2; exit 1; }

@@ -85,7 +85,7 @@ ${messages}
   fi
 
 done < <(
-  find "$SESSIONS_DIR" -name "*.jsonl" -printf '%T@ %p\n' 2>/dev/null \
+  find "$SESSIONS_DIR" -name "*.jsonl" -exec stat -c '%Y %n' {} + 2>/dev/null \
   | sort -rn \
   | awk '{print $2}'
 )

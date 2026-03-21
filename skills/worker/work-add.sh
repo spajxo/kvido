@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
-REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*[:/]\([^/]*/[^/]*\)\.git$|\1|; s|.*[:/]\([^/]*/[^/]*\)$|\1|')
+REPO=$("$CONFIG" '.sources.gitlab.repo')
 
 # Defaults
 INSTRUCTION=""
@@ -100,5 +100,5 @@ ISSUE_URL=$(glab issue create \
   --label "$LABELS" \
   --yes)
 
-ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oP '\d+$')
+ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
 echo "$ISSUE_NUMBER"

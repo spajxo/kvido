@@ -33,7 +33,7 @@ Pro nové zprávy od ostatních uživatelů (ne od `SLACK_USER_ID`) vyhodnoť ú
 | Úroveň | Kdy | Akce |
 |---------|-----|------|
 | `silent` | FYI, informační zprávy | Log: `- **HH:MM** [dm/<jméno>] <zkrácený text>` do `state/today.md` |
-| `batch` | Méně urgentní, může počkat | `heartbeat-state.sh set-raw batched_events '<updated array>'` |
+| `batch` | Méně urgentní, může počkat | Vrať v NL výstupu s `Event (batch):` prefixem — heartbeat doručí při dalším full heartbeatu |
 | `immediate` | Vyžaduje reakci — otázka, request, blokuje někoho | `slack.sh send event --var emoji="💬" --var title="DM od <jméno>" --var description="<text max 100 zn>" --var source="Slack DM" --var reference="otevři DM" --var timestamp="<HH:MM>"` |
 
 Rozhodni podle kontextu — kdo píše, co potřebuje, jak urgentní to je.

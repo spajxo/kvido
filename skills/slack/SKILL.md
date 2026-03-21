@@ -78,10 +78,8 @@ V `templates/` — JSON soubory s `{{placeholder}}` proměnnými. Unified formá
 | Úroveň | Chování |
 |---------|---------|
 | `silent` | Jen zápis do `state/today.md`, žádná Slack zpráva |
-| `batch` | Přidá do `batched_events` v heartbeat-state.json, odešle souhrnně při dalším heartbeatu přes `slack.sh send` |
-
-> **Deprecated:** `batched_events` v heartbeat-state.json je nahrazeno notify TODOs. Batch notifikace řídí heartbeat přes notify TODO s pending statusem.
-| `immediate` | `slack.sh send` s `event` šablonou — okamžitě |
+| `batch` | Heartbeat vytvoří notify TODO s pending statusem, doručí při dalším full heartbeatu |
+| `immediate` | `slack.sh send` s odpovídající šablonou — okamžitě |
 
 ## Threading
 
@@ -95,7 +93,7 @@ Přečti `.claude/kvido.local.md` → `focus_mode`. Beze změny — suppress, ba
 
 ## Batching
 
-Přečti `.claude/kvido.local.md` → `batching`. Beze změny — batched_events se odesílají při full heartbeatu jako souhrnná zpráva přes `slack.sh send`.
+Přečti `.claude/kvido.local.md` → `batching`. Batch notifikace řídí heartbeat přes notify TODO s pending statusem — flush při full heartbeatu nebo změně focus mode.
 
 ## Auth
 

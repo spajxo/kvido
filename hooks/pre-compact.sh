@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Read JSON input from stdin
@@ -21,14 +21,6 @@ fi
 if [[ -f "$STATE_DIR/heartbeat-state.json" ]]; then
   ITER=$(jq -r '.iteration_count // 0' "$STATE_DIR/heartbeat-state.json" 2>/dev/null || echo "0")
   SUMMARY="$SUMMARY Heartbeat iteration: $ITER."
-fi
-
-if [[ -d "$STATE_DIR/work/triage" ]]; then
-  TRIAGE_COUNT=$(ls "$STATE_DIR/work/triage/"*.md 2>/dev/null | wc -l)
-  TRIAGE_COUNT="${TRIAGE_COUNT:-0}"
-  if [[ "$TRIAGE_COUNT" -gt 0 ]]; then
-    SUMMARY="$SUMMARY Triage inbox: $TRIAGE_COUNT items."
-  fi
 fi
 
 if [[ -n "$SUMMARY" ]]; then
