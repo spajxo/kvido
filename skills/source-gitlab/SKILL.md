@@ -5,7 +5,7 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce pro repo seznam.
+> **Konfigurace:** Přečti `.claude/kvido.local.md` pro repo seznam.
 
 # Source: GitLab
 
@@ -31,7 +31,7 @@ Nový MR kde jsem reviewer, není v backlogu → triage item:
 `- [ ] Review MR !IID: title (repo) #source:gitlab #added:YYYY-MM-DD #ref:repo!IID`
 
 ### health
-Pro každý repo v kvido.local.md:
+Pro každý repo v `.claude/kvido.local.md`:
 ```bash
 test -d <path>/.git && echo "OK: <name>" || echo "FAIL: <name>"
 ```

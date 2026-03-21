@@ -37,7 +37,7 @@ Pokud obojí existuje, přeskoč na Step 2.
 ### a) Config soubory
 
 Pokud neexistují, zkopíruj:
-- `kvido.local.md.example` → `kvido.local.md` (pokud `kvido.local.md` neexistuje)
+- `kvido.local.md.example` → `.claude/kvido.local.md` (pokud `.claude/kvido.local.md` neexistuje)
 - `.env.example` → `.env` (pokud `.env` neexistuje)
 
 ### b) Persona setup
@@ -58,7 +58,7 @@ Přečti `.env`. Pokud obsahuje prázdné hodnoty (klíče s `=""` nebo `=`):
 
 Přidej do `.gitignore` pokud tam ještě nejsou:
 ```
-kvido.local.md
+.claude/kvido.local.md
 .env
 state/
 memory/
@@ -163,7 +163,7 @@ done
 ```
 
 ### Git connectivity
-Pro každý repo v kvido.local.md:
+Pro každý repo v `.claude/kvido.local.md`:
 ```bash
 test -d <path>/.git || echo "WARNING: repo <name> missing at <path>"
 ```

@@ -74,7 +74,7 @@ Extrahuj: přehled událostí dle kategorie, celkový meeting čas, zbývající
 ### Slack
 
 Slack data jsou součástí gather morning režimu (source-slack watch-channels).
-Přečti `kvido.local.md` → `sources.slack` pro priority kanálů.
+Přečti `.claude/kvido.local.md` → `sources.slack` pro priority kanálů.
 
 Filtruj na: přímé mentions, odpovědi ve vláknech, DMs.
 

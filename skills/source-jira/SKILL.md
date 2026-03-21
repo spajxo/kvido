@@ -5,7 +5,7 @@ allowed-tools: Read, Bash, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce. Credentials (`ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`) čti z `.env`.
+> **Konfigurace:** Přečti `.claude/kvido.local.md`. Credentials (`ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`) čti z `.env`.
 
 # Source: Jira
 

@@ -21,7 +21,7 @@ set -euo pipefail
 # PLUGIN_ROOT — directory where config.sh lives (e.g. <plugin>/skills)
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # CONFIG_FILE — kvido.local.md in project's .claude/ directory
-CONFIG_FILE="${PWD}/kvido.local.md"
+CONFIG_FILE="${PWD}/.claude/kvido.local.md"
 
 # ── Check arguments ──────────────────────────────────────────────────────────
 

@@ -303,7 +303,7 @@ Check for any `notify:*` TODOs with status `pending` (serialized batch payload f
    ```
    Output: `TASK_ID=..., SIZE=..., PRIORITY=..., SOURCE_REF=..., INSTRUCTION=..., PHASE=..., WORKTREE=...`
 5. `TodoWrite` task `worker:<NEXT_TASK>` with status `in_progress` and description `"Worker #<id>: <instruction[:60]>"`
-6. Load model from worker/kvido.local.md: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent)
+6. Load model from `.claude/kvido.local.md`: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent)
 7. Dispatch `worker` agent (`run_in_background: true`, model per size):
    ```
    TASK_ISSUE=<NEXT_TASK>, TASK_ID, INSTRUCTION, SIZE, SOURCE_REF, PHASE, CURRENT_STATE, MEMORY

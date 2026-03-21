@@ -80,7 +80,7 @@ STATE=$(glab issue view "$TASK_ISSUE" --repo "$GITLAB_REPO" --output json | jq -
 ```
 
 ### Timeout
-Pokud task trvá > `task_timeout_minutes` (z kvido.local.md):
+Pokud task trvá > `task_timeout_minutes` (z `.claude/kvido.local.md`):
 1. Pošli partial výsledek co máš
 2. `work-fail.sh --issue "$TASK_ISSUE" --reason "Timeout po Xm"`
 3. Pokud byl progress > 50% → přidej follow-up item s `work-add.sh`

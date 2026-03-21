@@ -7,7 +7,7 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce pro focus mode a batching nastavení.
+> **Konfigurace:** Přečti `.claude/kvido.local.md` pro focus mode a batching nastavení.
 
 # Slack
 
@@ -91,11 +91,11 @@ Flat zprávy jako default. Thread jen při eskalaci:
 
 ## Focus Mode
 
-Přečti `kvido.local.md` → `focus_mode`. Beze změny — suppress, batching, after_focus_summary fungují identicky.
+Přečti `.claude/kvido.local.md` → `focus_mode`. Beze změny — suppress, batching, after_focus_summary fungují identicky.
 
 ## Batching
 
-Přečti `kvido.local.md` → `batching`. Beze změny — batched_events se odesílají při full heartbeatu jako souhrnná zpráva přes `slack.sh send`.
+Přečti `.claude/kvido.local.md` → `batching`. Beze změny — batched_events se odesílají při full heartbeatu jako souhrnná zpráva přes `slack.sh send`.
 
 ## Auth
 

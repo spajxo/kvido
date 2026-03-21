@@ -1,0 +1,10 @@
+{
+  "name": "kvido",
+  "version": "0.1.0",
+  "description": "Personal AI workflow assistant — heartbeat, planner, worker, triage",
+  "author": {
+    "name": "Pavel Stejskal"
+  },
+  "homepage": "https://github.com/spajxo/kvido",
+  "repository": "https://github.com/spajxo/kvido"
+}

@@ -4,7 +4,7 @@ description: Triage inbox, backlog management, WIP limit enforcement. Interaktiv
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 ---
 
-> **Konfigurace:** WIP limit a práhy z root `kvido.local.md` → `skills.triage` (přes `config.sh`). Defaults: wip_limit=3, triage_overflow_threshold=10.
+> **Konfigurace:** WIP limit a práhy z `.claude/kvido.local.md` → `skills.triage` (přes `config.sh`). Defaults: wip_limit=3, triage_overflow_threshold=10.
 
 # Triage & Backlog
 

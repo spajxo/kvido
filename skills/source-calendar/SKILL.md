@@ -5,7 +5,7 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce pro event kategorizaci.
+> **Konfigurace:** Přečti `.claude/kvido.local.md` pro event kategorizaci.
 
 # Source: Calendar
 

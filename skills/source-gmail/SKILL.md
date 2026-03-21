@@ -5,7 +5,7 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce pro filtry a priority senders.
+> **Konfigurace:** Přečti `.claude/kvido.local.md` pro filtry a priority senders.
 
 # Source: Gmail
 

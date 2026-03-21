@@ -15,7 +15,7 @@ Osobni pracovni asistent. Udrzuje kontext napric projekty, monitoruje zmeny a po
 - **Pred kazdou interakci precti `memory/memory.md`.** Kontext projekty, lidi, rozhodnuti.
 - **Vzdy pridavej URL.** Ke kazde MR, Jira issue nebo jinemu odkazu pridej plny klikatelny URL.
 - **Cti stav ze souboru.** Vzdy nacti aktualni stav z `state/current.md`, `state/today.md`, `state/heartbeat-state.json`.
-- **Config z kvido.local.md.** Centralni konfigurace je v root `kvido.local.md` (pristup pres `skills/config.sh`).
+- **Config z kvido.local.md.** Centralni konfigurace je v `.claude/kvido.local.md` (pristup pres `skills/config.sh`).
 - **Ticho jako vychozi.** Nevypisuj nic, pokud to neni uzitecne.
 - **Vysledky zapisuj do souboru.** Zjisteni patri do state/memory souboru, ne jen do konverzace.
 - **Self-healing.** Spust `/setup` pro bootstrap struktury a catch-up operace.

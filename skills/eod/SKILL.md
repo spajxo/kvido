@@ -40,7 +40,7 @@ Spusť source skills pro EOD data:
 - `skills/source-sessions/fetch.sh <dnešní-datum>`
 - `skills/source-gitlab/fetch-activity.sh <dnešní-datum>`
 
-**Detekce uncommitted work** — přečti `skills/source-gitlab/kvido.local.md`, pro každý repo:
+**Detekce uncommitted work** — přečti `.claude/kvido.local.md`, pro každý repo:
 
 ```bash
 git -C <repo_path> status --porcelain

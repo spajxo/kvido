@@ -71,7 +71,7 @@ Pouzij tento limit misto pevneho "max 5" v dalsich krocich.
 
 **Chybejici config:**
 - Zminka o repo, Slack kanalu, Jira projektu mimo monitoring
-- Porovnej s root `kvido.local.md` (sekce `sources.gitlab`, `sources.jira`, `sources.slack`)
+- Porovnej s `.claude/kvido.local.md` (sekce `sources.gitlab`, `sources.jira`, `sources.slack`)
 
 **Manualni prace:**
 - User dela neco co by slo automatizovat (opakovany prikaz, manualni lookup)

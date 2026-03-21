@@ -5,7 +5,7 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, mcp__claude_ai_Atlassian__se
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce.
+> **Konfigurace:** Přečti `.claude/kvido.local.md`.
 
 # Planner
 
@@ -54,7 +54,7 @@ skills/source-jira/fetch.sh
 
 ### Slack channels (vždy)
 Přečti `skills/source-slack/SKILL.md` → spusť watch-channels capability.
-Přečti `kvido.local.md` → `sources.slack` pro kanály a priority.
+Přečti `.claude/kvido.local.md` → `sources.slack` pro kanály a priority.
 
 ### Calendar (vždy)
 ```bash
@@ -67,7 +67,7 @@ skills/source-gmail/fetch.sh
 ```
 
 ### Interests (dle intervalu)
-Přečti planner-state.md → `last_interests_check`. Pokud starší než `check_interval_hours` z kvido.local.md:
+Přečti planner-state.md → `last_interests_check`. Pokud starší než `check_interval_hours` z `.claude/kvido.local.md`:
 - Přečti `skills/interests/SKILL.md` → spusť automatické checks
 - Aktualizuj `last_interests_check`
 
@@ -109,7 +109,7 @@ Pro každý detekovaný event rozhodni o úrovni notifikace na základě kontext
 Rozhoduj podle: aktuální focus (state/current.md), čas, odesílatel, typ eventu, zda vyžaduje akci. Zpětnou vazbu na rozhodnutí ukládej do `memory/learnings.md`.
 
 ### Focus mode
-Přečti `skills/planner/kvido.local.md` focus_mode.
+Přečti `.claude/kvido.local.md` focus_mode.
 Zkontroluj calendar data — běží focus event? → suppress immediate na batch.
 
 ### Proaktivní upozornění
@@ -204,7 +204,7 @@ Max 3 triage items per běh.
 Vyhodnoť potřebu a vytvoř worker tasky:
 
 ### Goal assignment
-Při vytváření worker tasků přidávej `--goal <id>` na základě kontextu. Cíle jsou definovány v `kvido.local.md` → `goals`. Mapování:
+Při vytváření worker tasků přidávej `--goal <id>` na základě kontextu. Cíle jsou definovány v `.claude/kvido.local.md` → `goals`. Mapování:
 - librarian, enricher, self-improver, backlog hygiene, triage overflow, archive rotation → `--goal maintenance`
 - Scheduled tasks z `memory/planner.md` → planner odhadne goal dle instrukce (např. workflow úkol → `productivity`, dokumentace → `knowledge`)
 

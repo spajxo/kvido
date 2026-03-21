@@ -5,7 +5,7 @@ allowed-tools: Read, Write
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce. Pokud `enabled: false`, přeskoč.
+> **Konfigurace:** Přečti `.claude/kvido.local.md`. Pokud `enabled: false`, přeskoč.
 
 # Daily Questions
 
@@ -13,7 +13,7 @@ Voláno z EOD skill (po journal entry, před confirm).
 
 ## Postup
 
-1. Přečti kvido.local.md — pokud `enabled: false`, přeskoč.
+1. Přečti `.claude/kvido.local.md` — pokud `enabled: false`, přeskoč.
 2. Zkontroluj `frequency`:
    - `weekdays` → přeskoč sobotu a neděli
    - `friday_only` → přeskoč pokud není pátek

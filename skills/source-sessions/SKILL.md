@@ -5,7 +5,7 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce pro idle threshold.
+> **Konfigurace:** Přečti `.claude/kvido.local.md` pro idle threshold.
 
 # Source: Sessions
 

@@ -2,7 +2,7 @@
 # =============================================================================
 # kvido.local.md — Kvido assistant configuration
 # =============================================================================
-# Copy to kvido.local.md in your project root and fill in your data.
+# Copy to .claude/kvido.local.md in your project and fill in your data.
 # Usage: skills/config.sh '<yq_expression>'
 # Example: skills/config.sh '.sources.gitlab.repos[].name'
 # =============================================================================

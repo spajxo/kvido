@@ -5,7 +5,7 @@ allowed-tools: Read, Bash, mcp__claude_ai_Slack__slack_search_public_and_private
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce pro channel list. DM credentials čti z `.env`.
+> **Konfigurace:** Přečti `.claude/kvido.local.md` pro channel list. DM credentials čti z `.env`.
 
 # Source: Slack
 
@@ -23,7 +23,7 @@ Výstup: JSON array. Filtruj přes `jq`:
 - `.[] | select(.user == "$SLACK_USER_ID")` — zprávy od uživatele
 - `.[] | select(.ts > "$last_dm_ts")` — novější než poslední scan
 
-Navíc přečti `dm_channels` z `kvido.local.md`. Pro každý kde je `channel_id` definováno (přeskoč záznamy bez `channel_id`):
+Navíc přečti `dm_channels` z `.claude/kvido.local.md`. Pro každý kde je `channel_id` definováno (přeskoč záznamy bez `channel_id`):
 ```bash
 skills/slack/slack.sh read "<channel_id>" --limit 5 --oldest "$last_dm_ts"
 ```
@@ -45,7 +45,7 @@ skills/heartbeat/heartbeat-state.sh set last_dm_ts "<nejnovější ts>"
 
 ### watch-channels
 
-Přečti kvido.local.md. Pro kanály s `priority: high` a `priority: normal` kde je `channel_id`:
+Přečti `.claude/kvido.local.md`. Pro kanály s `priority: high` a `priority: normal` kde je `channel_id`:
 
 **Výběr transportu:**
 - Kanál bez `use_mcp` (nebo `use_mcp: false`) → použij `slack.sh read` (Bot token, standardní):
@@ -57,7 +57,7 @@ Přečti kvido.local.md. Pro kanály s `priority: high` a `priority: normal` kde
   mcp__claude_ai_Slack__slack_read_channel(channel_id="<channel_id>", limit=5)
   ```
 
-Pro kanály bez `channel_id` → přeskoč (nebo doplň ID do kvido.local.md).
+Pro kanály bez `channel_id` → přeskoč (nebo doplň ID do `.claude/kvido.local.md`).
 
 Pro kanály s `watch_for: marvin_qa`: analyzuj zprávy z pohledu kvality AI bota Marvin.
 Signály k reportování (desktop level):

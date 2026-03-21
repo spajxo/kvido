@@ -30,7 +30,7 @@ Then run `/setup` inside Claude Code to complete the onboarding:
 
 1. Verify prerequisites (glab, jq, yq)
 2. Create runtime directories (`state/`, `memory/`)
-3. Copy config templates (`kvido.local.md`, `.env`)
+3. Copy config templates (`.claude/kvido.local.md`, `.env`)
 4. Update `.gitignore`
 5. Copy `CLAUDE.md.template` as project `CLAUDE.md`
 6. Run `/setup` for verification
@@ -38,8 +38,9 @@ Then run `/setup` inside Claude Code to complete the onboarding:
 ## Structure
 
 ```
-kvido-plugin/
-├── plugin.json              # Plugin manifest
+kvido/
+├── .claude-plugin/
+│   └── plugin.json          # Plugin manifest
 ├── CLAUDE.md.template       # Template for project CLAUDE.md
 ├── kvido.local.md.example   # Config template (sources, skills, runtime)
 ├── skills/                  # Skill definitions (SKILL.md + bash scripts)

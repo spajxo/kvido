@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Bash, WebSearch, WebFetch
 user-invocable: true
 ---
 
-> **Konfigurace:** Přečti `kvido.local.md` v této složce pro témata a intervaly.
+> **Konfigurace:** Přečti `.claude/kvido.local.md` pro témata a intervaly.
 
 # Interests
 
@@ -13,7 +13,7 @@ user-invocable: true
 Uživatel řekne "research X" nebo "zjisti stav X" → prohledej web a zapiš výsledky.
 
 ## Automatické použití (maintenance heartbeat)
-Přečti kvido.local.md. Pro každé téma kde je čas na check (podle `check_interval` a `last_checked` v `state/interests.md`):
+Přečti `.claude/kvido.local.md`. Pro každé téma kde je čas na check (podle `check_interval` a `last_checked` v `state/interests.md`):
 
 1. Prohledej web (WebSearch tool) s query z config
 2. Porovnej s předchozím stavem v `state/interests.md`
