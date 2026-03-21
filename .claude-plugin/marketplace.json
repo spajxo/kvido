@@ -1,0 +1,13 @@
+{
+  "name": "kvido-marketplace",
+  "owner": {
+    "name": "Pavel Stejskal"
+  },
+  "plugins": [
+    {
+      "name": "kvido",
+      "source": ".",
+      "description": "Personal AI workflow assistant — heartbeat, planner, worker, triage"
+    }
+  ]
+}
