@@ -1,6 +1,6 @@
 ---
 name: heartbeat
-description: Orchestrator -- TodoWrite-based dispatch tracking, chat/worker/planner/triage orchestration, adaptive interval.
+description: Use when the cron heartbeat fires to orchestrate chat, worker, planner, and triage dispatch.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, TodoWrite, TodoRead
 ---
 

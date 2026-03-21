@@ -1,6 +1,6 @@
 ---
 name: worker
-description: Async task execution — pravidla, queue management, report format. Veškeré operace přes task.sh.
+description: Use when heartbeat dispatches the worker agent to execute a queued task from state/tasks/.
 ---
 
 # Worker Skill

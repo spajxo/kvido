@@ -1,6 +1,6 @@
 ---
 name: source-calendar
-description: Google Calendar source — denní schedule, meeting reminders. Implementováno přes gws CLI.
+description: Use when fetching today's calendar events or generating meeting reminders.
 allowed-tools: Read, Bash
 user-invocable: false
 ---

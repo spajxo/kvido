@@ -1,6 +1,6 @@
 ---
 name: source-slack
-description: Slack source — channel monitoring, DM inbox, mention detection. Primárně přes slack.sh (Slack Web API), MCP jako fallback pro search.
+description: Use when monitoring Slack DM inbox, watched channels, or detecting new mentions.
 allowed-tools: Read, Bash, mcp__claude_ai_Slack__slack_search_public_and_private
 user-invocable: false
 ---

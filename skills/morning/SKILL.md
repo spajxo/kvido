@@ -1,6 +1,6 @@
 ---
 name: morning
-description: Ranní briefing — přehled včerejší práce, overnight změn, dnešního kalendáře a doporučení. Spouštěj při ranním pozdravu nebo manuálně přes /morning.
+description: Use when the user says good morning or invokes /morning for a daily briefing.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel
 ---
 

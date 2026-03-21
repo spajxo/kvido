@@ -1,6 +1,6 @@
 ---
 name: slack
-description: "Tool skill: Slack komunikace přes Slack Web API — Block Kit formátování, threading, notifikace, chat. Používej pro heartbeat, morning, eod."
+description: Use when sending Slack messages, formatting Block Kit payloads, or managing thread delivery.
 tool-type: interactive
 cli: slack.sh
 allowed-tools: Read, Bash

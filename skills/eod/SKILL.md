@@ -1,6 +1,6 @@
 ---
 name: eod
-description: Konec dne — journal entry, worklog check, update stavu, weekly summary (pátek). Spouštěj při EOD triggeru nebo manuálně přes /eod.
+description: Use when the user ends their day or invokes /eod for journal entry and worklog check.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronList, CronDelete, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__addWorklogToJiraIssue
 ---
 

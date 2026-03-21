@@ -1,6 +1,6 @@
 ---
 name: source-gmail
-description: Gmail source — nepřečtené emaily, priority sender watch. Lightweight fetch/watch pro gather.
+description: Use when fetching unread emails or watching for priority sender messages.
 allowed-tools: Read, Bash
 user-invocable: false
 ---

@@ -1,6 +1,6 @@
 ---
 name: source-jira
-description: Jira source — fetch issues, watch changes, detect triage items. Používej přes gather skill.
+description: Use when fetching Jira issues, watching for changes, or detecting new assigned tickets.
 allowed-tools: Read, Bash, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql
 user-invocable: false
 ---

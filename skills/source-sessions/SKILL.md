@@ -1,6 +1,6 @@
 ---
 name: source-sessions
-description: Claude Code session parser — čas strávený per projekt. Pure bash, žádná Python závislost.
+description: Use when parsing Claude Code session data for time tracking or message extraction.
 allowed-tools: Read, Bash
 user-invocable: false
 ---

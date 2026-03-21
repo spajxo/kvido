@@ -1,6 +1,6 @@
 ---
 name: daily-questions
-description: Volitelné EOD reflektivní otázky pro self-awareness a pattern detection.
+description: Use when EOD skill generates optional reflective questions for self-awareness.
 allowed-tools: Read, Write
 user-invocable: false
 ---

@@ -1,6 +1,6 @@
 ---
 name: interests
-description: Monitoring zájmových témat — security advisories, dependency releases, AI tooling updates.
+description: Use when checking configured interest topics for new findings via web search.
 allowed-tools: Read, Write, Bash, WebSearch, WebFetch
 user-invocable: true
 ---

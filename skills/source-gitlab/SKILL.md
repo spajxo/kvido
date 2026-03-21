@@ -1,6 +1,6 @@
 ---
 name: source-gitlab
-description: GitLab source — git activity, MR status, watch changes. Používej přes gather skill.
+description: Use when fetching git activity, MR status, or detecting new MRs from configured GitLab repos.
 allowed-tools: Read, Bash
 user-invocable: false
 ---

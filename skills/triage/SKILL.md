@@ -1,6 +1,6 @@
 ---
 name: triage
-description: Triage inbox, backlog management, WIP limit enforcement. Interaktivní zpracování neroztříděných položek.
+description: Use when processing untriaged items in state/tasks/triage/ or enforcing WIP limits.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 ---
 

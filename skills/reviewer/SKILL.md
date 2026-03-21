@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: MR review summary — přečte diff a připraví triage-ready shrnutí. Instrukce pro worker task.
+description: Use when a worker task needs to review a GitLab merge request and produce a triage-ready summary.
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: false
 ---
