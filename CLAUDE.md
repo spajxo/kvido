@@ -8,9 +8,9 @@ Kvido is a **Claude Code plugin** distributed via plugin marketplace. This repo 
 
 It is **not** a traditional application. There is no compilation, no test suite, no package manager, no build step. The "code" is markdown (SKILL.md, agent definitions, commands) + bash scripts.
 
-**Usage model:** Uživatel si vytvoří vlastní workspace složku (např. `~/kvido/`), nainstaluje plugin lokálně (`claude plugin install kvido --scope local`) a spouští Claude Code v té složce. Kvido pak běží jako rezidentní asistent — monitoruje externí zdroje (Jira, GitLab, Slack, Calendar, Gmail) a komunikuje přes Slack DM. Runtime soubory (`state/`, `memory/`, `.env`, `.claude/kvido.local.md`) žijí v uživatelově workspace, ne v tomto repo. Vytváří je `/setup`.
+**Usage model:** The user creates their own workspace folder (e.g. `~/kvido/`), installs the plugin locally (`claude plugin install kvido --scope local`) and runs Claude Code in that folder. Kvido then runs as a resident assistant — monitoring external sources (Jira, GitLab, Slack, Calendar, Gmail) and communicating via Slack DM. Runtime files (`state/`, `memory/`, `.env`, `.claude/kvido.local.md`) live in the user's workspace, not in this repo. They are created by `/setup`.
 
-## Prerequisites (pro uživatelův workspace)
+## Prerequisites (for the user's workspace)
 
 Required: `jq`. Optional: `glab` (GitLab monitoring), `acli` (Jira), `gws` (Google Workspace).
 
@@ -47,7 +47,7 @@ Claude Code plugin (`.claude-plugin/plugin.json`). Installed via `claude plugin 
 
 ### Agents
 
-All agents are dispatched by heartbeat with `run_in_background: true`. They return NL output — **never send Slack messages directly**. Heartbeat parses output and delivers via `slack.sh`. Triviální chat zprávy (pozdravy, sleep, turbo, cancel) heartbeat řeší inline bez dispatch agenta.
+All agents are dispatched by heartbeat with `run_in_background: true`. They return NL output — **never send Slack messages directly**. Heartbeat parses output and delivers via `slack.sh`. Trivial chat messages (greetings, sleep, turbo, cancel) are handled by heartbeat inline without dispatching an agent.
 
 | Agent | Trigger | Purpose |
 |-------|---------|---------|
@@ -66,7 +66,7 @@ All agents are dispatched by heartbeat with `run_in_background: true`. They retu
 - Config access: `skills/config.sh '.path.to.key'` (never parse kvido.local.md directly)
 - Worker queue: local markdown files in `state/tasks/` organized by status folders (triage, todo, in-progress, done, failed, cancelled). All operations via `skills/worker/task.sh`
 - Dispatch tracking: TodoWrite/TodoRead (not file-based locks)
-- Language: Czech (codebase, prompts, agent output)
+- Language: All prompts default to English. Runtime language is configured in the user's `memory/persona.md`.
 - Hook: `hooks/pre-compact.sh` injects state summary before context compaction
 
 ## Working on this codebase
