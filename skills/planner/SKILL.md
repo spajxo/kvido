@@ -9,8 +9,6 @@ user-invocable: false
 
 # Planner
 
-Centrální mozek asistenta. Sbíráš data ze všech zdrojů, analyzuješ situaci, vytváříš úkoly pro workery a notifikuješ uživatele o důležitých změnách.
-
 ---
 
 ## Step 1: Load Context
@@ -39,43 +37,16 @@ Pokud `memory/planner.md` neexistuje → přeskoč tiše.
 
 ## Step 3: Data Gathering
 
-Spusť source skills. Nahrazuje dřívější gather orchestrátor.
-
-### Git activity + MR status (vždy)
-```bash
-skills/source-gitlab/fetch-activity.sh <dnešní-datum>
-skills/source-gitlab/fetch-mrs.sh
-```
-
-### Jira (vždy)
-```bash
-skills/source-jira/fetch.sh
-```
-
-### Slack channels (vždy)
-Přečti `skills/source-slack/SKILL.md` → spusť watch-channels capability.
-Přečti `.claude/kvido.local.md` → `sources.slack` pro kanály a priority.
-
-### Calendar (vždy)
-```bash
-skills/source-calendar/fetch.sh
-```
-
-### Gmail (vždy)
-```bash
-skills/source-gmail/fetch.sh
-```
-
-### Interests (dle intervalu)
-Přečti planner-state.md → `last_interests_check`. Pokud starší než `check_interval_hours` z `.claude/kvido.local.md`:
-- Přečti `skills/interests/SKILL.md` → spusť automatické checks
-- Aktualizuj `last_interests_check`
-
-### Sessions (jen při EOD kontextu)
-Pokud v planner-state.md je `eod_pending: true`:
-```bash
-skills/source-sessions/fetch.sh <dnešní-datum>
-```
+| Source | Command | When |
+|--------|---------|------|
+| GitLab activity | `skills/source-gitlab/fetch-activity.sh <today>` | vždy |
+| GitLab MRs | `skills/source-gitlab/fetch-mrs.sh` | vždy |
+| Jira | `skills/source-jira/fetch.sh` | vždy |
+| Slack channels | viz `skills/source-slack/SKILL.md` watch-channels | vždy |
+| Calendar | `skills/source-calendar/fetch.sh` | vždy |
+| Gmail | `skills/source-gmail/fetch.sh` | vždy |
+| Interests | viz `skills/interests/SKILL.md` | pokud `last_interests_check` > `check_interval_hours` |
+| Sessions | `skills/source-sessions/fetch.sh <today>` | jen při `eod_pending: true` |
 
 ---
 
@@ -201,120 +172,35 @@ Max 3 triage items per běh.
 
 ## Step 7: Maintenance Planning
 
-Vyhodnoť potřebu a vytvoř worker tasky:
+Vyhodnoť potřebu a vytvoř worker tasky. Všechny maintenance tasky: `--source planner --goal maintenance`.
 
-### Goal assignment
-Při vytváření worker tasků přidávej `--goal <id>` na základě kontextu. Cíle jsou definovány v `.claude/kvido.local.md` → `goals`. Mapování:
-- librarian, enricher, self-improver, backlog hygiene, triage overflow, archive rotation → `--goal maintenance`
-- Scheduled tasks z `memory/planner.md` → planner odhadne goal dle instrukce (např. workflow úkol → `productivity`, dokumentace → `knowledge`)
+### Recurring tasks (max 1 denně each, check `last_*_date` v planner-state.md)
 
-### Memory health
-Přečti `memory/memory.md` — pokud > 100 řádků nebo `memory/learnings.md` má entries s Recurrence-Count >= 3:
-```bash
-skills/worker/task.sh create \
-  --instruction "Consolidation mode. Přečti a postupuj dle agents/librarian.md" \
-  --size m --priority medium --source planner --goal maintenance
-```
-Max 1 librarian task denně (check planner-state.md `last_librarian_date`).
+| Task | Trigger | Instruction | Size/Priority |
+|------|---------|-------------|---------------|
+| Librarian | `memory/memory.md` > 100 řádků nebo learnings Recurrence >= 3 | `Consolidation mode. Přečti a postupuj dle agents/librarian.md` | m/medium |
+| Enricher | Nejstarší projekt v `memory/projects/` > 7 dní | `Enrichment: <projekt>. Přečti a postupuj dle agents/project-enricher.md` | s/low |
+| Self-improver | Dnes ještě neproběhla | `Analýza dnešních sessions. Přečti a postupuj dle agents/self-improver.md` | m/low |
 
-### Project enrichment
-Přečti `memory/projects/` — najdi projekt s nejstarší aktualizací. Pokud > 7 dní:
-```bash
-skills/worker/task.sh create \
-  --instruction "Enrichment: <projekt>. Přečti a postupuj dle agents/project-enricher.md" \
-  --size s --priority low --source planner --goal maintenance
-```
-Max 1 enrichment denně.
+### Checks (output as `Event:`)
 
-### Self-improvement
-Pokud dnes ještě neproběhla (check planner-state.md `last_self_improve_date`):
-```bash
-skills/worker/task.sh create \
-  --instruction "Analýza dnešních sessions. Přečti a postupuj dle agents/self-improver.md" \
-  --size m --priority low --source planner --goal maintenance
-```
+| Check | Condition | Output |
+|-------|-----------|--------|
+| Stale workers | `find state/tasks/in-progress/ -name "*.md" -mmin +10` | `Event: 📊 Stale worker — <slug> in-progress > 10min. Urgency: normal.` |
+| Triage overflow | `task.sh count triage` >= 10 | `Event: 📋 Triage overflow — <N> položek. Spusť /triage. Urgency: normal.` |
+| Backlog stale | `todo/` low priority > 30 dní | Suggestion do `state/today.md` |
 
-### Stale workers
-Zkontroluj tasky v `in-progress` — soubory nemodifikované déle než 10 minut:
-```bash
-# Stale = file not modified in 10+ minutes
-find state/tasks/in-progress/ -name "*.md" -mmin +10 2>/dev/null
-# Or list all and check updated_at:
-skills/worker/task.sh list in-progress
-```
-Pokud stale → warning:
+### Periodic (check timestamps v planner-state.md)
 
-Zahrň do výstupu: `Event: 📊 Stale worker — Task <slug> (<title>) je in-progress přes 10 minut bez aktivity. Source: planner. Reference: <slug>. Urgency: normal.`
-
-### Backlog hygiene
-- Projdi tasky v `todo` s `priority: low` a `created_at` > 30 dní → zapiš suggestion do state/today.md:
-  ```bash
-  for f in state/tasks/todo/*.md; do
-    [[ -f "$f" ]] || continue
-    SLUG=$(basename "$f" .md)
-    TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
-    priority=$(echo "$TASK_DATA" | grep '^PRIORITY=' | cut -d= -f2-)
-    created=$(echo "$TASK_DATA" | grep '^CREATED_AT=' | cut -d= -f2-)
-    [[ "$priority" == "low" ]] && echo "$SLUG created=$created"
-  done
-  ```
-- User-assignee stale reminders → zpracováváno v Step 6b (triage batch)
-- Triage overflow: `skills/worker/task.sh count triage` — pokud >= 10:
-
-  Zahrň do výstupu: `Event: 📋 Triage overflow — <N> položek čeká v triage. Spusť /triage pro zpracování. Source: planner. Reference: triage queue. Urgency: normal.`
-
-### State hygiene
-- `state/current.md` WIP vs Jira — Done ticket → přesuň do comment bloku
-- Nový ticket assigned to me → přidej do WIP
-
-### Git sync (periodicky)
-Pokud `last_git_sync` v planner-state.md > 2 hodiny nebo neexistuje:
-- Spusť `/commit` skill — ten se postará o staging a commit message
-- Po úspěšném commitu pushni: `git push origin master`
-- Aktualizuj `last_git_sync` v planner-state.md
-
-### Archive rotation (periodicky)
-Pokud `last_archive_rotation` v planner-state.md > 7 dní:
-- Journals v `memory/journal/` starší 14 dní → `memory/archive/journal/`
-- Weekly v `memory/weekly/` starší 8 týdnů → `memory/archive/weekly/`
-- Decisions starší 90 dní → `memory/archive/decisions/`
-- Aktualizuj `last_archive_rotation`
+- **State hygiene:** `state/current.md` WIP sync s Jira — Done → comment, nový assigned → WIP.
+- **Git sync** (> 2h): `/commit` → `git push origin master`.
+- **Archive rotation** (> 7d): journals > 14d, weekly > 8w, decisions > 90d → `memory/archive/`.
 
 ---
 
 ## Step 8: Save State
 
-Aktualizuj `state/planner-state.md`:
-
-```markdown
-# Planner State
-
-## Last Run
-- timestamp: <aktuální čas>
-- sources_checked: gitlab, jira, slack, calendar, gmail
-- tasks_created: N
-- notifications_sent: N
-- triage_processed: N
-
-## Timestamps
-- last_morning_check: <datum>
-- last_interests_check: <datum>
-- last_librarian_date: <datum>
-- last_self_improve_date: <datum>
-- last_enrichment_date: <datum>
-- last_archive_rotation: <datum>
-
-## Scheduled Tasks Done Today
-- <HH:MM instrukce>
-
-## User Task Reminders
-- <slug>: last_reminded=<YYYY-MM-DD>
-
-## Reported Events
-- <event_key> | first_seen: <ts> | last_reported: <ts>
-```
-
-Vyčisti Reported Events starší 48h.
+Aktualizuj `state/planner-state.md` — sekce: Last Run (timestamp, counters), Timestamps (`last_*_date` per maintenance task), Scheduled Tasks Done Today, User Task Reminders (`<slug>: last_reminded=<date>`), Reported Events (`<event_key> | first_seen | last_reported`). Vyčisti Reported Events starší 48h.
 
 ---
 

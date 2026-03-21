@@ -137,71 +137,26 @@ Rules:
 - `immediate` -- use returned `ts` for follow-up flows (triage polling, thread replies)
 - shell failure -- log warning to `state/today.md`, mark notify TODO completed
 
-### Chat-agent completion
+### Common pattern (all agent completions)
 
-1. When chat-agent completes (background task returns result):
-   - Read chat-agent's NL output (returned natively by Agent tool)
-   - Parse `total_tokens` and `duration_ms` from Agent tool `<usage>` tag
-   - Log: `skills/heartbeat/heartbeat-state.sh log-activity chat execute --tokens <total_tokens> --duration_ms <duration_ms> --detail "<message summary[:60]>"`
-   - Parse output for: `Odpověď`, `Thread`, `Type`
-   - Create `notify:chat:<ts>` TODO (in_progress)
-   - Decide `LEVEL=immediate`, template `chat`
-   - Deliver inline:
-     ```bash
-     skills/slack/slack.sh <send|reply> <thread handling> chat \
-       --var message="<parsed Odpověď>"
-     ```
-   - Mark `chat:*` task as completed
-   - Check for `pending` chat tasks — if any, dispatch next chat-agent (FIFO)
+1. Read agent's NL output (returned by Agent tool)
+2. Parse `total_tokens` + `duration_ms` from `<usage>` tag → `heartbeat-state.sh log-activity <type> execute --tokens ... --duration_ms ...`
+3. Create `notify:<type>:<id>` TODO (in_progress)
+4. Apply delivery rules → deliver via `slack.sh` → mark TODO completed
+5. Mark agent task as completed
 
-### Planner completion
+### Per-agent specifics
 
-1. When planner agent completes:
-   - Read planner's NL output, log activity via `heartbeat-state.sh log-activity planner execute`
-   - Parse output line-by-line — planner uses prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:`
-   - If `No notifications.` → mark planner completed, skip delivery
-   - For each notification item: choose matching template from `skills/slack/templates/`, apply delivery rules, deliver via `slack.sh`
-   - For triage items delivered as `immediate`: create `triage:<slug>` TODO with returned `ts` for reaction polling
-   - For each `Dispatch: <agent-name>` line: dispatch named agent in background
-   - Mark `planner` task as completed
-
-### Worker completion
-
-1. When worker agent completes:
-   - Read worker's NL output
-   - Parse `total_tokens` and `duration_ms` from Agent tool `<usage>` tag
-   - Log: `skills/heartbeat/heartbeat-state.sh log-activity worker execute --tokens <total_tokens> --duration_ms <duration_ms> --task_id <issue_id> --detail "#<id>: <result summary[:60]>"`
-   - Parse output for: `Result`, `Task`, `Type`, `Source`
-   - Create `notify:worker:<issue_id>` TODO (in_progress)
-   - Choose template `worker-report`, level `high` for `worker-error` otherwise `normal`
-   - Deliver inline:
-     ```bash
-     skills/slack/slack.sh <send|reply> <thread handling> worker-report \
-       --var title="<first line or task summary>" \
-       --var results="<parsed Result>" \
-       --var task_id="<parsed Task>" \
-       --var duration="<duration formatted from duration_ms>"
-     ```
-   - Mark `worker:*` task as completed
-
-### Dispatched agent completion (e.g. morning, eod)
-
-1. When a planner-dispatched agent completes:
-   - Read agent's NL output, log activity via `heartbeat-state.sh log-activity`
-   - Use agent name as template name (e.g. `morning` → `slack.sh send morning`), fall back to `event` for unknown agents
-   - Parse output for template variables, deliver via `slack.sh`
-   - Mark agent task as completed
+| Agent | Parse fields | Template | Level | Extra |
+|-------|-------------|----------|-------|-------|
+| chat-agent | `Odpověď`, `Thread`, `Type` | `chat` | always `immediate` | After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
+| planner | Prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:` | per-line mapping from `skills/slack/templates/` | per delivery rules | `Triage:` → create `triage:<slug>` TODO with `ts`. `Dispatch:` → dispatch named agent. `No notifications.` → skip. |
+| worker | `Result`, `Task`, `Type`, `Source` | `worker-report` | `high` for error, else `normal` | — |
+| other (morning, eod) | template variables per agent | agent name as template, fallback `event` | per delivery rules | — |
 
 ### Batch flush
 
-Check for any `notify:*` TODOs with status `pending` (serialized batch payload from current or previous iterations):
-1. Flush only when:
-   - planner/full iteration is running, or
-   - focus mode switched from `on` to `off`
-2. For each pending item, read stored template + vars payload
-3. Re-run direct `slack.sh send <template> --var ...` with the stored vars
-4. Mark each flushed notify TODO as completed after successful send
-5. On failure, log warning and leave TODO `pending` for next flush
+Flush `notify:*` TODOs with `pending` status when: planner/full iteration runs, or focus mode switches off. Re-deliver stored template+vars via `slack.sh`. On failure, leave `pending` for next flush.
 
 ---
 
@@ -220,38 +175,15 @@ Check for any `notify:*` TODOs with status `pending` (serialized batch payload f
 
 ## Step 4: Worker Dispatch
 
-1. Use `TodoRead` -- check if any `worker:*` task exists with status `in_progress`. If yes -- skip (max 1 concurrent worker).
-2. Find next task:
-   ```bash
-   NEXT_TASK=$(skills/worker/task.sh list todo --sort priority | head -1)
-   ```
-   Empty → skip. Also check WIP limit: `skills/worker/task.sh count in-progress` >= max_concurrent → skip.
-3. Move to in-progress and load attributes:
-   ```bash
-   skills/worker/task.sh move "$NEXT_TASK" in-progress
-   skills/worker/task.sh read "$NEXT_TASK"
-   ```
-   Output: `SLUG=..., SIZE=..., PRIORITY=..., SOURCE_REF=..., INSTRUCTION=..., PHASE=..., WORKTREE=...`
-   If pipeline task without phase, set default: `skills/worker/task.sh update "$NEXT_TASK" phase brainstorm|implement`
-4. `TodoWrite` task `worker:<NEXT_TASK>` with status `in_progress` and description `"Worker <slug>: <instruction[:60]>"`
-5. Load model from `.claude/kvido.local.md`: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent)
-6. Dispatch `worker` agent (`run_in_background: true`, model per size):
-   ```
-   TASK_SLUG=<NEXT_TASK>, INSTRUCTION, SIZE, SOURCE_REF, PHASE, CURRENT_STATE, MEMORY
-   ```
-   - If `WORKTREE=true`: add `isolation: "worktree"` to Agent tool call
-   - If `WORKTREE=false`: dispatch without isolation
-7. Log activity: `skills/heartbeat/heartbeat-state.sh log-activity worker dispatch --detail "<slug>: <instruction[:60]>" --task_id <NEXT_TASK>`
-8. Log: `- **HH:MM** [worker] Dispatched <slug> (<size>/<priority>): <instruction[:60]>`
-9. If SOURCE_REF not empty, send acknowledgement directly:
-   - Create `notify:ack:<NEXT_TASK>` TODO (in_progress)
-   - Decide `LEVEL=immediate`, template `chat`
-   - Call:
-     ```bash
-     skills/slack/slack.sh reply "<SOURCE_REF>" chat \
-       --var message="Přijat úkol <NEXT_TASK>: <instruction[:60]>"
-     ```
-   - Mark TODO completed on success, otherwise log warning and mark completed
+1. `TodoRead` — if any `worker:*` in_progress → skip (max 1 concurrent).
+2. `NEXT_TASK=$(skills/worker/task.sh list todo --sort priority | head -1)` — empty → skip.
+3. `task.sh move "$NEXT_TASK" in-progress` + `task.sh read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION, PHASE, WORKTREE.
+   - Pipeline task without phase → set default: `task.sh update "$NEXT_TASK" phase brainstorm|implement`
+4. `TodoWrite` task `worker:<NEXT_TASK>` (in_progress).
+5. Model from config: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent).
+6. Dispatch `worker` agent (`run_in_background: true`, model per size). If `WORKTREE=true` → add `isolation: "worktree"`.
+7. Log activity via `heartbeat-state.sh log-activity worker dispatch`.
+8. If SOURCE_REF not empty → send ack via `slack.sh reply "<SOURCE_REF>" chat --var message="Přijat úkol..."`.
 
 Max 1 worker per iteration.
 
@@ -259,46 +191,18 @@ Max 1 worker per iteration.
 
 ## Step 5: Adaptive Interval
 
-`heartbeat.sh` returns `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `TURBO_ACTIVE`, `TURBO_UNTIL`, `SLEEP_ACTIVE` and `SLEEP_UNTIL`.
+`heartbeat.sh` returns `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `TURBO_ACTIVE/UNTIL`, `SLEEP_ACTIVE/UNTIL`.
 
-### Sleep mode
+| Mode | Trigger | TARGET_PRESET | Behavior |
+|------|---------|---------------|----------|
+| Sleep | "jdu spát" in DM | `sleep` | `CronDelete` old → `CronCreate` one-shot at `SLEEP_UNTIL` (default 06:00). No planner/worker dispatch. After wake: normal flow. |
+| Turbo | "turbo" in DM | `1m` | 30min burst. After expiry: `heartbeat.sh` auto-clears, returns normal. |
+| Normal | — | decay-based | Based on interaction age (config `skills.heartbeat.decay.*`). |
 
-If `SLEEP_ACTIVE == true`, `heartbeat.sh` set `TARGET_PRESET="sleep"` and `ZONE="sleep"`.
-Sleep is activated by keywords in Slack DM (handled inline by heartbeat in Step 2). Default until 06:00 tomorrow, custom time supported.
-
-When activating sleep mode:
-1. Log: `- **HH:MM** [heartbeat] Sleep mode until $(date -d "$SLEEP_UNTIL" +%H:%M)`
-2. `CronDelete` old job
-3. Calculate one-shot cron expression for `SLEEP_UNTIL`:
-   - Parse hour and minute from `SLEEP_UNTIL` timestamp
-   - `CronCreate` with `recurring: false` and matching cron expression
-4. Save new job ID and preset:
-   ```bash
-   skills/heartbeat/heartbeat-state.sh set cron_job_id "<new_job_id>"
-   skills/heartbeat/heartbeat-state.sh set active_preset "sleep"
-   ```
-5. No worker dispatch or planner dispatch during sleep mode.
-
-After waking (heartbeat fired by one-shot cron):
-- `heartbeat.sh` detects expired `sleep_until`, clears key, `SLEEP_ACTIVE=false`
-- Continue normal adaptive flow
-
-### Turbo mode
-
-If `TURBO_ACTIVE == true`, `heartbeat.sh` set `TARGET_PRESET="1m"` and `ZONE="turbo"`.
-Turbo is activated by "turbo" message in Slack DM (handled inline by heartbeat in Step 2). Default 30 min.
-After `turbo_until` expires, heartbeat.sh clears key and returns normal adaptive flow.
-
-1. If `TARGET_PRESET != ACTIVE_PRESET`:
-   - Log: `- **HH:MM** [heartbeat] Adaptive: {ACTIVE_PRESET} -> {TARGET_PRESET}`
-   - `CronDelete` old job
-   - `CronCreate` new with matching cron expression
-   - Save new job ID and preset:
-     ```bash
-     skills/heartbeat/heartbeat-state.sh set cron_job_id "<new_job_id>"
-     skills/heartbeat/heartbeat-state.sh set active_preset "<TARGET_PRESET>"
-     ```
-2. If same -- no action.
+If `TARGET_PRESET != ACTIVE_PRESET`:
+1. `CronDelete` old job → `CronCreate` new with matching expression
+2. `heartbeat-state.sh set cron_job_id` + `active_preset`
+3. Log: `- **HH:MM** [heartbeat] Adaptive: {ACTIVE} -> {TARGET}`
 
 ---
 
