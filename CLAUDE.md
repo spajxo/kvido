@@ -1,17 +1,45 @@
 # CLAUDE.md
 
-This repository is a **Claude Code plugin marketplace** containing the core kvido assistant and optional source plugins.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Structure
+## What is this
 
-- `.claude-plugin/marketplace.json` — plugin registry listing all available plugins
-- `plugins/kvido/` — core assistant plugin
-- `plugins/kvido-*/` — source plugins (gitlab, jira, slack, calendar, gmail, sessions)
+A **Claude Code plugin marketplace** — not a traditional application. No compilation, no tests, no package manager. The "code" is markdown (SKILL.md, agent definitions, commands) + bash scripts.
 
-For architecture details, see `plugins/kvido/CLAUDE.md`.
+## Marketplace layout
+
+```
+.claude-plugin/marketplace.json    ← plugin registry (lists all 7 plugins)
+plugins/
+├── kvido/                         ← core plugin (heartbeat, planner, worker, chat, slack delivery)
+│   ├── .claude-plugin/plugin.json
+│   ├── agents/                    ← subagent definitions (YAML frontmatter + markdown)
+│   ├── commands/                  ← slash commands (thin wrappers → SKILL.md)
+│   ├── hooks/                     ← pre-compact state injection
+│   └── skills/                    ← SKILL.md + bash helpers
+├── kvido-gitlab/                  ← source plugin (requires glab)
+├── kvido-jira/                    ← source plugin (requires acli or Atlassian MCP)
+├── kvido-slack/                   ← source plugin
+├── kvido-calendar/                ← source plugin (Google Calendar MCP)
+├── kvido-gmail/                   ← source plugin (requires gws)
+└── kvido-sessions/                ← source plugin (no external deps)
+```
+
+Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. They are discovered at runtime by `plugins/kvido/skills/discover-sources.sh` which reads `~/.claude/plugins/installed_plugins.json`.
+
+## Key design decisions
+
+- **Source plugins reference core scripts** (`skills/slack/slack.sh`, `skills/worker/task.sh`) via relative paths. This works because they are always invoked by agents running in the core plugin's context — never standalone.
+- **Config** is always read via `skills/config.sh 'flat.key'` — never parse `kvido.local.md` directly.
+- **All bash scripts** use `set -euo pipefail`.
+- **Agents never send Slack messages directly** — they return NL output. Heartbeat delivers via `slack.sh`.
+- **Prompts default to English**. Runtime language is configured in the user's `memory/persona.md`.
 
 ## Working on this codebase
 
-- Each plugin is self-contained in its `plugins/<name>/` directory with its own `.claude-plugin/plugin.json`
-- Source plugins contain only `skills/source-*/` — they are discovered at runtime by the core plugin via `skills/discover-sources.sh`
-- No build step, no tests — validate by reading plugin conventions and running `/setup` health check
+- Edit SKILL.md and agent .md files directly — no build step
+- Slack message templates are JSON files in `plugins/kvido/skills/slack/templates/`
+- Plugin manifests: each plugin has `.claude-plugin/plugin.json` with name, version, description
+- Marketplace manifest: `.claude-plugin/marketplace.json` lists all plugins with `./plugins/<name>` local source paths
+- Validate changes by reading plugin conventions and running `/setup` health check in a workspace
+- Core plugin CLAUDE.md (`plugins/kvido/CLAUDE.md`) is separate — it provides runtime instructions when the plugin is installed in a user's workspace
