@@ -5,7 +5,7 @@ allowed-tools: Read, Bash, mcp__claude_ai_Slack__slack_search_public_and_private
 user-invocable: false
 ---
 
-> **Configuration:** Read `.claude/kvido.local.md` for channel list. DM credentials from `.env`.
+> **Configuration:** Via `skills/config.sh` (`sources.slack.*` keys). DM credentials from `.env`.
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
@@ -27,9 +27,14 @@ Output: JSON array. Filter via `jq`:
 - `.[] | select(.user == "$SLACK_USER_ID")` — messages from the user
 - `.[] | select(.ts > "$last_dm_ts")` — newer than last scan
 
-Also read `dm_channels` from `.claude/kvido.local.md`. For each entry where `channel_id` is defined (skip entries without `channel_id`):
+List DM channels to monitor:
 ```bash
-skills/slack/slack.sh read "<channel_id>" --limit 5 --oldest "$last_dm_ts"
+skills/config.sh --keys 'sources.slack.dm_channels'
+```
+For each entry where `channel_id` is defined (skip entries without `channel_id`):
+```bash
+CHANNEL_ID=$(skills/config.sh "sources.slack.dm_channels.<name>.channel_id")
+skills/slack/slack.sh read "$CHANNEL_ID" --limit 5 --oldest "$last_dm_ts"
 ```
 
 For new messages from other users (not from `SLACK_USER_ID`) determine notification level:
@@ -49,7 +54,7 @@ skills/heartbeat/heartbeat-state.sh set last_dm_ts "<newest ts>"
 
 ### watch-channels
 
-Read `.claude/kvido.local.md`. For channels with `priority: high` and `priority: normal` where `channel_id` is set:
+List watched channels via `skills/config.sh --keys 'sources.slack.channels'`. For channels with `priority: high` and `priority: normal` where `channel_id` is set:
 
 **Transport selection:**
 - Channel without `use_mcp` (or `use_mcp: false`) → use `slack.sh read` (Bot token, standard):
