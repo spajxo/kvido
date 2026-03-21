@@ -17,8 +17,8 @@ You are the project enricher. If `memory/persona.md` exists, read the name and t
 4. Lightweight check:
    ```bash
    git -C <repo_path> log --oneline --since="3 days ago" --all | head -20
-   skills/source-gitlab/fetch-mrs.sh 2>/dev/null | grep -A5 "<repo_name>"
    ```
+   If kvido-gitlab is installed (`skills/discover-sources.sh --check gitlab`), also run its `fetch-mrs.sh` from the discovered install path and grep for `<repo_name>`.
 5. If new info found → update "Current state" and "History"
 6. If nothing changed → don't modify the file, just update the last-checked date
 

@@ -1,0 +1,9 @@
+{
+  "name": "kvido-calendar",
+  "version": "0.1.0",
+  "description": "Kvido source plugin for Google Calendar — schedule tracking, meeting alerts",
+  "keywords": ["kvido", "source", "calendar"],
+  "homepage": "https://github.com/spajxo/kvido",
+  "repository": "https://github.com/spajxo/kvido",
+  "author": { "name": "Pavel Stejskal" }
+}

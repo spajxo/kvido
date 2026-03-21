@@ -12,6 +12,8 @@ Setup and self-healing command. Run on first launch, after plugin installation, 
 
 ## Step 0: Prerequisites
 
+### Required tools
+
 ```bash
 for cmd in jq; do
   if command -v "$cmd" &>/dev/null; then
@@ -20,16 +22,29 @@ for cmd in jq; do
     echo "MISSING: $cmd — required"
   fi
 done
-for cmd in glab acli gws; do
-  if command -v "$cmd" &>/dev/null; then
-    echo "OK: $cmd $(command -v $cmd)"
-  else
-    echo "OPTIONAL: $cmd not found"
-  fi
-done
 ```
 
 If a required tool is missing, inform the user and offer installation. Do not proceed until required prerequisites are met.
+
+### Source plugins
+
+Run `skills/discover-sources.sh` to list installed source plugins. Show the user what is installed and what is available:
+
+| Source plugin | Prerequisite | Status |
+|---------------|-------------|--------|
+| kvido-gitlab | `glab` CLI | installed / not installed |
+| kvido-jira | `acli` CLI or Atlassian MCP | installed / not installed |
+| kvido-slack | `SLACK_BOT_TOKEN` in .env | installed / not installed |
+| kvido-calendar | Google Calendar MCP | installed / not installed |
+| kvido-gmail | `gws` CLI | installed / not installed |
+| kvido-sessions | none | installed / not installed |
+
+For each not-installed plugin, check if prerequisites are available and suggest installation:
+```
+claude plugin install kvido-gitlab
+```
+
+Skip this step if this is a re-run and all desired sources are already installed.
 
 ## Step 1: First-time Setup
 
@@ -87,9 +102,10 @@ Offer the user a shell alias for quick launching:
 3. If yes:
    - Detect shell rc file: if `$SHELL` contains `zsh` → `~/.zshrc`, else `~/.bashrc`
    - Resolve plugin path: the `assistant.sh` script is located in the plugin root (parent of this `commands/` directory). Use the absolute path.
+   - Resolve workspace path: the current working directory (`$PWD`) is the user's workspace.
    - Append to rc file (only if alias not already present):
      ```bash
-     alias <name>='<absolute_path_to_plugin>/assistant.sh'
+     alias <name>='cd <workspace_path> && <absolute_path_to_plugin>/assistant.sh'
      ```
    - Inform user: "Alias created. Run `source ~/.zshrc` (or `~/.bashrc`) or restart your shell to activate it."
 4. If no: skip silently.
@@ -155,20 +171,19 @@ Missing or empty → log warning.
 
 ### Binary check
 ```bash
-for cmd in jq glab acli gws; do
-  command -v "$cmd" &>/dev/null || echo "WARNING: $cmd not found"
-done
-```
-
-### Git connectivity
-For each repo in `.claude/kvido.local.md`:
-```bash
-test -d <path>/.git || echo "WARNING: repo <name> missing at <path>"
+command -v jq &>/dev/null || echo "WARNING: jq not found"
 ```
 
 ### Source health
-Run health check from each source skill (per SKILL.md → health capability).
-Write results to `state/source-health.json`.
+Run `skills/discover-sources.sh` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
+
+Skip sources that are not installed or do not define a health capability.
+
+### Git connectivity
+For each repo in `.claude/kvido.local.md` (only if kvido-gitlab is installed):
+```bash
+test -d <path>/.git || echo "WARNING: repo <name> missing at <path>"
+```
 
 ### Uncommitted assistant changes
 ```bash

@@ -1,26 +1,19 @@
 # kvido
 
-Kvido is a Claude Code plugin that turns your terminal into a living workspace assistant.
-It monitors your work tools (Jira, GitLab, Slack, Calendar, Gmail) in the background and
-communicates with you via Slack DM — morning briefings, change notifications, task execution,
-and end-of-day journals.
+Kvido is a Claude Code plugin marketplace that turns your terminal into a living workspace assistant.
+Install the core plugin and add source plugins for the tools you use — Jira, GitLab, Slack, Calendar, Gmail.
 
-## Features
+## Plugins
 
-- **Heartbeat** — periodic background monitoring, adaptive interval, chat dispatch, worker orchestration
-- **Planner** — change detection across all sources, Slack notifications, daily context update
-- **Worker** — async task queue backed by GitLab Issues; model routing by task size
-- **Morning / EOD** — daily briefing with schedule and overnight changes; end-of-day journal with worklog check
-- **Chat** — respond to Slack DM messages, create tasks, look up information in real time
-
-## Prerequisites
-
-| Tool | Required | Purpose |
-|------|----------|---------|
-| `jq` | Yes | JSON parsing (used by all shell scripts) |
-| `glab` | No | GitLab monitoring — MR status, pipeline activity, git log |
-| `acli` | No | Jira integration — issues, transitions, worklogs |
-| `gws` | No | Google Workspace — Gmail and Calendar via CLI |
+| Plugin | Description | Prerequisites |
+|--------|-------------|---------------|
+| **kvido** | Core — heartbeat, planner, worker, chat, triage | `jq` |
+| kvido-gitlab | GitLab MR tracking, activity monitoring | `glab` |
+| kvido-jira | Jira issue tracking, status changes | `acli` or Atlassian MCP |
+| kvido-slack | Slack channel monitoring, message watching | `SLACK_BOT_TOKEN` |
+| kvido-calendar | Google Calendar schedule tracking, meeting alerts | Google Calendar MCP |
+| kvido-gmail | Email monitoring, priority filtering | `gws` |
+| kvido-sessions | Claude Code session analysis | none |
 
 ## Installation
 
@@ -30,13 +23,16 @@ and end-of-day journals.
    mkdir ~/kvido && cd ~/kvido && git init
    ```
 
-2. Install the plugin locally:
+2. Install the core plugin and the sources you need:
 
    ```bash
-   claude plugin install kvido --scope local
+   claude plugin install kvido
+   claude plugin install kvido-gitlab
+   claude plugin install kvido-jira
+   # ... add more as needed
    ```
 
-3. Launch Claude Code:
+3. Launch Claude Code and run setup:
 
    ```bash
    claude
@@ -44,23 +40,26 @@ and end-of-day journals.
 
 4. Run `/setup` inside the Claude Code session — it creates the runtime directories
    (`state/`, `memory/`), config templates (`.claude/kvido.local.md`, `.env`),
-   `.gitignore`, and `CLAUDE.md`.
+   `.gitignore`, and `CLAUDE.md`. It also detects installed source plugins and
+   offers to install missing ones.
+
+## Quick launch
+
+After setup, use the shell alias (offered during `/setup`) or run directly:
+
+```bash
+./assistant.sh                    # default: /loop 5m /heartbeat
+./assistant.sh /morning           # morning briefing
+```
 
 ## Daily Usage
 
-```bash
-cd ~/kvido && claude
-```
-
 | Trigger | Action |
 |---------|--------|
-| Say "good morning" | Daily briefing — schedule, overnight changes, focus for the day |
+| Say "good morning" or `/morning` | Daily briefing — schedule, overnight changes, focus |
 | Say "start heartbeat" or `/heartbeat` | Start the cron loop (default every 10 min) |
-| Say "done for today" or `/eod` | End-of-day journal, worklog check, weekly summary on Fridays |
-| Say "going to sleep" | Pause heartbeat until morning (default 06:00) |
-| Say "show dashboard" | Regenerate and open the visual status overview |
-
-The heartbeat loop runs unattended in the background. Leave the terminal open and kvido works autonomously.
+| Say "done for today" or `/eod` | End-of-day journal, worklog check |
+| Say "going to sleep" | Pause heartbeat until morning |
 
 ## Configuration
 
@@ -68,56 +67,42 @@ Three config locations, all gitignored:
 
 **`.claude/kvido.local.md`** — sources and skill behavior.
 Fill in Slack channel IDs, GitLab repo paths, Jira project keys, Gmail filters.
-This is the primary config file; see `kvido.local.md.example` for the full reference.
+See `kvido.local.md.example` for the full reference.
 
 **`.env`** — credentials and IDs.
-Required keys: `SLACK_BOT_TOKEN`, `SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`.
+Required: `SLACK_BOT_TOKEN`, `SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`.
 Optional: `ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`, `CLAUDE_MODEL`.
 
 **`memory/persona.md`** — assistant name, personality, language, and tone.
-If the file does not exist, kvido defaults to concise Czech responses.
 
-## Structure
-
-Workspace directory (created by `/setup`):
+## Repository Structure
 
 ```
-~/kvido/
-├── .claude/kvido.local.md    # source and skill configuration (gitignored)
-├── .env                      # Slack tokens, IDs (gitignored)
-├── state/                    # ephemeral runtime state (gitignored)
-│   ├── current.md            # active focus, WIP, blockers
-│   ├── today.md              # daily briefing and heartbeat log
-│   └── heartbeat-state.json  # heartbeat counters and timestamps
-├── memory/                   # persistent context (gitignored)
-│   ├── memory.md             # main context — projects, people, decisions
-│   ├── projects/             # per-project long-term context
-│   └── journal/              # daily journal entries (generated by EOD)
-└── CLAUDE.md                 # Claude Code instructions (generated by /setup)
-```
-
-Plugin directory (this repository):
-
-```
-kvido/
-├── .claude-plugin/plugin.json
-├── .claude/
-│   ├── skills/               # SKILL.md + bash helpers per skill
-│   ├── agents/               # subagent definitions (planner, worker, listener)
-│   ├── commands/             # slash commands (/morning, /eod, /heartbeat, /triage, /setup)
-│   └── hooks/                # pre-compact state injection
-└── kvido.local.md.example    # annotated config template
+kvido/                                # marketplace repo
+├── .claude-plugin/marketplace.json   # plugin registry
+├── plugins/
+│   ├── kvido/                        # core assistant plugin
+│   │   ├── agents/                   # planner, worker, chat-agent, ...
+│   │   ├── commands/                 # /heartbeat, /morning, /eod, /triage, /setup
+│   │   ├── skills/                   # heartbeat, planner, worker, slack delivery, ...
+│   │   └── hooks/                    # pre-compact state injection
+│   ├── kvido-gitlab/                 # GitLab source plugin
+│   ├── kvido-jira/                   # Jira source plugin
+│   ├── kvido-slack/                  # Slack source plugin
+│   ├── kvido-calendar/               # Calendar source plugin
+│   ├── kvido-gmail/                  # Gmail source plugin
+│   └── kvido-sessions/               # Sessions source plugin
+├── kvido.local.md.example            # annotated config template
+└── CLAUDE.md.template                # workspace CLAUDE.md template
 ```
 
 ## How It Works
 
-On each heartbeat tick, kvido runs `heartbeat.sh` to gather data (Slack DM check, worker queue depth,
-timestamps), then dispatches the planner subagent every N ticks. The planner fetches live data from all
-configured sources, detects changes, updates `state/current.md`, and sends Slack notifications for
-anything that needs attention. In parallel, the heartbeat picks up the next task from the worker queue
-and executes it as an isolated Claude Code subagent. Chat messages arriving via Slack DM are processed
-by the listener agent, which can create new tasks, answer questions, or update state.
+On each heartbeat tick, kvido gathers data (Slack DM check, worker queue),
+then dispatches the planner subagent. The planner uses `discover-sources.sh`
+to find installed source plugins, fetches live data from each, detects changes,
+and sends Slack notifications. The worker queue executes tasks as isolated subagents.
 
 ## Status
 
-v0.1.0 — ready for testing. See [LICENSE](LICENSE) for terms.
+v0.2.0 — ready for testing. See [LICENSE](LICENSE) for terms.
