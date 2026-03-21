@@ -37,6 +37,23 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The SKILL.md for each source plugin documents the MCP fallback procedure.
 - **config.sh is duplicated** across all source plugins (each has its own copy). When modifying config.sh, update all copies.
 
+## Runtime architecture
+
+```
+heartbeat (cron, every 10 min) — plugins/kvido/skills/heartbeat/
+├── reads Slack DM (via core slack.sh)
+├── checks worker queue (state/tasks/)
+├── dispatches planner every Nth tick → plugins/kvido/agents/planner.md
+│   └── discover-sources.sh → finds kvido-* plugins in installed_plugins.json
+│       ├── reads each source's SKILL.md from its installPath
+│       ├── runs fetch.sh (exit 0 = success, exit 10 = use MCP fallback)
+│       └── detects changes vs planner-state.md → Slack notifications
+├── dispatches worker if task pending → plugins/kvido/agents/worker.md
+└── dispatches chat-agent on non-trivial Slack DM
+```
+
+Source plugins are never invoked standalone. The planner agent runs in the core plugin context, reads source SKILL.md files, and executes their fetch scripts. This is why source plugins can reference core scripts (`skills/slack/slack.sh`, `skills/worker/task.sh`) via relative paths.
+
 ## Working on this codebase
 
 - Edit SKILL.md and agent .md files directly — no build step
@@ -45,3 +62,4 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 - Marketplace manifest: `.claude-plugin/marketplace.json` lists all plugins with `./plugins/<name>` local source paths
 - Validate changes by reading plugin conventions and running `/setup` health check in a workspace
 - Core plugin CLAUDE.md (`plugins/kvido/CLAUDE.md`) is separate — it provides runtime instructions when the plugin is installed in a user's workspace
+- User-facing templates: `plugins/kvido/kvido.local.md.example` (config reference) and `plugins/kvido/CLAUDE.md.template` (workspace CLAUDE.md)

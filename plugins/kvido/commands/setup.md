@@ -111,6 +111,27 @@ Offer the user a shell alias for quick launching:
 4. If no: skip silently.
 
 
+### g) Source plugin config validation
+
+For each installed source plugin (via `skills/discover-sources.sh`), verify that `.claude/kvido.local.md` contains the required config keys. Use `skills/config.sh` to check.
+
+| Plugin | Required keys | Check |
+|--------|--------------|-------|
+| kvido-gitlab | At least one repo: `sources.gitlab.repos` must have children | `skills/config.sh --keys 'sources.gitlab.repos'` returns non-empty |
+| kvido-jira | At least one project: `sources.jira.projects` must have children with `filter` | `skills/config.sh --keys 'sources.jira.projects'` returns non-empty |
+| kvido-slack | At least one channel or DM config | `skills/config.sh --keys 'sources.slack.channels'` or `skills/config.sh --keys 'sources.slack.dm_channels'` returns non-empty |
+| kvido-calendar | Categories (optional, works without) | No required keys — skip |
+| kvido-gmail | Watch query | `skills/config.sh 'sources.gmail.watch_query'` exists |
+| kvido-sessions | Idle threshold (optional, has default) | No required keys — skip |
+
+For each missing config:
+1. Show which keys are missing and what they configure
+2. Offer to help fill them in (show examples from `kvido.local.md.example`)
+3. If the user provides values, write them into `.claude/kvido.local.md` frontmatter
+
+Skip this step for plugins that are not installed.
+
+
 ## Step 2: Structure Bootstrap
 
 Create missing directories:
@@ -173,6 +194,9 @@ Missing or empty → log warning.
 ```bash
 command -v jq &>/dev/null || echo "WARNING: jq not found"
 ```
+
+### Config validation
+Run `skills/config.sh --validate` to check config format. For each installed source plugin, verify required keys exist (same checks as Step 1g). Log warnings for missing keys.
 
 ### Source health
 Run `skills/discover-sources.sh` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
