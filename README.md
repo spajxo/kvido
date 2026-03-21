@@ -7,7 +7,7 @@ Install the core plugin and add source plugins for the tools you use — Jira, G
 
 | Plugin | Description | Prerequisites |
 |--------|-------------|---------------|
-| **kvido-assistant** | Core — heartbeat, planner, worker, chat, triage | `jq` |
+| **kvido** | Core — heartbeat, planner, worker, chat, triage | `jq` |
 | kvido-gitlab | GitLab MR tracking, activity monitoring | `glab` |
 | kvido-jira | Jira issue tracking, status changes | `acli` or Atlassian MCP |
 | kvido-slack | Slack channel monitoring, message watching | `SLACK_BOT_TOKEN` |
@@ -26,7 +26,7 @@ Install the core plugin and add source plugins for the tools you use — Jira, G
 2. Install the core plugin and the sources you need:
 
    ```bash
-   claude plugin install kvido-assistant
+   claude plugin install kvido
    claude plugin install kvido-gitlab
    claude plugin install kvido-jira
    # ... add more as needed

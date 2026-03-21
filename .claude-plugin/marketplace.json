@@ -5,7 +5,7 @@
   },
   "plugins": [
     {
-      "name": "kvido-assistant",
+      "name": "kvido",
       "source": "./plugins/kvido",
       "description": "Core assistant — heartbeat, planner, worker, triage"
     },

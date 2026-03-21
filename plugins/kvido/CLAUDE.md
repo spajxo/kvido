@@ -8,7 +8,7 @@ Kvido is a **Claude Code plugin marketplace** containing the core assistant and 
 
 It is **not** a traditional application. There is no compilation, no test suite, no package manager, no build step. The "code" is markdown (SKILL.md, agent definitions, commands) + bash scripts.
 
-**Usage model:** The user creates their own workspace folder (e.g. `~/kvido/`), installs the core plugin (`claude plugin install kvido-assistant`) and optional source plugins (e.g. `claude plugin install kvido-gitlab`). Runtime files (`state/`, `memory/`, `.env`, `.claude/kvido.local.md`) live in the user's workspace. They are created by `/setup`.
+**Usage model:** The user creates their own workspace folder (e.g. `~/kvido/`), installs the core plugin (`claude plugin install kvido`) and optional source plugins (e.g. `claude plugin install kvido-gitlab`). Runtime files (`state/`, `memory/`, `.env`, `.claude/kvido.local.md`) live in the user's workspace. They are created by `/setup`.
 
 ## Prerequisites (for the user's workspace)
 
@@ -22,7 +22,7 @@ This repo is a Claude Code plugin marketplace. Each plugin is in `plugins/<name>
 
 | Plugin | Description | Prerequisites |
 |--------|-------------|---------------|
-| `kvido-assistant` | Core — heartbeat, planner, worker, triage | `jq` |
+| `kvido` | Core — heartbeat, planner, worker, triage | `jq` |
 | `kvido-gitlab` | GitLab MR tracking, activity monitoring | `glab` |
 | `kvido-jira` | Jira issue tracking, status changes | `acli` or Atlassian MCP |
 | `kvido-slack` | Slack channel monitoring | `SLACK_BOT_TOKEN` |

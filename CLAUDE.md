@@ -5,7 +5,7 @@ This repository is a **Claude Code plugin marketplace** containing the core kvid
 ## Structure
 
 - `.claude-plugin/marketplace.json` — plugin registry listing all available plugins
-- `plugins/kvido/` — core assistant plugin (kvido-assistant)
+- `plugins/kvido/` — core assistant plugin
 - `plugins/kvido-*/` — source plugins (gitlab, jira, slack, calendar, gmail, sessions)
 
 For architecture details, see `plugins/kvido/CLAUDE.md`.

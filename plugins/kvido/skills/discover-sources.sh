@@ -25,5 +25,5 @@ if [[ "${1:-}" == "--check" ]]; then
   exit $?
 fi
 
-jq -r '.[] | select(.name | startswith("kvido-")) | select(.name != "kvido-assistant") | select(.installPath) | "\(.name)\t\(.installPath)"' \
+jq -r '.[] | select(.name | startswith("kvido-")) | select(.installPath) | "\(.name)\t\(.installPath)"' \
   "$REGISTRY"
