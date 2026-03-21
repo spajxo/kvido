@@ -175,9 +175,9 @@ command -v jq &>/dev/null || echo "WARNING: jq not found"
 ```
 
 ### Source health
-Run `skills/discover-sources.sh` to get installed source plugins. For each installed source, read its SKILL.md and run its `health` capability. Write results to `state/source-health.json`.
+Run `skills/discover-sources.sh` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
 
-Skip health checks for sources that are not installed.
+Skip sources that are not installed or do not define a health capability.
 
 ### Git connectivity
 For each repo in `.claude/kvido.local.md` (only if kvido-gitlab is installed):

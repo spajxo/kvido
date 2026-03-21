@@ -11,6 +11,8 @@ user-invocable: false
 
 # Source: Slack
 
+> **Note:** This source plugin is always invoked by the core kvido planner/heartbeat agent. All `skills/slack/` and `skills/heartbeat/` paths refer to scripts in the core kvido plugin (resolved from the agent's working context).
+
 Reading via `slack.sh read` (Slack Web API). Search via Slack MCP (requires user context).
 
 ## Capabilities
