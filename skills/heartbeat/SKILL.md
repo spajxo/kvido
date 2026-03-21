@@ -16,32 +16,7 @@ Tone and style per `memory/persona.md` (section Heartbeat). If persona missing, 
 
 ## Orchestration Model
 
-All dispatch tracking uses **TodoWrite/TodoRead** (Claude Code native task primitives). Each dispatched agent or pending action = one todo item. TodoWrite replaces file-based locks (`chat-lock.sh`, `pending-chat-messages.json`, `triage-messages.json`).
-
-### Task ID conventions
-
-| Type | ID format | Example |
-|------|-----------|---------|
-| Chat dispatch | `chat:<slack_ts>` | `chat:1773933088.437799` |
-| Worker dispatch | `worker:<issue_id>` | `worker:20` |
-| Planner dispatch | `planner` | `planner` |
-| Triage poll | `triage:<issue_id>` | `triage:7` |
-| Notify chat | `notify:chat:<ts>` | `notify:chat:1773933088.437` |
-| Notify planner | `notify:planner:<iteration>` | `notify:planner:42` |
-| Notify worker | `notify:worker:<issue_id>` | `notify:worker:20` |
-| Notify triage | `notify:triage:<issue_id>` | `notify:triage:15` |
-| Notify ack | `notify:ack:<issue_id>` | `notify:ack:20` |
-| Notify queue | `notify:queue:<ts>` | `notify:queue:1773933088.437` |
-| Agent dispatch | `<agent-name>` | `morning` |
-| Notify agent | `notify:<agent-name>` | `notify:morning` |
-
-### Status mapping
-
-| TodoWrite status | Meaning |
-|------------------|---------|
-| `in_progress` | Agent dispatched, running |
-| `pending` | Queued, waiting for processing |
-| `completed` | Done successfully |
+All dispatch tracking uses **TodoWrite/TodoRead** (Claude Code native task primitives). Each dispatched agent or pending action = one todo item.
 
 ### Recovery (session start)
 
