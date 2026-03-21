@@ -6,7 +6,9 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 
 # Kvido Setup
 
-Setup a self-healing command. Spouštěj při prvním spuštění, po instalaci pluginu, nebo po problémech.
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
+Setup and self-healing command. Run on first launch, after plugin installation, or when something is broken.
 
 ## Step 0: Prerequisites
 
@@ -27,18 +29,18 @@ for cmd in glab acli gws; do
 done
 ```
 
-Pokud chybí povinný nástroj, informuj uživatele a nabídni instalaci. Nepokračuj dokud nejsou splněny povinné prerekvizity.
+If a required tool is missing, inform the user and offer installation. Do not proceed until required prerequisites are met.
 
 ## Step 1: First-time Setup
 
-Detekce: `.env` neexistuje NEBO `memory/persona.md` neexistuje → spusť first-time setup.
-Pokud obojí existuje, přeskoč na Step 2.
+Detection: `.env` does not exist OR `memory/persona.md` does not exist → run first-time setup.
+If both exist, skip to Step 2.
 
-### a) Config soubory
+### a) Config files
 
-Pokud neexistují, vytvoř:
-- `.claude/kvido.local.md` — zkopíruj `kvido.local.md.example` z pluginu
-- `.env` — vytvoř s prázdnými hodnotami:
+If files don't exist, create them:
+- `.claude/kvido.local.md` — copy `kvido.local.md.example` from the plugin
+- `.env` — create with empty values:
   ```
   SLACK_DM_CHANNEL_ID=
   SLACK_USER_ID=
@@ -48,21 +50,23 @@ Pokud neexistují, vytvoř:
 
 ### b) Persona setup
 
-Pokud `memory/persona.md` neexistuje:
-1. Zeptej se uživatele: "Jak se má tvůj asistent jmenovat? Jaký má mít tón a osobnost? (např. stručný a věcný, přátelský, formální...)"
-2. Z odpovědi vytvoř `memory/persona.md` s odpovídající strukturou (jméno, jazyk, tón, osobnost, URL formáty)
-3. Vytvoř i `memory/` adresář pokud neexistuje
+If `memory/persona.md` does not exist:
+1. Ask the user:
+   - "What language should Kvido use? (default: en)"
+   - "What's your assistant's name? What tone and personality should it have? (e.g. brief and factual, friendly, formal...)"
+2. From the answers, create `memory/persona.md` with the appropriate structure (name, language, tone, personality, URL formats). Store language as `language: en` (or the chosen language code).
+3. Also create the `memory/` directory if it doesn't exist.
 
-### c) .env vyplnění
+### c) .env values
 
-Přečti `.env`. Pokud obsahuje prázdné hodnoty (klíče s `=""` nebo `=`):
-1. Vypiš seznam chybějících hodnot a k čemu slouží
-2. Nabídni pomoc s vyplněním (jak najít Slack IDs, kde vzít tokeny atd.)
-3. Pokud uživatel poskytne hodnoty, zapiš je do `.env`
+Read `.env`. If it contains empty values (keys with `=""` or `=`):
+1. List the missing values and what they are used for
+2. Offer help filling them in (how to find Slack IDs, where to get tokens, etc.)
+3. If the user provides values, write them to `.env`
 
 ### d) .gitignore
 
-Přidej do `.gitignore` pokud tam ještě nejsou:
+Add to `.gitignore` if not already present:
 ```
 .claude/kvido.local.md
 .env
@@ -72,66 +76,66 @@ memory/
 
 ### e) CLAUDE.md
 
-Pokud projekt nemá `CLAUDE.md`, zkopíruj `CLAUDE.md.template` z pluginu jako základ.
+If the project does not have a `CLAUDE.md`, copy `CLAUDE.md.template` from the plugin as a starting point.
 
 
 ## Step 2: Structure Bootstrap
 
-Vytvoř chybějící adresáře:
+Create missing directories:
 
 ```bash
 mkdir -p memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
 mkdir -p state/tasks/{triage,todo,in-progress,done,failed,cancelled}
 ```
 
-Pro každý chybějící soubor vytvoř s minimálním obsahem:
-- `memory/memory.md` → `# Memory` + sekce (Kdo jsem, Aktivní projekty, Klíčová rozhodnutí, Naučené lekce, Lidé)
+For each missing file, create with minimal content:
+- `memory/memory.md` → `# Memory` + sections (Who I am, Active projects, Key decisions, Lessons learned, People)
 - `memory/this-week.md` → `# Week YYYY-Www`
 - `memory/learnings.md` → `# Learnings`
 - `memory/errors.md` → `# Errors`
 - `memory/people/_index.md` → `# People`
 - `memory/decisions/_index.md` → `# Decisions`
-- `state/heartbeat-state.json` → default schema (iteration_count: 0, všechny timestamps null, last_chat_ts: "0", cron_job_id: "", active_preset: "10m", last_interaction_ts: null)
-- `state/current.md` → prázdný template (Active Focus, WIP, Blockers, Parked, Notes for Tomorrow)
-- `state/planner-state.md` → prázdný planner state template
+- `state/heartbeat-state.json` → default schema (iteration_count: 0, all timestamps null, last_chat_ts: "0", cron_job_id: "", active_preset: "10m", last_interaction_ts: null)
+- `state/current.md` → empty template (Active Focus, WIP, Blockers, Parked, Notes for Tomorrow)
+- `state/planner-state.md` → empty planner state template
 
 ## Step 3: Planning Bootstrap
 
-Pokud `memory/planner.md` neexistuje, vytvoř s ukázkovým obsahem:
+If `memory/planner.md` does not exist, create it with example content:
 
 ```markdown
-# Planner — osobní instrukce
+# Planner — personal instructions
 
-Sem přidej osobní instrukce pro plannera.
+Add your personal instructions for the planner here.
 
-## Příklady
-- 11:00: Připomeň mi stretch break
-- Pondělí: Zkontroluj stav všech MRů za minulý týden
-- Pátek 15:00: Příprava na weekly standup
+## Examples
+- 11:00: Remind me to take a stretch break
+- Monday: Review the status of all open MRs from last week
+- Friday 15:00: Prepare for weekly standup
 ```
 
 ## Step 4: EOD Catch-up
 
-Zkontroluj `memory/journal/` — pokud chybí journal pro dny kde existuje git aktivita:
-- Dispatni librarian: "Extraction mode pro YYYY-MM-DD. Vytvoř catch-up journal z dostupných dat."
+Check `memory/journal/` — if a journal is missing for days where git activity exists:
+- Dispatch librarian: "Extraction mode for YYYY-MM-DD. Create a catch-up journal from available data."
 
-## Step 5: Rotace
+## Step 5: Rotation
 
 ### Weekly
-Pokud `memory/this-week.md` obsahuje předchozí týden:
-- Přesuň obsah do `memory/weekly/YYYY-Www.md`
-- Resetuj na aktuální týden
+If `memory/this-week.md` contains a previous week:
+- Move content to `memory/weekly/YYYY-Www.md`
+- Reset to the current week
 
 ### Archive
-- Journals starší 14 dní → `memory/archive/journal/`
-- Weekly starší 8 týdnů → `memory/archive/weekly/`
-- Decisions starší 90 dní → `memory/archive/decisions/`
+- Journals older than 14 days → `memory/archive/journal/`
+- Weeklies older than 8 weeks → `memory/archive/weekly/`
+- Decisions older than 90 days → `memory/archive/decisions/`
 
 ## Step 6: Health Check
 
 ### Env check
-Ověř že `.env` obsahuje všechny požadované klíče (`SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`, `SLACK_USER_NAME`, `SLACK_BOT_TOKEN`) a že nejsou prázdné.
-Chybějící nebo prázdné → log warning.
+Verify that `.env` contains all required keys (`SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`, `SLACK_USER_NAME`, `SLACK_BOT_TOKEN`) and that they are not empty.
+Missing or empty → log warning.
 
 ### Binary check
 ```bash
@@ -141,23 +145,23 @@ done
 ```
 
 ### Git connectivity
-Pro každý repo v `.claude/kvido.local.md`:
+For each repo in `.claude/kvido.local.md`:
 ```bash
 test -d <path>/.git || echo "WARNING: repo <name> missing at <path>"
 ```
 
 ### Source health
-Spusť health check z každého source skillu (dle SKILL.md → health capability).
-Zapiš výsledky do `state/source-health.json`.
+Run health check from each source skill (per SKILL.md → health capability).
+Write results to `state/source-health.json`.
 
 ### Uncommitted assistant changes
 ```bash
 git status --porcelain
 ```
-Pokud neprázdné → warning.
+If non-empty → warning.
 
 ## Output
 
-Pokud vše OK → "Setup complete: vše v pořádku"
-Pokud vytvořeny soubory → výpis co bylo vytvořeno
-Pokud catch-up → výpis co bylo doplněno
+If everything is OK → "Setup complete: all good"
+If files were created → list what was created
+If catch-up was performed → list what was filled in
