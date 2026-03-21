@@ -14,16 +14,6 @@ Tone and style per `memory/persona.md` (section Heartbeat). If persona missing, 
 
 ---
 
-## Orchestration Model
-
-All dispatch tracking uses **TodoWrite/TodoRead** (Claude Code native task primitives). Each dispatched agent or pending action = one todo item.
-
-### Recovery (session start)
-
-At iteration 0 (or after session restart), TodoRead all items. Any `in_progress` tasks from a previous session are orphaned -- the agent that was running them no longer exists. Mark them `completed` (or re-queue if appropriate). `notify:*` tasks are heartbeat-owned delivery tasks, not a separate agent lifecycle.
-
----
-
 ## Step 1: Init
 
 Run:
@@ -166,32 +156,12 @@ Rules:
 ### Planner completion
 
 1. When planner agent completes:
-   - Read planner's NL output
-   - Parse `total_tokens` and `duration_ms` from Agent tool `<usage>` tag
-   - Log: `skills/heartbeat/heartbeat-state.sh log-activity planner execute --tokens <total_tokens> --duration_ms <duration_ms> --detail "<N notifications|No notifications>"`
-   - Parse output — extract individual items:
-     - Lines starting with `Event:` or `Event (batch):` → type event
-     - Lines starting with `Triage:` → type triage-item
-     - Lines starting with `Reminder:` → type reminder
-     - Lines starting with `Dispatch:` → agent dispatch request (see below)
-   - If output is `No notifications.` → mark planner completed, skip delivery
-   - For each notification item (Event/Triage/Reminder):
-     - Create `notify:<type>:<id>` TODO (in_progress)
-     - Parse to structured fields and choose level:
-       - Events: template `event`, vars `emoji`, `title`, `description`, `source`, `reference`, `timestamp`; `URGENCY=high` if line starts with `Event:`, otherwise `normal`
-       - Triage: template `triage-item`, vars `issue`, `title`, `description`, `issue_url`, `priority`, `size`, `assignee`; `URGENCY=normal`
-       - Reminders: template `event`, vars `emoji="⏰"`, `title="Připomínka"`, `description`, `source="planner"`, `reference`, `timestamp`; `URGENCY=normal`
-     - After each decision:
-       - `immediate` → send via `slack.sh send <template> --var ...`, mark notify TODO completed
-       - `silent` → log summary, mark notify TODO completed
-       - `batch` → set notify TODO status to `pending` and store serialized template + vars in description
-       - triage-item + `immediate` → create `triage:<issue_id>` with `ts=<returned ts>` in description
-   - For each `Dispatch:` line — parse agent name and parameters:
-     - Format: `Dispatch: <agent-name> KEY1=value1 KEY2="value2" ...`
-     - Create `<agent-name>` TODO (in_progress) with description containing parameters
-     - Dispatch named agent (background) with parsed parameters as template variables
-     - Example: `Dispatch: morning`
-       → dispatch `morning` agent with no additional parameters
+   - Read planner's NL output, log activity via `heartbeat-state.sh log-activity planner execute`
+   - Parse output line-by-line — planner uses prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:`
+   - If `No notifications.` → mark planner completed, skip delivery
+   - For each notification item: choose matching template from `skills/slack/templates/`, apply delivery rules, deliver via `slack.sh`
+   - For triage items delivered as `immediate`: create `triage:<issue_id>` TODO with returned `ts` for reaction polling
+   - For each `Dispatch: <agent-name>` line: dispatch named agent in background
    - Mark `planner` task as completed
 
 ### Worker completion
@@ -215,31 +185,11 @@ Rules:
 
 ### Dispatched agent completion (e.g. morning, eod)
 
-1. When a planner-dispatched agent completes (TODO task like `morning` with status `in_progress`):
-   - Read agent's NL output
-   - Parse `total_tokens` and `duration_ms` from Agent tool `<usage>` tag
-   - Log: `skills/heartbeat/heartbeat-state.sh log-activity <agent-name> execute --tokens <total_tokens> --duration_ms <duration_ms> --detail "<result summary[:60]>"`
-   - Parse output for: Type (e.g. `morning` or `eod`)
-   - Create `notify:<agent-name>` TODO (in_progress)
-   - Determine template from agent name:
-     - `morning` → `morning`
-     - `eod` → `eod`
-     - all others → `event`
-   - Deliver inline:
-     - `morning` → parse/output variables expected by `morning` template and call `slack.sh send morning`
-     - `eod` → parse/output variables expected by `eod` template and call `slack.sh send eod`
-     - others → parse/output variables expected by `event` template and call `slack.sh send event`
+1. When a planner-dispatched agent completes:
+   - Read agent's NL output, log activity via `heartbeat-state.sh log-activity`
+   - Use agent name as template name (e.g. `morning` → `slack.sh send morning`), fall back to `event` for unknown agents
+   - Parse output for template variables, deliver via `slack.sh`
    - Mark agent task as completed
-
-### Notify result handling
-
-After each delivery decision:
-1. Parse level, template, summary, optional returned `ts`
-2. Log: `- **HH:MM** [notify] <SUMMARY>` (or warning on error)
-3. `batch` → keep notify TODO as `pending` and persist compact template + vars payload
-4. `immediate` or `silent` → mark notify TODO completed
-5. `immediate` + triage-item → create `triage:<issue_id>` TODO with `ts=<returned ts>`
-6. On command failure → log warning and mark notify TODO completed
 
 ### Batch flush
 
@@ -301,15 +251,7 @@ Max 1 worker per iteration.
 
 ---
 
-## Step 5: Log
-
-State update (iteration_count, last_quick) is done in heartbeat.sh (Step 1).
-
-If nothing to report -- no output.
-
----
-
-## Step 6: Adaptive Interval
+## Step 5: Adaptive Interval
 
 `heartbeat.sh` returns `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `TURBO_ACTIVE`, `TURBO_UNTIL`, `SLEEP_ACTIVE` and `SLEEP_UNTIL`.
 
@@ -365,4 +307,3 @@ After `turbo_until` expires, heartbeat.sh clears key and returns normal adaptive
 - **Dependency rule:** Do not dispatch chat-agent if one is already `in_progress`. Do not dispatch worker if one is already `in_progress`. Planner can run alongside chat-agent but not alongside another planner.
 - **No business agent calls slack.sh directly.** Heartbeat owns Slack delivery via `slack.sh`.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
-- **batched_events deprecated.** Batch notifications use notify TODOs with pending status, not heartbeat-state.json array.
