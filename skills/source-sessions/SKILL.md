@@ -5,7 +5,9 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `.claude/kvido.local.md` pro idle threshold.
+> **Configuration:** Read `.claude/kvido.local.md` for idle threshold.
+
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
 
 # Source: Sessions
 
@@ -15,9 +17,9 @@ user-invocable: false
 ```bash
 skills/source-sessions/fetch.sh [YYYY-MM-DD]
 ```
-Default: včera. Parsuje JSONL session soubory v `~/.claude/projects/`.
+Default: yesterday. Parses JSONL session files in `~/.claude/projects/`.
 
-Output per projekt:
+Output per project:
 ```
 === group/project (2 sessions, ~1h 30m) ===
   Tickets: PROJ-123, PROJ-456
@@ -27,20 +29,20 @@ Output per projekt:
 ```bash
 skills/source-sessions/fetch-messages.sh [YYYY-MM-DD]
 ```
-Default: dnes. Extrahuje user messages a assistant retry/error vzory z JSONL sessions.
+Default: today. Extracts user messages and assistant retry/error patterns from JSONL sessions.
 
-Output: plain text se session markery, max ~2000 řádků (nejnovější první).
+Output: plain text with session markers, max ~2000 lines (newest first).
 ```
-=== projekt/repo (session-id) ===
-USER: zpráva od uživatele
-RETRY: assistant opravuje předchozí výstup...
+=== project/repo (session-id) ===
+USER: message from user
+RETRY: assistant correcting previous output...
 ```
 
-Určeno pro self-improver agenta — předfiltrovaný vstup pro detekci vzorů.
+Intended for the self-improver agent — pre-filtered input for pattern detection.
 
 ## Schedule
-- morning: fetch (včera)
+- morning: fetch (yesterday)
 - heartbeat-quick: skip
 - heartbeat-full: skip
-- heartbeat-maintenance: fetch-messages (dnes) — pro self-improver agent
-- eod: fetch (dnes)
+- heartbeat-maintenance: fetch-messages (today) — for self-improver agent
+- eod: fetch (today)

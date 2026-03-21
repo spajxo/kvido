@@ -5,7 +5,9 @@ allowed-tools: Read, Bash, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `.claude/kvido.local.md`. Credentials (`ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`) čti z `.env`.
+> **Configuration:** Read `.claude/kvido.local.md`. Credentials (`ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`) from `.env`.
+
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
 
 # Source: Jira
 
@@ -15,17 +17,17 @@ user-invocable: false
 ```bash
 skills/source-jira/fetch.sh [--since YYYY-MM-DD] [--project KEY]
 ```
-Výstup: plain text, jeden blok per projekt.
+Output: plain text, one block per project.
 
 ### watch
-Spusť fetch s `--since YYYY-MM-DD` (dnešní datum).
-Nové/změněné tickety oproti předchozímu planner-state = events.
+Run fetch with `--since YYYY-MM-DD` (today's date).
+New/changed tickets compared to previous planner-state = events.
 
 ### triage-detect
-Po fetch zkontroluj:
-- Nový ticket assignee=me → dedup check:
+After fetch check:
+- New ticket assignee=me → dedup check:
   ```bash
-  # Projdi existující úkoly se source jira
+  # Iterate existing tasks with source jira
   for d in state/tasks/*/; do
     for f in "$d"*.md; do
       [[ -f "$f" ]] || continue
@@ -37,7 +39,7 @@ Po fetch zkontroluj:
     done
   done
   ```
-  Pokud odpovídající úkol neexistuje → vytvoř triage úkol:
+  If no matching task exists → create triage task:
   ```bash
   skills/worker/task.sh create \
     --title "[KEY] summary" \
@@ -51,11 +53,11 @@ Po fetch zkontroluj:
 ```bash
 acli jira info 2>/dev/null && echo "OK" || echo "FAIL: acli"
 ```
-Fallback: Atlassian MCP searchJiraIssuesUsingJql s testovým JQL `project = PROJ ORDER BY updated DESC` (limit 1 přes maxResults parametr MCP, ne v JQL).
+Fallback: Atlassian MCP searchJiraIssuesUsingJql with test JQL `project = PROJ ORDER BY updated DESC` (limit 1 via maxResults MCP parameter, not in JQL).
 
 ## Schedule
 - morning: fetch
 - heartbeat-quick: skip
 - heartbeat-full: watch (--since today)
 - heartbeat-maintenance: health
-- eod: skip (worklog check zůstává přímo v EOD)
+- eod: skip (worklog check stays directly in EOD)

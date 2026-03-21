@@ -5,11 +5,13 @@ allowed-tools: Read, Bash, mcp__claude_ai_Slack__slack_search_public_and_private
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `.claude/kvido.local.md` pro channel list. DM credentials čti z `.env`.
+> **Configuration:** Read `.claude/kvido.local.md` for channel list. DM credentials from `.env`.
+
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
 
 # Source: Slack
 
-Čtení přes `slack.sh read` (Slack Web API). Search přes Slack MCP (vyžaduje user context).
+Reading via `slack.sh read` (Slack Web API). Search via Slack MCP (requires user context).
 
 ## Capabilities
 
@@ -19,74 +21,74 @@ user-invocable: false
 skills/slack/slack.sh read --limit 5
 ```
 
-Výstup: JSON array. Filtruj přes `jq`:
-- `.[] | select(.user == "$SLACK_USER_ID")` — zprávy od uživatele
-- `.[] | select(.ts > "$last_dm_ts")` — novější než poslední scan
+Output: JSON array. Filter via `jq`:
+- `.[] | select(.user == "$SLACK_USER_ID")` — messages from the user
+- `.[] | select(.ts > "$last_dm_ts")` — newer than last scan
 
-Navíc přečti `dm_channels` z `.claude/kvido.local.md`. Pro každý kde je `channel_id` definováno (přeskoč záznamy bez `channel_id`):
+Also read `dm_channels` from `.claude/kvido.local.md`. For each entry where `channel_id` is defined (skip entries without `channel_id`):
 ```bash
 skills/slack/slack.sh read "<channel_id>" --limit 5 --oldest "$last_dm_ts"
 ```
 
-Pro nové zprávy od ostatních uživatelů (ne od `SLACK_USER_ID`) vyhodnoť úroveň notifikace:
+For new messages from other users (not from `SLACK_USER_ID`) determine notification level:
 
-| Úroveň | Kdy | Akce |
-|---------|-----|------|
-| `silent` | FYI, informační zprávy | Log: `- **HH:MM** [dm/<jméno>] <zkrácený text>` do `state/today.md` |
-| `batch` | Méně urgentní, může počkat | Vrať v NL výstupu s `Event (batch):` prefixem — heartbeat doručí při dalším full heartbeatu |
-| `immediate` | Vyžaduje reakci — otázka, request, blokuje někoho | `slack.sh send event --var emoji="💬" --var title="DM od <jméno>" --var description="<text max 100 zn>" --var source="Slack DM" --var reference="otevři DM" --var timestamp="<HH:MM>"` |
+| Level | When | Action |
+|-------|------|--------|
+| `silent` | FYI, informational messages | Log: `- **HH:MM** [dm/<name>] <truncated text>` to `state/today.md` |
+| `batch` | Less urgent, can wait | Return in NL output with `Event (batch):` prefix — heartbeat delivers at next full heartbeat |
+| `immediate` | Requires response — question, request, blocking someone | `slack.sh send event --var emoji="💬" --var title="DM from <name>" --var description="<text max 100 chars>" --var source="Slack DM" --var reference="open DM" --var timestamp="<HH:MM>"` |
 
-Rozhodni podle kontextu — kdo píše, co potřebuje, jak urgentní to je.
+Decide based on context — who's writing, what they need, how urgent it is.
 
-Vždy aktualizuj timestamp po zpracování:
+Always update timestamp after processing:
 ```bash
-skills/heartbeat/heartbeat-state.sh set last_dm_ts "<nejnovější ts>"
+skills/heartbeat/heartbeat-state.sh set last_dm_ts "<newest ts>"
 ```
 
 ### watch-channels
 
-Přečti `.claude/kvido.local.md`. Pro kanály s `priority: high` a `priority: normal` kde je `channel_id`:
+Read `.claude/kvido.local.md`. For channels with `priority: high` and `priority: normal` where `channel_id` is set:
 
-**Výběr transportu:**
-- Kanál bez `use_mcp` (nebo `use_mcp: false`) → použij `slack.sh read` (Bot token, standardní):
+**Transport selection:**
+- Channel without `use_mcp` (or `use_mcp: false`) → use `slack.sh read` (Bot token, standard):
   ```bash
   skills/slack/slack.sh read "<channel_id>" --limit 5
   ```
-- Kanál s `use_mcp: true` → použij Slack MCP `slack_read_channel` (čte jako uživatel — pro kanály kde bot nemá přístup nebo je vyžadován user context):
+- Channel with `use_mcp: true` → use Slack MCP `slack_read_channel` (reads as user — for channels where bot has no access or user context is required):
   ```
   mcp__claude_ai_Slack__slack_read_channel(channel_id="<channel_id>", limit=5)
   ```
 
-Pro kanály bez `channel_id` → přeskoč (nebo doplň ID do `.claude/kvido.local.md`).
+For channels without `channel_id` → skip (or add ID to `.claude/kvido.local.md`).
 
-Pro kanály s `watch_for: marvin_qa`: analyzuj zprávy z pohledu kvality AI bota Marvin.
-Signály k reportování (desktop level):
-- Uživatel si stěžuje na odpověď bota
-- Bot neodpověděl nebo odpověděl prázdně
-- Uživatel opakuje dotaz
-Report format: `[ds-parking/marvin] <popis problému nebo příležitosti>`
+For channels with `watch_for: marvin_qa`: analyze messages from the perspective of Marvin AI bot quality.
+Signals to report (desktop level):
+- User complains about bot response
+- Bot did not respond or responded with empty output
+- User repeats the same question
+Report format: `[ds-parking/marvin] <description of issue or opportunity>`
 
-Po analýze zapiš nálezy do `state/today.md` jako samostatnou sekci `## Marvin QA`.
-Pokud sekce v today.md ještě neexistuje, přidej ji na konec souboru.
-Pokud existuje, appenduj nové nálezy pod existující obsah sekce.
-Formát každého nálezu: `- **HH:MM** <popis problému nebo příležitosti>`
-Pokud nebyly nalezeny žádné nové nálezy, do today.md nepište nic (tichý výstup).
+After analysis, write findings to `state/today.md` as a separate section `## Marvin QA`.
+If the section does not yet exist in today.md, append it at the end of the file.
+If it exists, append new findings below the existing section content.
+Format for each finding: `- **HH:MM** <description of issue or opportunity>`
+If no new findings were found, write nothing to today.md (silent output).
 
 ### triage-detect
 
-Slack zprávy s akčním obsahem: "mohl bys", "potřebujeme", "review", "podívej se", "deadline", "prosím"
-→ triage item: `- [ ] popis (od @author v #channel) #source:slack #added:YYYY-MM-DD`
+Slack messages with actionable content: "could you", "we need", "review", "take a look", "deadline", "please"
+→ triage item: `- [ ] description (from @author in #channel) #source:slack #added:YYYY-MM-DD`
 
 ### health
 
 ```bash
 skills/slack/slack.sh read --limit 1
 ```
-OK pokud vrátí neprázdný výsledek.
+OK if returns non-empty result.
 
 ## Schedule
 
-- morning: watch-channels (mentions od včerejška)
+- morning: watch-channels (mentions since yesterday)
 - heartbeat-quick: watch-dm
 - heartbeat-full: watch-dm + watch-channels (high+normal)
 - heartbeat-maintenance: health

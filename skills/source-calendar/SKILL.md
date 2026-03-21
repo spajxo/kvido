@@ -5,23 +5,25 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `.claude/kvido.local.md` pro event kategorizaci.
+> **Configuration:** Read `.claude/kvido.local.md` for event categorization.
+
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
 
 # Source: Calendar
 
 ## Capabilities
 
 ### fetch
-Spusť `fetch.sh [YYYY-MM-DD]` pro daný den.
-Vrátí pre-kategorizovaná data dle kvido.local.md `categories` + celkový meeting čas a free deep-work čas.
+Run `fetch.sh [YYYY-MM-DD]` for the given day.
+Returns pre-categorized data per kvido.local.md `categories` + total meeting time and free deep-work time.
 
 ### watch
-Pokud `state/today.md` obsahuje Today's Schedule, použij existující data.
-Jinak spusť `fetch.sh` a filtruj meetingy začínající v příštích 60 min → reminder event.
+If `state/today.md` contains Today's Schedule, use existing data.
+Otherwise run `fetch.sh` and filter meetings starting in the next 60 min → reminder event.
 
 ## Schedule
-- morning: fetch (dnešek)
+- morning: fetch (today)
 - heartbeat-quick: skip
-- heartbeat-full: watch (meetingy v příštích 60 min)
+- heartbeat-full: watch (meetings in next 60 min)
 - heartbeat-maintenance: skip
-- eod: skip (data už v today.md)
+- eod: skip (data already in today.md)

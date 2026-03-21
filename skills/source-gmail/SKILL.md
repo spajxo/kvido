@@ -5,30 +5,32 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `.claude/kvido.local.md` pro filtry a priority senders.
+> **Configuration:** Read `.claude/kvido.local.md` for filters and priority senders.
+
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
 
 # Source: Gmail
 
 ## Capabilities
 
 ### fetch
-Spusť `fetch.sh`. Vrátí formátovaný souhrn nepřečtených emailů filtrovaných dle kvido.local.md.
-Výstup: lidsky čitelný souhrn — od, předmět, datum, snippet. Max `max_results` položek.
+Run `fetch.sh`. Returns formatted summary of unread emails filtered per kvido.local.md.
+Output: human-readable summary — from, subject, date, snippet. Max `max_results` items.
 
 ### watch
-Quick check počtu nepřečtených od priority senderů od posledního checku.
-Pokud nový důležitý email (od priority_senders) → emit event pro heartbeat.
-Event key pattern: `email:<message_id>` — pro dedup v heartbeat-state.json.
+Quick check of unread count from priority senders since last check.
+If new important email (from priority_senders) → emit event for heartbeat.
+Event key pattern: `email:<message_id>` — for dedup in heartbeat-state.json.
 
 ### health
 ```bash
 gws gmail users getProfile me
 ```
-Výsledek do `state/source-health.json` pod klíč `gmail`.
+Result to `state/source-health.json` under key `gmail`.
 
 ## Schedule
-- morning: `fetch` (nepřečtený inbox)
+- morning: `fetch` (unread inbox)
 - heartbeat-quick: skip
-- heartbeat-full: `watch` (nové od posledního checku)
+- heartbeat-full: `watch` (new since last check)
 - heartbeat-maintenance: skip
 - eod: skip
