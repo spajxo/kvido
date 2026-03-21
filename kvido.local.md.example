@@ -2,7 +2,7 @@
 # =============================================================================
 # kvido.local.md — Kvido assistant configuration
 # =============================================================================
-# Copy to .claude/kvido.local.md in your project and fill in your data.
+# Copy to .claude/kvido.local.md in your workspace and fill in your data.
 # Usage: skills/config.sh 'key' [default]
 # Usage: skills/config.sh --keys 'prefix'
 # Example: skills/config.sh 'sources.gmail.max_results'
@@ -12,16 +12,35 @@
 # =============================================================================
 
 # =============================================================================
-# SOURCES — data sources
+# QUICK START — minimum required configuration
+# =============================================================================
+# 1. Set sources.slack.self_dm_channel.channel_id to your Slack DM channel ID.
+#    Find it: open Slack → right-click your own name → "Copy link" → last segment.
+# 2. Set SLACK_BOT_TOKEN, SLACK_DM_CHANNEL_ID, SLACK_USER_ID in .env.
+# 3. Everything else is optional — add sources as needed.
+# =============================================================================
+
+# =============================================================================
+# SOURCES — data sources to monitor
 # =============================================================================
 
 # Jira ---
+# Which CLI tool to use for Jira queries.
+# acli (Atlassian CLI) is preferred; atlassian-mcp is used as fallback.
 sources.jira.tool.primary: acli
 sources.jira.tool.fallback: atlassian-mcp
+# Add one block per Jira project you want to monitor.
+# filter: JQL query to scope the issues (e.g. assigned to you, not done)
+# label:  human-readable project name used in notifications
 # sources.jira.projects.PROJ.filter: "assignee = currentUser() AND status != Done ORDER BY updated DESC"
 # sources.jira.projects.PROJ.label: My Project
 
 # GitLab ---
+# Add one block per repository to monitor.
+# path:     absolute path to local clone
+# branches: comma-separated list of branches to watch
+# priority: high | normal | low  (affects planner notification urgency)
+# type:     omit for normal repos; set to "knowledge-base" to skip commit/MR tracking
 # sources.gitlab.repos.group-project.path: ~/Projects/path/to/repo
 # sources.gitlab.repos.group-project.branches: main
 # sources.gitlab.repos.group-project.priority: high
@@ -30,6 +49,9 @@ sources.jira.tool.fallback: atlassian-mcp
 # sources.gitlab.repos.group-kb.type: knowledge-base
 
 # Slack ---
+# self_dm_channel: the DM channel where kvido sends all notifications to you.
+# dm_channels:     individual DM channels to monitor for incoming messages.
+# channels:        public/private channels to watch for mentions or keywords.
 sources.slack.self_dm_channel.name: assistant
 sources.slack.self_dm_channel.channel_id: ""
 # sources.slack.dm_channels.person-name.user_id: UXXXXXXXXXX
@@ -39,6 +61,8 @@ sources.slack.self_dm_channel.channel_id: ""
 # sources.slack.channels.channel-name.priority: high
 
 # Calendar ---
+# Map calendar event title keywords to category labels.
+# The planner uses these categories in the daily briefing.
 sources.calendar.categories.standup: standup,daily
 sources.calendar.categories.planning: planning,refinement,grooming
 sources.calendar.categories.one_on_one: "1:1,1on1"
@@ -46,12 +70,18 @@ sources.calendar.categories.focus: "focus,deep work"
 sources.calendar.default_category: meeting
 
 # Gmail ---
+# watch_query:      Gmail search query to filter relevant unread messages.
+# max_results:      maximum number of messages to fetch per check.
+# priority_senders: glob patterns for senders that trigger urgent notifications.
+# labels_ignore:    Gmail label names to exclude from results.
 sources.gmail.watch_query: "is:unread -category:promotions -category:social"
 sources.gmail.max_results: 20
 # sources.gmail.priority_senders: "*@example.com"
 # sources.gmail.labels_ignore: CATEGORY_PROMOTIONS,CATEGORY_SOCIAL
 
 # Sessions ---
+# idle_threshold_min: minutes of inactivity before a work session is considered ended.
+# default_date:       which day to parse when no date is specified ("yesterday" or "today").
 sources.sessions.idle_threshold_min: 10
 sources.sessions.default_date: yesterday
 
@@ -60,6 +90,9 @@ sources.sessions.default_date: yesterday
 # =============================================================================
 
 # Heartbeat ---
+# Cron expressions for each named interval preset.
+# Working-hours adaptive interval: starts at wh_after_interaction after activity,
+# then decays toward longer intervals based on minutes since last interaction.
 skills.heartbeat.presets.5m: "*/5 * * * *"
 skills.heartbeat.presets.10m: "*/10 * * * *"
 skills.heartbeat.presets.30m: "*/30 * * * *"
@@ -75,9 +108,18 @@ skills.heartbeat.decay.240.preset: 30m
 skills.heartbeat.decay.null.preset: 60m
 
 # Planner ---
+# How many heartbeat ticks between full planner runs (gather + change detection).
 skills.planner.planning_interval: 10
 
 # Worker ---
+# Async task execution settings.
+# work_dir:               directory (relative to workspace root) used for task state files.
+# max_concurrent:         maximum number of tasks running in parallel.
+# task_timeout_minutes:   abort task if it exceeds this duration.
+# stale_lock_minutes:     release a stuck lock after this many minutes.
+# overflow_threshold:     alert when the queue exceeds this many pending tasks.
+# models.*:               Claude model to use per task size label (s/m/l/xl).
+# urgent_model:           model used for tasks labeled priority:urgent.
 skills.worker.work_dir: state/work
 skills.worker.max_concurrent: 2
 skills.worker.task_timeout_minutes: 8
@@ -90,24 +132,40 @@ skills.worker.models.xl: claude-opus-4-6
 skills.worker.urgent_model: claude-opus-4-6
 
 # Slack behavior ---
+# batching.enabled:  collect notifications during a heartbeat tick and send as one message.
+# batching.window:   "full_heartbeat" batches until the end of the current tick.
 skills.slack.batching.enabled: true
 skills.slack.batching.window: full_heartbeat
 
 # Triage ---
+# wip_limit:                  maximum number of in-progress tasks before blocking new pickups.
+# triage_overflow_threshold:  alert when this many items are waiting in triage.
+# done_rotation:              day of week to archive completed tasks ("friday" or "daily").
 skills.triage.wip_limit: 3
 skills.triage.triage_overflow_threshold: 10
 skills.triage.done_rotation: friday
 
 # Dashboard ---
+# enabled:      generate state/dashboard.html on every heartbeat tick.
+# auto_refresh: browser auto-refresh interval in seconds (0 = disabled).
 skills.dashboard.enabled: true
 skills.dashboard.auto_refresh: 20
 
 # Daily Questions ---
+# Reflective questions shown at EOD to detect recurring patterns.
+# enabled:       turn this feature on or off.
+# max_questions: how many questions to ask per EOD session.
+# frequency:     "weekdays", "daily", or "never".
 skills.daily_questions.enabled: true
 skills.daily_questions.max_questions: 2
 skills.daily_questions.frequency: weekdays
 
 # Interests ---
+# Topics to monitor for relevant updates (security advisories, releases, etc.).
+# query:          search query used by the interests skill.
+# urgency:        high | medium | low — notification priority when new results appear.
+# check_interval: how often to check — "daily" or "weekly".
+# reason:         why this topic matters to you (used in notification context).
 # skills.interests.topics.example-topic.name: "Example topic"
 # skills.interests.topics.example-topic.query: "example search query"
 # skills.interests.topics.example-topic.urgency: medium
@@ -117,4 +175,4 @@ skills.daily_questions.frequency: weekdays
 
 # Custom instructions
 
-<!-- Optional markdown body for per-project notes or overrides. -->
+<!-- Optional markdown body for per-project notes or assistant overrides. -->
