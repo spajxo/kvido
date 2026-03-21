@@ -78,6 +78,22 @@ memory/
 
 If the project does not have a `CLAUDE.md`, copy `CLAUDE.md.template` from the plugin as a starting point.
 
+### f) Shell alias
+
+Offer the user a shell alias for quick launching:
+
+1. Derive alias name from `memory/persona.md` assistant name (lowercase, strip diacritics via `iconv -f utf-8 -t ascii//TRANSLIT`). Fallback: `kvido`.
+2. Ask: "Do you want to create a shell alias `<name>` for quick launching?"
+3. If yes:
+   - Detect shell rc file: if `$SHELL` contains `zsh` → `~/.zshrc`, else `~/.bashrc`
+   - Resolve plugin path: the `assistant.sh` script is located in the plugin root (parent of this `commands/` directory). Use the absolute path.
+   - Append to rc file (only if alias not already present):
+     ```bash
+     alias <name>='<absolute_path_to_plugin>/assistant.sh'
+     ```
+   - Inform user: "Alias created. Run `source ~/.zshrc` (or `~/.bashrc`) or restart your shell to activate it."
+4. If no: skip silently.
+
 
 ## Step 2: Structure Bootstrap
 
