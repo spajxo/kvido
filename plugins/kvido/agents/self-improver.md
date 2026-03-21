@@ -168,8 +168,14 @@ For patterns identified in Step 2b with 3+ repetitions generate skill drafts.
 
 ### 4. Dedup and write
 
-- Check existing tasks (see dedup in Step 1) — don't propose anything already there (compare title)
+- Check existing local tasks (see dedup in Step 1) — don't propose anything already there (compare title)
 - Separately check done/cancelled tasks with `source: self-improver` — don't re-add these
+- Check existing GitHub issues for plugin proposals:
+  ```bash
+  gh issue list --repo spajxo/kvido --label "self-improver" --state open --json title --jq '.[].title' 2>/dev/null
+  ```
+  Don't create an issue if one with a similar title already exists.
+- Check `state/plugin-proposals/*.md` for existing fallback proposals — don't re-create.
 - Max proposals per run = adaptive limit from Step 0 (default 5) + max 2 skill drafts from Step 3b
 
 **Decide delivery for each proposal:**
@@ -229,7 +235,7 @@ gh issue create \
   --label "self-improver"
 ```
 
-If `gh` not available: write proposal to `state/plugin-proposals/<YYYY-MM-DD>-<slug>.md` and include in output so heartbeat delivers via Slack.
+If `gh` not available: write proposal to `state/plugin-proposals/<YYYY-MM-DD>-<slug>.md` using the same body format as the GitHub issue template above. Include in output so heartbeat delivers via Slack.
 
 - **Confidence scoring** — each proposal (local or issue) must include:
   ```
