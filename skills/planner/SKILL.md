@@ -5,7 +5,9 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, mcp__claude_ai_Atlassian__se
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `.claude/kvido.local.md`.
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
+> **Configuration:** Read `.claude/kvido.local.md`.
 
 # Planner
 
@@ -13,25 +15,25 @@ user-invocable: false
 
 ## Step 1: Load Context
 
-1. Přečti `state/planner-state.md` — co jsem naposledy dělal, nalezené eventy, timestamps per source
-2. Přečti `state/current.md` — WIP, focus, blockers
-3. Přečti `memory/planner.md` — osobní instrukce od uživatele (pokud existuje, není povinný)
-4. Přečti `memory/memory.md` — dlouhodobý kontext (projekty, lidé, rozhodnutí)
-5. Zjisti aktuální čas (`date -Iseconds`) a den v týdnu
+1. Read `state/planner-state.md` — what was done last run, found events, timestamps per source
+2. Read `state/current.md` — WIP, focus, blockers
+3. Read `memory/planner.md` — personal instructions from the user (optional, not required)
+4. Read `memory/memory.md` — long-term context (projects, people, decisions)
+5. Get current time (`date -Iseconds`) and day of week
 
 ---
 
-## Step 2: Scheduled Tasks (osobní instrukce)
+## Step 2: Scheduled Tasks (personal instructions)
 
-Projdi `memory/planner.md`. Hledej časové triggery:
-- Formát: `- HH:MM: <instrukce>` nebo `- <den>: <instrukce>`
-- Pokud je čas na akci a nebyla provedena dnes (check planner-state.md) → proveď nebo vytvoř worker task přes:
+Go through `memory/planner.md`. Look for time triggers:
+- Format: `- HH:MM: <instruction>` or `- <day>: <instruction>`
+- If it's time to act and it hasn't been done today (check planner-state.md) → execute or create a worker task via:
   ```bash
-  skills/worker/task.sh create --instruction "<instrukce>" --size s --priority high --source planner
+  skills/worker/task.sh create --instruction "<instruction>" --size s --priority high --source planner
   ```
-- Zapiš do planner-state.md že akce provedena
+- Write to planner-state.md that the action was performed
 
-Pokud `memory/planner.md` neexistuje → přeskoč tiše.
+If `memory/planner.md` does not exist → skip silently.
 
 ---
 
@@ -39,23 +41,23 @@ Pokud `memory/planner.md` neexistuje → přeskoč tiše.
 
 | Source | Command | When |
 |--------|---------|------|
-| GitLab activity | `skills/source-gitlab/fetch-activity.sh <today>` | vždy |
-| GitLab MRs | `skills/source-gitlab/fetch-mrs.sh` | vždy |
-| Jira | `skills/source-jira/fetch.sh` | vždy |
-| Slack channels | viz `skills/source-slack/SKILL.md` watch-channels | vždy |
-| Calendar | `skills/source-calendar/fetch.sh` | vždy |
-| Gmail | `skills/source-gmail/fetch.sh` | vždy |
-| Interests | viz `skills/interests/SKILL.md` | pokud `last_interests_check` > `check_interval_hours` |
-| Sessions | `skills/source-sessions/fetch.sh <today>` | jen při `eod_pending: true` |
+| GitLab activity | `skills/source-gitlab/fetch-activity.sh <today>` | always |
+| GitLab MRs | `skills/source-gitlab/fetch-mrs.sh` | always |
+| Jira | `skills/source-jira/fetch.sh` | always |
+| Slack channels | see `skills/source-slack/SKILL.md` watch-channels | always |
+| Calendar | `skills/source-calendar/fetch.sh` | always |
+| Gmail | `skills/source-gmail/fetch.sh` | always |
+| Interests | see `skills/interests/SKILL.md` | if `last_interests_check` > `check_interval_hours` |
+| Sessions | `skills/source-sessions/fetch.sh <today>` | only when `eod_pending: true` |
 
 ---
 
-## Step 4: Change Detection & Notifikace
+## Step 4: Change Detection & Notifications
 
-Porovnej nasbíraná data s předchozím stavem v `planner-state.md` (sekce "## Reported Events").
+Compare collected data against previous state in `planner-state.md` (section "## Reported Events").
 
 ### Event keys
-Generuj klíče pro dedup:
+Generate keys for dedup:
 - Git: `git:<repo>:<branch>:<hash>`
 - MR CI: `mr:<repo>!<iid>:ci_<status>`
 - MR review: `mr:<repo>!<iid>:review_<state>`
@@ -64,44 +66,44 @@ Generuj klíče pro dedup:
 - Jira comment: `jira:<key>:comment_<count>`
 - Slack: `slack:<channel>:<thread_ts>`
 
-Existuje v Reported Events → skip (dedup).
-Nový → notifikuj a přidej do Reported Events.
+Already in Reported Events → skip (dedup).
+New → notify and add to Reported Events.
 
 ### Notification levels
 
-Pro každý detekovaný event rozhodni o úrovni notifikace na základě kontextu — kdo je zdroj, co se stalo, jak urgentní to je, jestli to uživatele blokuje nebo vyžaduje jeho akci.
+For each detected event, decide the notification level based on context — who is the source, what happened, how urgent it is, whether it blocks the user or requires their action.
 
-| Úroveň | Chování |
-|---------|---------|
-| `silent` | Jen log do `state/today.md`, nezahrnuj do výstupu |
-| `batch` | Zahrň do výstupu: `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal.` |
-| `immediate` | Zahrň do výstupu: `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: high.` |
+| Level | Behavior |
+|-------|---------|
+| `silent` | Log to `state/today.md` only, do not include in output |
+| `batch` | Include in output: `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal.` |
+| `immediate` | Include in output: `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: high.` |
 
-Rozhoduj podle: aktuální focus (state/current.md), čas, odesílatel, typ eventu, zda vyžaduje akci. Zpětnou vazbu na rozhodnutí ukládej do `memory/learnings.md`.
+Decide based on: current focus (state/current.md), time, sender, event type, whether action is required. Store feedback on decisions in `memory/learnings.md`.
 
 ### Focus mode
-Přečti `.claude/kvido.local.md` focus_mode.
-Zkontroluj calendar data — běží focus event? → suppress immediate na batch.
+Read `.claude/kvido.local.md` focus_mode.
+Check calendar data — is a focus event running? → suppress immediate to batch.
 
-### Proaktivní upozornění
-Sleduj stale MR reviews, WIP tickety bez aktivity, status změny. Rozhodni o úrovni dle kontextu.
+### Proactive alerts
+Watch for stale MR reviews, WIP tickets with no activity, status changes. Decide level based on context.
 
-Všechny notifikace loguj — planner-state.md "## Reported Events" + `state/today.md`.
+Log all notifications — planner-state.md "## Reported Events" + `state/today.md`.
 
 ---
 
 ## Step 5: Morning / EOD Detection
 
 ### Morning
-Přečti `state/heartbeat-state.json` → `last_morning_date`.
-Pokud != dnešní datum, zahrň do výstupu:
+Read `state/heartbeat-state.json` → `last_morning_date`.
+If != today's date, include in output:
 ```
 Dispatch: morning
 ```
-Aktualizuj `last_morning_date` v heartbeat-state.json.
+Update `last_morning_date` in heartbeat-state.json.
 
 ### EOD
-Pokud osobní instrukce v `memory/planner.md` definují EOD čas a ten nastal, zahrň do výstupu:
+If personal instructions in `memory/planner.md` define an EOD time and it has arrived, include in output:
 ```
 Dispatch: eod
 ```
@@ -110,38 +112,38 @@ Dispatch: eod
 
 ## Step 6: Triage & User Context
 
-### 6a: Triage queue (jen agent items ke schválení)
+### 6a: Triage queue (agent items awaiting approval only)
 
-Načti tasky ve stavu triage:
+Load tasks in triage state:
 ```bash
 skills/worker/task.sh list triage
 ```
 
-**Triage items se NESCHVALUJÍ automaticky.** Zůstávají v `triage` dokud uživatel explicitně neschválí.
+**Triage items are NOT auto-approved.** They stay in `triage` until the user explicitly approves.
 
-Pro každý task (max 3 per běh):
-1. Přečti task detail: `skills/worker/task.sh read <slug>` — pochop co se požaduje
-2. Vyhodnoť relevanci a urgentnost
-3. **Jasné zadání** → zařaď do approval batche:
-   - Navrhni: title (max 8 slov), priority, size, assignee=agent, stručný popis
-4. **Nejasné** → zahrň do výstupu: `Question: <slug> '<title>' — <otázka pro uživatele>. Urgency: normal.` Nech task na příště.
+For each task (max 3 per run):
+1. Read task detail: `skills/worker/task.sh read <slug>` — understand what is requested
+2. Evaluate relevance and urgency
+3. **Clear request** → add to approval batch:
+   - Suggest: title (max 8 words), priority, size, assignee=agent, brief description
+4. **Unclear** → include in output: `Question: <slug> '<title>' — <question for user>. Urgency: normal.` Leave task for next run.
 
 ### 6b: User context reminders (memory/state-first)
 
-Přečti `state/current.md`, `state/today.md` a relevantní změny ze zdrojů (Jira, GitLab, Gmail, Calendar, Slack). Hledej:
-- položky v `Work in Progress` nebo `Blockers`, které jsou stale nebo čekají na reakci
-- nové externí změny, které mají změnit dnešní prioritu
-- deadline nebo follow-upy, které patří do `Pinned Today` nebo `Notes for Tomorrow`
+Read `state/current.md`, `state/today.md` and relevant changes from sources (Jira, GitLab, Gmail, Calendar, Slack). Look for:
+- items in `Work in Progress` or `Blockers` that are stale or waiting for a response
+- new external changes that should shift today's priority
+- deadlines or follow-ups that belong in `Pinned Today` or `Notes for Tomorrow`
 
-Výstupem nejsou nové GitLab issues. Výstupem jsou jen připomínky a návrhy do current contextu:
-- `Reminder:` pro stale nebo čekající uživatelské follow-upy
-- `Event:` pokud zdrojová změna má změnit fokus dne
-- při silném signálu navrhni explicitně, co připnout do `state/current.md`
+Output is not new GitLab issues. Output is only reminders and suggestions for current context:
+- `Reminder:` for stale or pending user follow-ups
+- `Event:` if a source change should shift the day's focus
+- with a strong signal, explicitly suggest what to pin in `state/current.md`
 
 Legacy compatibility:
-- Pokud najdeš staré tasky přiřazené uživateli, nikdy z nich nevytvářej nový workflow
-- Můžeš je jen jednou denně připomenout v textu výstupu, pokud jsou stále relevantní
-- Evidenci připomenutí drž v `state/planner-state.md`:
+- If you find old tasks assigned to the user, never create a new workflow from them
+- You may remind about them at most once per day in the text output, if still relevant
+- Track reminder history in `state/planner-state.md`:
 ```markdown
 ## User Task Reminders
 - <slug>: last_reminded=<YYYY-MM-DD>
@@ -149,50 +151,50 @@ Legacy compatibility:
 
 ### Individual triage messages
 
-Pro každý triage item zahrň do výstupu:
+For each triage item include in output:
 ```
-Triage: <slug> '<title>' — <popis>. Priority: <priority>. Size: <size>. Assignee: <assignee>.
+Triage: <slug> '<title>' — <description>. Priority: <priority>. Size: <size>. Assignee: <assignee>.
 ```
 
-Stále zapiš note na task s poznámkou že triage item byl odeslán — ale BEZ Slack ts (ten doplní heartbeat po doručení):
+Also write a note on the task indicating the triage item was sent — but WITHOUT a Slack ts (heartbeat will fill that in after delivery):
 ```bash
-skills/worker/task.sh note <slug> "Triage: odesláno ke schválení. Čeká na rozhodnutí uživatele."
+skills/worker/task.sh note <slug> "Triage: sent for approval. Awaiting user decision."
 ```
 
-**Pozor:** Planner běží jako subagent a NEMÁ přístup k TodoWrite. Heartbeat (hlavní session) si po doručení přes `slack.sh` sám vytvoří `triage:<slug>` todo tasky pro polling. Planner jen zapisuje notes na tasky a vrací NL výstup.
+**Note:** Planner runs as a subagent and does NOT have access to TodoWrite. Heartbeat (main session) will create `triage:<slug>` todo tasks for polling after delivery via `slack.sh`. Planner only writes notes on tasks and returns NL output.
 
-Stale user task připomínky zahrň do výstupu:
+Include stale user task reminders in output:
 ```
-Reminder: Čeká na tebe: <projekt/zdroj> — <stručný follow-up nebo blocker>.
+Reminder: Waiting on you: <project/source> — <brief follow-up or blocker>.
 ```
 
-Max 3 triage items per běh.
+Max 3 triage items per run.
 
 ---
 
 ## Step 7: Maintenance Planning
 
-Vyhodnoť potřebu a vytvoř worker tasky. Všechny maintenance tasky: `--source planner --goal maintenance`.
+Evaluate need and create worker tasks. All maintenance tasks: `--source planner --goal maintenance`.
 
-### Recurring tasks (max 1 denně each, check `last_*_date` v planner-state.md)
+### Recurring tasks (max 1 per day each, check `last_*_date` in planner-state.md)
 
 | Task | Trigger | Instruction | Size/Priority |
 |------|---------|-------------|---------------|
-| Librarian | `memory/memory.md` > 100 řádků nebo learnings Recurrence >= 3 | `Consolidation mode. Přečti a postupuj dle agents/librarian.md` | m/medium |
-| Enricher | Nejstarší projekt v `memory/projects/` > 7 dní | `Enrichment: <projekt>. Přečti a postupuj dle agents/project-enricher.md` | s/low |
-| Self-improver | Dnes ještě neproběhla | `Analýza dnešních sessions. Přečti a postupuj dle agents/self-improver.md` | m/low |
+| Librarian | `memory/memory.md` > 100 lines or learnings Recurrence >= 3 | `Consolidation mode. Read and follow agents/librarian.md` | m/medium |
+| Enricher | Oldest project in `memory/projects/` > 7 days | `Enrichment: <project>. Read and follow agents/project-enricher.md` | s/low |
+| Self-improver | Not yet run today | `Analyze today's sessions. Read and follow agents/self-improver.md` | m/low |
 
 ### Checks (output as `Event:`)
 
 | Check | Condition | Output |
 |-------|-----------|--------|
 | Stale workers | `find state/tasks/in-progress/ -name "*.md" -mmin +10` | `Event: 📊 Stale worker — <slug> in-progress > 10min. Urgency: normal.` |
-| Triage overflow | `task.sh count triage` >= 10 | `Event: 📋 Triage overflow — <N> položek. Spusť /triage. Urgency: normal.` |
-| Backlog stale | `todo/` low priority > 30 dní | Suggestion do `state/today.md` |
+| Triage overflow | `task.sh count triage` >= 10 | `Event: 📋 Triage overflow — <N> items. Run /triage. Urgency: normal.` |
+| Backlog stale | `todo/` low priority > 30 days | Suggestion into `state/today.md` |
 
-### Periodic (check timestamps v planner-state.md)
+### Periodic (check timestamps in planner-state.md)
 
-- **State hygiene:** `state/current.md` WIP sync s Jira — Done → comment, nový assigned → WIP.
+- **State hygiene:** `state/current.md` WIP sync with Jira — Done → comment, newly assigned → WIP.
 - **Git sync** (> 2h): `/commit` → `git push origin master`.
 - **Archive rotation** (> 7d): journals > 14d, weekly > 8w, decisions > 90d → `memory/archive/`.
 
@@ -200,21 +202,21 @@ Vyhodnoť potřebu a vytvoř worker tasky. Všechny maintenance tasky: `--source
 
 ## Step 8: Save State
 
-Aktualizuj `state/planner-state.md` — sekce: Last Run (timestamp, counters), Timestamps (`last_*_date` per maintenance task), Scheduled Tasks Done Today, User Task Reminders (`<slug>: last_reminded=<date>`), Reported Events (`<event_key> | first_seen | last_reported`). Vyčisti Reported Events starší 48h.
+Update `state/planner-state.md` — sections: Last Run (timestamp, counters), Timestamps (`last_*_date` per maintenance task), Scheduled Tasks Done Today, User Task Reminders (`<slug>: last_reminded=<date>`), Reported Events (`<event_key> | first_seen | last_reported`). Clean up Reported Events older than 48h.
 
 ---
 
 ## Output Format
 
-Vrať natural language souhrn všech notifikací. Formát per položka:
+Return a natural language summary of all notifications. Format per item:
 
 - **Event:** `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: <high|normal|low>.`
 - **Event (batch):** `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal.`
-- **Triage:** `Triage: <slug> '<title>' — <popis>. Priority: <p>. Size: <s>. Assignee: <a>.`
+- **Triage:** `Triage: <slug> '<title>' — <description>. Priority: <p>. Size: <s>. Assignee: <a>.`
 - **Reminder:** `Reminder: <text>. Urgency: normal.`
-- **Dispatch:** `Dispatch: <agent-name> KEY1=value1 KEY2=value2 ...` — heartbeat dispatchne uvedeného agenta s parametry.
+- **Dispatch:** `Dispatch: <agent-name> KEY1=value1 KEY2=value2 ...` — heartbeat will dispatch the named agent with parameters.
 
-Pokud žádné notifikace nejsou potřeba, vrať: `No notifications.`
+If no notifications are needed, return: `No notifications.`
 
 ---
 
@@ -232,11 +234,11 @@ Pokud žádné notifikace nejsou potřeba, vrať: `No notifications.`
 
 ## Critical Rules
 
-- **Buď stručný.** Žádné omáčky, jen data a akce.
-- **State-first.** Čti z souborů, piš do souborů. Nespoléhej na konverzační kontext.
-- **Dedup.** Kontroluj Reported Events před každou notifikací.
-- **Max 3 triage items per běh.** Nezdržuj se.
-- **Čas ze systému.** `date -Iseconds`.
-- **Vždy přidávej URL.** Ke každé MR, Jira issue přidej plný klikatelný URL.
-- **Pokud source selže** → loguj warning, pokračuj s dalším source.
-- **Nesnaž se dělat práci sám** — vytvoř worker task.
+- **Be concise.** No filler, just data and actions.
+- **State-first.** Read from files, write to files. Do not rely on conversational context.
+- **Dedup.** Check Reported Events before every notification.
+- **Max 3 triage items per run.** Don't get bogged down.
+- **Time from system.** `date -Iseconds`.
+- **Always include URLs.** Add a full clickable URL to every MR, Jira issue.
+- **If a source fails** → log warning, continue with next source.
+- **Don't try to do the work yourself** — create a worker task.

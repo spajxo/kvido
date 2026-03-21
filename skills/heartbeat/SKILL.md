@@ -4,6 +4,8 @@ description: Use when the cron heartbeat fires to orchestrate chat, worker, plan
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, TodoWrite, TodoRead
 ---
 
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
 # Heartbeat
 
 Runs automatically via `/loop`. Be extremely brief -- no output if nothing to report.
@@ -50,13 +52,13 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
 
 3. **Classify and handle new message:**
 
-   Read the message and decide: **triviální** (answer inline) or **netriviální** (dispatch subagent).
+   Read the message and decide: **trivial** (answer inline) or **non-trivial** (dispatch subagent).
 
    **THREAD_TS derivation:** If message has field `thread_ts` (is thread reply) -- `THREAD_TS = thread_ts value`. If no `thread_ts` (top-level message) -- `THREAD_TS = ""`. **Never pass `ts` as THREAD_TS.**
 
-   **Triviální** — heartbeat handles inline, no agent dispatch:
-   - Pozdravy, potvrzení, díky ("ahoj", "ok", "díky", "jasné", "super")
-   - Sleep mode ("jdu spát", "dobrou noc", "pauza", "sleep"):
+   **Trivial** — heartbeat handles inline, no agent dispatch:
+   - Greetings, confirmations, thanks ("hi", "ok", "thanks", "got it", "great")
+   - Sleep mode ("going to sleep", "good night", "pause", "sleep"):
      ```bash
      SLEEP_UNTIL=$(date -d "tomorrow 06:00" -Iseconds)  # or parsed time
      skills/heartbeat/heartbeat-state.sh set sleep_until "$SLEEP_UNTIL"
@@ -66,22 +68,22 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
      TURBO_UNTIL=$(date -d "+30 min" -Iseconds)  # or parsed duration
      skills/heartbeat/heartbeat-state.sh set turbo_until "$TURBO_UNTIL"
      ```
-   - Cancel ("zruš <slug>", "cancel <slug>"):
+   - Cancel ("cancel <slug>"):
      ```bash
      skills/worker/task.sh note <slug> "Cancelled via chat"
      skills/worker/task.sh move <slug> cancelled
      ```
    - Simple status questions answerable from loaded state/current.md and state/today.md
 
-   For triviální: compose response, create `notify:chat:<ts>` TODO (in_progress), deliver via `slack.sh send|reply chat --var message="<response>"`, mark notify TODO completed. Log: `- **HH:MM** [chat] <summary>`
+   For trivial: compose response, create `notify:chat:<ts>` TODO (in_progress), deliver via `slack.sh send|reply chat --var message="<response>"`, mark notify TODO completed. Log: `- **HH:MM** [chat] <summary>`
 
-   **Netriviální** — requires MCP lookup, research, task creation, or pipeline response:
+   **Non-trivial** — requires MCP lookup, research, task creation, or pipeline response:
    - If no active `chat:*` task:
      - `TodoWrite` task `chat:<ts>` with status `in_progress`
      - Load last 10 messages; if thread reply, load whole thread
      - Dispatch `chat-agent` (`run_in_background: true`) with template vars: CHAT_HISTORY, NEW_MESSAGE, THREAD_TS, CURRENT_STATE, MEMORY
    - If active `chat:*` task exists:
-     - Send ack: `skills/slack/slack.sh send chat --var message="Moment..."`
+     - Send ack: `skills/slack/slack.sh send chat --var message="One moment..."`
      - `TodoWrite` task `chat:<ts>` with status `pending`
 
    Update: `heartbeat-state.sh set last_chat_ts "<ts>"` + `heartbeat-state.sh set last_interaction_ts "$(date -Iseconds)"`
@@ -149,7 +151,7 @@ Rules:
 
 | Agent | Parse fields | Template | Level | Extra |
 |-------|-------------|----------|-------|-------|
-| chat-agent | `Odpověď`, `Thread`, `Type` | `chat` | always `immediate` | After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
+| chat-agent | `Reply`, `Thread`, `Type` | `chat` | always `immediate` | After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
 | planner | Prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:` | per-line mapping from `skills/slack/templates/` | per delivery rules | `Triage:` → create `triage:<slug>` TODO with `ts`. `Dispatch:` → dispatch named agent. `No notifications.` → skip. |
 | worker | `Result`, `Task`, `Type`, `Source` | `worker-report` | `high` for error, else `normal` | — |
 | other (morning, eod) | template variables per agent | agent name as template, fallback `event` | per delivery rules | — |
@@ -183,7 +185,7 @@ Flush `notify:*` TODOs with `pending` status when: planner/full iteration runs, 
 5. Model from config: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent).
 6. Dispatch `worker` agent (`run_in_background: true`, model per size). If `WORKTREE=true` → add `isolation: "worktree"`.
 7. Log activity via `heartbeat-state.sh log-activity worker dispatch`.
-8. If SOURCE_REF not empty → send ack via `slack.sh reply "<SOURCE_REF>" chat --var message="Přijat úkol..."`.
+8. If SOURCE_REF not empty → send ack via `slack.sh reply "<SOURCE_REF>" chat --var message="Task accepted..."`.
 
 Max 1 worker per iteration.
 
@@ -195,7 +197,7 @@ Max 1 worker per iteration.
 
 | Mode | Trigger | TARGET_PRESET | Behavior |
 |------|---------|---------------|----------|
-| Sleep | "jdu spát" in DM | `sleep` | `CronDelete` old → `CronCreate` one-shot at `SLEEP_UNTIL` (default 06:00). No planner/worker dispatch. After wake: normal flow. |
+| Sleep | "going to sleep" in DM | `sleep` | `CronDelete` old → `CronCreate` one-shot at `SLEEP_UNTIL` (default 06:00). No planner/worker dispatch. After wake: normal flow. |
 | Turbo | "turbo" in DM | `1m` | 30min burst. After expiry: `heartbeat.sh` auto-clears, returns normal. |
 | Normal | — | decay-based | Based on interaction age (config `skills.heartbeat.decay.*`). |
 
@@ -211,7 +213,7 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 | Mistake | Fix |
 |---------|-----|
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
-| Dispatching chat-agent for trivial messages ("ok", "díky") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
+| Dispatching chat-agent for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
 | Sending Slack directly from agents | Only heartbeat calls `slack.sh`. Agents return NL output. |
 | Dispatching worker when one is already `in_progress` | Check TodoRead for `worker:*` in_progress first |
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 1 |

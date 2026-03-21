@@ -3,11 +3,13 @@ name: worker
 description: Use when heartbeat dispatches the worker agent to execute a queued task from state/tasks/.
 ---
 
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
 # Worker Skill
 
-Worker provádí zadané úkoly asynchronně na pozadí heartbeatu.
-Veškerý queue management jde přes `skills/worker/task.sh`.
-Tasky jsou lokální markdown soubory v `state/tasks/` — status je název složky, metadata jsou YAML frontmatter.
+Worker executes assigned tasks asynchronously in the background of the heartbeat.
+All queue management goes through `skills/worker/task.sh`.
+Tasks are local markdown files in `state/tasks/` — status is the folder name, metadata is YAML frontmatter.
 
 ## Pipeline
 
@@ -17,24 +19,24 @@ triage/ → todo/ → in-progress/ → done/
                                 → cancelled/
 ```
 
-- `triage/` — neroztříděné, čekají na schválení
-- `todo/` — připravené k práci
-- `in-progress/` — právě se pracuje
-- `done/` — dokončené
-- `failed/` — selhané
-- `cancelled/` — zrušené
+- `triage/` — unsorted, awaiting approval
+- `todo/` — ready to work
+- `in-progress/` — currently being worked on
+- `done/` — completed
+- `failed/` — failed
+- `cancelled/` — cancelled
 
-**Frontmatter fields** (metadata v YAML hlavičce):
+**Frontmatter fields** (metadata in YAML header):
 - `priority: urgent|high|medium|low`
 - `size: s|m|l|xl`
 - `source: planner|slack|recurring|self-improver|manual|jira|interests`
 - `source_ref: <slack ts, jira key, commit hash>`
 - `pipeline: true` — multi-phase task flag
 - `phase: brainstorm|spec|implement|review`
-- `waiting_on: <na co se čeká>`
+- `waiting_on: <what is being waited on>`
 - `recurring: <trigger JSON>`
 
-**Task file struktura:**
+**Task file structure:**
 ```markdown
 ---
 priority: medium
@@ -51,110 +53,110 @@ source_ref: "1773933088.437"
 
 ## task.sh subcommands
 
-| Subcommand | Akce |
-|------------|------|
-| `task.sh create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Vytvoří task soubor, vrátí slug. Pipeline auto pro l/xl. |
-| `task.sh read <slug>` | Vrátí frontmatter + obsah jako key=value |
-| `task.sh read-raw <slug>` | Vrátí raw markdown obsah task souboru |
-| `task.sh update <slug> <field> <value>` | Aktualizuje frontmatter field |
-| `task.sh move <slug> <status>` | Přesune task do jiné status složky |
-| `task.sh list [status]` | Vypíše tasky (volitelně filtr na status) |
-| `task.sh find <slug>` | Najde task a vrátí jeho aktuální status (složku) |
-| `task.sh note <slug> "<text>"` | Přidá text do ## Worker Notes |
-| `task.sh count [status]` | Počet tasků (volitelně per status) |
+| Subcommand | Action |
+|------------|--------|
+| `task.sh create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Creates task file, returns slug. Pipeline auto for l/xl. |
+| `task.sh read <slug>` | Returns frontmatter + content as key=value |
+| `task.sh read-raw <slug>` | Returns raw markdown content of task file |
+| `task.sh update <slug> <field> <value>` | Updates frontmatter field |
+| `task.sh move <slug> <status>` | Moves task to a different status folder |
+| `task.sh list [status]` | Lists tasks (optional filter by status) |
+| `task.sh find <slug>` | Finds task and returns its current status (folder) |
+| `task.sh note <slug> "<text>"` | Appends text to ## Worker Notes |
+| `task.sh count [status]` | Count of tasks (optionally per status) |
 
-## Pravidla
+## Rules
 
-### Co Worker smí
-- Číst libovolné soubory v repozitáři
-- Volat source skills a tool skills (glab, acli, slack.sh, gws)
-- Volat MCP tools (Atlassian, Slack, Calendar)
-- Zapisovat do `state/today.md`
-- Dispatovat sub-agenty (researcher, reviewer) pro hloubkovou analýzu
+### What Worker may do
+- Read any files in the repository
+- Call source skills and tool skills (glab, acli, slack.sh, gws)
+- Call MCP tools (Atlassian, Slack, Calendar)
+- Write to `state/today.md`
+- Dispatch sub-agents (researcher, reviewer) for in-depth analysis
 
-### Co Worker nesmí
-- Pushovat do vzdálených repozitářů bez explicitního zadání v instrukci
-- Měnit `state/current.md` (patří heartbeatu)
-- Dispatovat další workery (žádné worker → worker chaining)
-- Posílat více než 3 Slack zprávy na jeden task
-- Pokračovat pokud task je v done/failed/cancelled (kontrola na začátku)
+### What Worker must not do
+- Push to remote repositories without an explicit instruction in the task
+- Modify `state/current.md` (owned by heartbeat)
+- Dispatch additional workers (no worker → worker chaining)
+- Send more than 3 Slack messages per task
+- Continue if task is in done/failed/cancelled (check at start)
 
-### Zpracování cancel
-Na začátku práce ověř že task nebyl zrušen/dokončen:
+### Cancel handling
+At the start of work, verify the task has not been cancelled/completed:
 ```bash
 STATUS=$(skills/worker/task.sh find "$TASK_SLUG")
-[[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0  # tiše — cancel nebo race condition
+[[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0  # silent — cancel or race condition
 ```
 
 ### Timeout
-Pokud task trvá > `task_timeout_minutes` (z `.claude/kvido.local.md`):
-1. Pošli partial výsledek co máš
-2. `task.sh note "$TASK_SLUG" "## Failed\nTimeout po Xm"` + `task.sh move "$TASK_SLUG" failed`
-3. Pokud byl progress > 50% → přidej follow-up: `task.sh create "<title>" --priority medium --size s`
+If a task takes > `task_timeout_minutes` (from `.claude/kvido.local.md`):
+1. Send partial result with what you have
+2. `task.sh note "$TASK_SLUG" "## Failed\nTimeout after Xm"` + `task.sh move "$TASK_SLUG" failed`
+3. If progress > 50% → add follow-up: `task.sh create "<title>" --priority medium --size s`
 
-## Pipeline fáze (opt-in pro l/xl tasky)
+## Pipeline phases (opt-in for l/xl tasks)
 
-Worker podporuje strukturovaný pipeline pro velké tasky. Pipeline je opt-in — aktivuje se frontmatter `pipeline: true` (automaticky pro size l/xl).
+Worker supports a structured pipeline for large tasks. Pipeline is opt-in — activated by frontmatter `pipeline: true` (automatic for size l/xl).
 
-### Kdy použít pipeline
+### When to use pipeline
 
-- `size: l` nebo `size: xl` → automaticky `pipeline: true` + `phase: brainstorm`
-- `size: s` a `size: m` → pipeline se nepoužívá (standardní execution)
+- `size: l` or `size: xl` → automatically `pipeline: true` + `phase: brainstorm`
+- `size: s` and `size: m` → pipeline not used (standard execution)
 
-### Chování per fáze
+### Behavior per phase
 
 #### brainstorm
-1. Přečti task instrukci a veškerý dostupný kontext
-2. Přidej worker note s otázkami a nejednoznačnostmi
-3. Pošli Slack zprávu s otázkami (max 5 otázek, stručně)
-4. `task.sh move "$TASK_SLUG" todo` + `task.sh update "$TASK_SLUG" waiting_on "<popis>"`
-5. Chat-responder zapíše odpovědi jako worker note, aktualizuje phase
-6. Při příštím spuštění: vyhodnoť jestli máš dost kontextu
-   - Ne → další kolo otázek (max 3 kola)
-   - Ano → `task.sh update "$TASK_SLUG" phase spec` + `task.sh move "$TASK_SLUG" todo`
+1. Read the task instruction and all available context
+2. Add worker note with questions and ambiguities
+3. Send Slack message with questions (max 5 questions, brief)
+4. `task.sh move "$TASK_SLUG" todo` + `task.sh update "$TASK_SLUG" waiting_on "<description>"`
+5. Chat-responder writes answers as worker note, updates phase
+6. On next run: evaluate if enough context
+   - No → another round of questions (max 3 rounds)
+   - Yes → `task.sh update "$TASK_SLUG" phase spec` + `task.sh move "$TASK_SLUG" todo`
 
 #### spec
-1. Navrhni 2–3 přístupy (minimal, clean, pragmatic)
-2. Worker note + Slack zpráva
-3. `task.sh update "$TASK_SLUG" waiting_on "<čeká na volbu>"`
-4. Chat-responder zapíše volbu, `task.sh update "$TASK_SLUG" phase implement`
+1. Propose 2–3 approaches (minimal, clean, pragmatic)
+2. Worker note + Slack message
+3. `task.sh update "$TASK_SLUG" waiting_on "<waiting for choice>"`
+4. Chat-responder writes choice, `task.sh update "$TASK_SLUG" phase implement`
 
 #### implement
-Standardní worker execution dle zvolené spec.
-Po dokončení: `task.sh update "$TASK_SLUG" phase review` + `task.sh move "$TASK_SLUG" todo`.
+Standard worker execution per the chosen spec.
+When done: `task.sh update "$TASK_SLUG" phase review` + `task.sh move "$TASK_SLUG" todo`.
 
 #### review
-1. Projdi implementaci — bugs, konvence, zjednodušení
-2. Worker note + Slack zpráva
-3. Pokud blokery → `task.sh update "$TASK_SLUG" waiting_on "<blocker>"`
-4. Pokud OK → `task.sh move "$TASK_SLUG" done`
+1. Go through the implementation — bugs, conventions, simplifications
+2. Worker note + Slack message
+3. If blockers → `task.sh update "$TASK_SLUG" waiting_on "<blocker>"`
+4. If OK → `task.sh move "$TASK_SLUG" done`
 
-### Pipeline pravidla
-- Worker vždy zkontroluje phase z `task.sh read` na začátku
-- Každá fáze je separátní worker run (task se vrací do todo mezi fázemi)
-- Max 3 Slack zprávy celkem na celý pipeline
-- Uživatel může přerušit cancel (slug přes chat)
+### Pipeline rules
+- Worker always checks phase from `task.sh read` at start
+- Each phase is a separate worker run (task returns to todo between phases)
+- Max 3 Slack messages total for the entire pipeline
+- User can interrupt via cancel (slug via chat)
 
 ## Worktree & PR mode
 
-Pokud task má frontmatter `worktree: true`, worker běží v izolovaném git worktree (heartbeat nastaví `isolation: "worktree"` na Agent tool).
+If a task has frontmatter `worktree: true`, worker runs in an isolated git worktree (heartbeat sets `isolation: "worktree"` on the Agent tool).
 
-**Auto-worktree pro assistant repo:** Pokud task modifikuje soubory v repozitáři asistenta, vždy použij worktree mode — i bez explicitního `worktree: true`. Nepushuj přímo do main.
+**Auto-worktree for assistant repo:** If a task modifies files in the assistant repository, always use worktree mode — even without an explicit `worktree: true`. Do not push directly to main.
 
-### Pravidla
-- Všechny změny commitni do worktree branch
+### Rules
+- Commit all changes into the worktree branch
 - `git push -u origin HEAD`
-- Uživatel vytvoří MR manuálně
-- Nepushuj přímo do main
-- Branch name: automaticky z worktree (Claude Code ji vytvoří)
+- User creates the MR manually
+- Do not push directly to main
+- Branch name: automatically from worktree (Claude Code creates it)
 
 ### Commit message
-Použij konvenční commit message (feat/fix/chore) dle typu změny.
+Use conventional commit message (feat/fix/chore) based on the type of change.
 
-### Po dokončení worktree tasku
-- `task.sh note "$TASK_SLUG" "## Result\nBranch: <branch>, pushed. <popis změn>"`
+### After completing a worktree task
+- `task.sh note "$TASK_SLUG" "## Result\nBranch: <branch>, pushed. <description of changes>"`
 - `task.sh move "$TASK_SLUG" done`
-- Slack report obsahuje název branch
+- Slack report includes the branch name
 
 ---
 
@@ -172,21 +174,21 @@ Použij konvenční commit message (feat/fix/chore) dle typu změny.
 
 ## Report format
 
-Vrať NL výstup — heartbeat zajistí doručení. Neposílej přes `slack.sh` přímo.
+Return NL output — heartbeat handles delivery. Do not call `slack.sh` directly.
 
-Strukturuj výstup dle `worker-report` šablony (heartbeat ji použije pro formátování):
+Structure output per the `worker-report` template (heartbeat will use it for formatting):
 
-Výsledný vzhled:
+Expected appearance:
 ```
-🔧 *<stručný název úkolu>*
+🔧 *<brief task name>*
 ━━━━━━━━━━━━━━━━
-✅ <konkrétní výsledek 1>
-✅ <konkrétní výsledek 2>
-⚠️ <upozornění — jen pokud relevantní>
+✅ <concrete result 1>
+✅ <concrete result 2>
+⚠️ <warning — only if relevant>
 
 <slug> · <Xm Ys>
 ```
 
-**Konkrétnost je povinná.**
-Ne "zkontroloval jsem MRy" ale "group/project !342: čeká 3 dny, assignee Jan, 2 nevyřešené komentáře".
-Pokud output > 3000 znaků → zkrať na top 5 položek + "a X dalších".
+**Specificity is mandatory.**
+Not "checked MRs" but "group/project !342: waiting 3 days, assignee Jan, 2 unresolved comments".
+If output > 3000 chars → trim to top 5 items + "and X more".
