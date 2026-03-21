@@ -70,7 +70,7 @@ if [[ -n "$SLEEP_UNTIL" && "$SLEEP_UNTIL" != "null" ]]; then
   fi
 fi
 
-# Load adaptive rules from centrální kvido.local.md via config.sh
+# Load adaptive rules from central kvido.local.md via config.sh
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
 
 WH_START=$($CONFIG 'skills.heartbeat.wh_start')
@@ -107,7 +107,7 @@ elif (( DOW >= 1 && DOW <= 5 && HOUR >= WH_START && HOUR < WH_END )); then
   fi
 else
   ZONE="off_hours"
-  # Pokud je nová interakce i mimo working hours, přepni na kratší interval
+  # If a new interaction occurs outside working hours, switch to a shorter interval
   if (( INTERACTION_AGO_MIN < WH_INTERACTION_WINDOW )); then
     TARGET_PRESET="$WH_AFTER_INTERACTION"
   else

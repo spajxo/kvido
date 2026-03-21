@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# task.sh — Centrální helper pro správu lokálních úkolů
+# task.sh — Central helper for managing local tasks
 #
 # Usage: task.sh <command> [args...]
 #
 # Commands:
 #   create   --title "..." --instruction "..." [--priority medium] [--size m] ...
-#   read     <slug>           # key=value výstup
-#   read-raw <slug>           # celý obsah souboru
-#   update   <slug> <key> <value>  # aktualizace frontmatter pole
-#   move     <slug> <status>  # přesun mezi složkami
-#   list     <status> [--sort priority]  # výpis slugů
-#   find     <slug>           # vrátí aktuální status
-#   note     <slug> <message> # připojí k ## Worker Notes
-#   count    <status>         # počet úkolů ve složce
+#   read     <slug>           # key=value output
+#   read-raw <slug>           # full file contents
+#   update   <slug> <key> <value>  # update frontmatter field
+#   move     <slug> <status>  # move between folders
+#   list     <status> [--sort priority]  # list slugs
+#   find     <slug>           # returns current status
+#   note     <slug> <message> # append to ## Worker Notes
+#   count    <status>         # number of tasks in folder
 
 set -euo pipefail
 

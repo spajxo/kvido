@@ -30,14 +30,14 @@ MSG_COUNT=$(echo "$MESSAGES" | jq -r '.messages | length')
 HAS_MORE=$(echo "$MESSAGES" | jq -r '.nextPageToken != null')
 
 if [[ "$MSG_COUNT" -eq 0 ]]; then
-  echo "Inbox: prázdno"
+  echo "Inbox: empty"
   exit 0
 fi
 
 if [[ "$HAS_MORE" == "true" ]]; then
-  echo "Inbox: ${MSG_COUNT}+ nepřečtených (zobrazeno ${MSG_COUNT} z více)"
+  echo "Inbox: ${MSG_COUNT}+ unread (showing ${MSG_COUNT} of more)"
 else
-  echo "Inbox: $MSG_COUNT nepřečtených"
+  echo "Inbox: $MSG_COUNT unread"
 fi
 echo ""
 
@@ -48,13 +48,13 @@ echo "$MESSAGES" | jq -r '.messages[]?.id // empty' | head -n "$MAX_RESULTS" | w
     '{userId: "me", id: $id, format: "metadata", metadataHeaders: ["From", "Subject", "Date"]}')" 2>/dev/null) || continue
 
   FROM=$(echo "$META" | jq -r '.payload.headers[] | select(.name == "From") | .value' 2>/dev/null || echo "unknown")
-  SUBJECT=$(echo "$META" | jq -r '.payload.headers[] | select(.name == "Subject") | .value' 2>/dev/null || echo "(bez předmětu)")
+  SUBJECT=$(echo "$META" | jq -r '.payload.headers[] | select(.name == "Subject") | .value' 2>/dev/null || echo "(no subject)")
   DATE=$(echo "$META" | jq -r '.payload.headers[] | select(.name == "Date") | .value' 2>/dev/null || echo "")
   SNIPPET=$(echo "$META" | jq -r '.snippet // ""' 2>/dev/null | cut -c1-100)
 
-  echo "- Od: $FROM"
-  echo "  Předmět: $SUBJECT"
-  [[ -n "$DATE" ]] && echo "  Datum: $DATE"
-  [[ -n "$SNIPPET" ]] && echo "  Náhled: $SNIPPET"
+  echo "- From: $FROM"
+  echo "  Subject: $SUBJECT"
+  [[ -n "$DATE" ]] && echo "  Date: $DATE"
+  [[ -n "$SNIPPET" ]] && echo "  Preview: $SNIPPET"
   echo ""
 done

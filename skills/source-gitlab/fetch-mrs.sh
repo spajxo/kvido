@@ -2,7 +2,7 @@
 # fetch-mrs.sh — aggregate open MR status across monitored repos
 #
 # Usage: fetch-mrs.sh [--priority high|normal|low]
-# Reads repos from centrální kvido.local.md via config.sh
+# Reads repos from central kvido.local.md via config.sh
 # Output: plain text summary of open MRs (authored + reviewing) with CI status
 #
 # Note: must cd into each repo for glab to work (glab uses git remote context)
@@ -80,7 +80,7 @@ process_repo() {
   echo ""
 }
 
-# Parse repos from centrální kvido.local.md via config.sh
+# Parse repos from central kvido.local.md via config.sh
 for repo_key in $($CONFIG --keys 'sources.gitlab.repos'); do
   repo_path=$($CONFIG "sources.gitlab.repos.${repo_key}.path")
   repo_priority=$($CONFIG "sources.gitlab.repos.${repo_key}.priority" "normal")

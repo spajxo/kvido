@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# heartbeat-state.sh — CRUD rozhraní pro state/heartbeat-state.json
-# Použití:
+# heartbeat-state.sh — CRUD interface for state/heartbeat-state.json
+# Usage:
 #   heartbeat-state.sh get <key>
 #   heartbeat-state.sh set <key> <value>
 #   heartbeat-state.sh set-raw <key> <json_value>
@@ -9,11 +9,11 @@
 #   heartbeat-state.sh log-activity <agent> <action> [--detail "..."] [--duration_ms N] [--tokens N] [--task_id N]
 #
 # Concurrency:
-#   Write operace (set, set-raw, increment) jsou chráněny flockem na
-#   STATE_FILE.lock. Read operace (get, get-json) lock nepotřebují —
-#   čtou soubor po atomickém mv, který je na Linuxu atomický pro
-#   reader na stejném FS. Timeout locku je 10s; pokud se nepodaří
-#   zamknout, skript selže s exit 1.
+#   Write operations (set, set-raw, increment) are protected by flock on
+#   STATE_FILE.lock. Read operations (get, get-json) do not need a lock —
+#   they read the file after an atomic mv, which is atomic on Linux for
+#   a reader on the same FS. Lock timeout is 10s; if the lock cannot be
+#   acquired, the script fails with exit 1.
 
 set -euo pipefail
 
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 STATE_FILE="${PWD}/state/heartbeat-state.json"
 LOCK_FILE="${STATE_FILE}.lock"
-LOCK_TIMEOUT=10  # sekund
+LOCK_TIMEOUT=10  # seconds
 
 _ensure_file() {
   if [[ ! -f "$STATE_FILE" ]]; then
@@ -38,16 +38,16 @@ _atomic_write() {
 }
 
 # _locked_write <key> <jq_filter> [jq_args...]
-# Zamkne LOCK_FILE, provede jq transformaci a atomicky zapíše výsledek.
-# Zámek je uvolněn automaticky při zavření FD 200 (po návratu z funkce).
+# Locks LOCK_FILE, performs jq transformation and atomically writes the result.
+# The lock is released automatically when FD 200 is closed (on function return).
 _locked_write() {
   local jq_filter="$1"
   shift
   (
-    # Otevři lock FD a získej exkluzivní zámek (timeout LOCK_TIMEOUT s)
+    # Open lock FD and acquire exclusive lock (timeout LOCK_TIMEOUT s)
     exec 200>"$LOCK_FILE"
     if ! flock -w "$LOCK_TIMEOUT" 200; then
-      echo "heartbeat-state.sh: timeout při získávání locku ($LOCK_TIMEOUT s)" >&2
+      echo "heartbeat-state.sh: timeout acquiring lock ($LOCK_TIMEOUT s)" >&2
       exit 1
     fi
     _ensure_file

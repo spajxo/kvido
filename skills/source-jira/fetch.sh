@@ -2,7 +2,7 @@
 # fetch.sh — aggregate Jira issues across monitored projects
 #
 # Usage: fetch.sh [--since YYYY-MM-DD] [--project KEY]
-# Reads projects from centrální kvido.local.md via config.sh
+# Reads projects from central kvido.local.md via config.sh
 # Output: plain text summary of open issues per project
 #
 # --since: only show issues updated since given date (optional)
@@ -28,7 +28,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Parse projects from centrální kvido.local.md via config.sh
+# Parse projects from central kvido.local.md via config.sh
 projects=()
 labels=()
 jql_filters=()

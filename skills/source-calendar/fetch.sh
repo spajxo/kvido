@@ -27,11 +27,11 @@ EVENTS=$(gws calendar events list primary \
 EVENT_COUNT=$(echo "$EVENTS" | jq -r '.items | length')
 
 if [[ "$EVENT_COUNT" -eq 0 ]]; then
-  echo "Kalendář $TARGET_DATE: žádné události"
+  echo "Calendar $TARGET_DATE: no events"
   exit 0
 fi
 
-echo "Kalendář $TARGET_DATE:"
+echo "Calendar $TARGET_DATE:"
 echo ""
 
 TOTAL_MINUTES=0
@@ -39,7 +39,7 @@ TOTAL_MINUTES=0
 echo "$EVENTS" | jq -r '.items[] | @base64' | while read -r ITEM_B64; do
   ITEM=$(echo "$ITEM_B64" | base64 -d)
 
-  SUMMARY=$(echo "$ITEM" | jq -r '.summary // "(bez názvu)"')
+  SUMMARY=$(echo "$ITEM" | jq -r '.summary // "(no title)"')
   START=$(echo "$ITEM" | jq -r '.start.dateTime // .start.date // ""')
   END=$(echo "$ITEM" | jq -r '.end.dateTime // .end.date // ""')
   ALL_DAY=$(echo "$ITEM" | jq -r 'if .start.date then "true" else "false" end')
@@ -61,7 +61,7 @@ echo "$EVENTS" | jq -r '.items[] | @base64' | while read -r ITEM_B64; do
 
   # Format time
   if [[ "$ALL_DAY" == "true" ]]; then
-    TIME_STR="celý den"
+    TIME_STR="all day"
   else
     START_TIME=$(echo "$START" | grep -oE '[0-9]{2}:[0-9]{2}' || echo "$START")
     END_TIME=$(echo "$END" | grep -oE '[0-9]{2}:[0-9]{2}' || echo "$END")
@@ -80,4 +80,4 @@ done
 
 # Summary line
 echo ""
-echo "Celkem: $EVENT_COUNT událostí"
+echo "Total: $EVENT_COUNT events"

@@ -208,7 +208,7 @@ cat > "$TMP_FILE" << HTMLEOF
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="${AUTO_REFRESH}">
-<title>Kvído Dashboard</title>
+<title>Kvido Dashboard</title>
 <style>
 :root {
   --bg: #1a1b26; --bg-raised: #1f2031; --card: #24283b; --card-hover: #292e42;
@@ -338,7 +338,7 @@ footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20p
 </head>
 <body>
 <header>
-<h1>Kvído Dashboard</h1>
+<h1>Kvido Dashboard</h1>
 <div class="meta">
   <span class="meta-tag">${TODAY}</span>
   <span class="meta-tag">#${ITERATION}</span>
