@@ -6,7 +6,10 @@
   "plugins": [
     {
       "name": "kvido",
-      "source": ".",
+      "source": {
+        "type": "path",
+        "path": "."
+      },
       "description": "Personal AI workflow assistant — heartbeat, planner, worker, triage"
     }
   ]
