@@ -7,11 +7,12 @@
 #   2. state/heartbeat-state.json
 #   3. state/current.md
 #   4. state/today.md
-#   5. glab issue list (GitLab API)
+#   5. state/tasks/ (local task files)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
 STATE_DIR="${PWD}/state"
 OUTPUT="$STATE_DIR/dashboard.html"
@@ -143,23 +144,22 @@ if [[ -f "$TODAY_FILE" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Source 5: GitLab Issues (work queue)
+# Source 5: Local task files (work queue)
 # ---------------------------------------------------------------------------
-REPO=$($CONFIG '.sources.gitlab.repo' 2>/dev/null || echo "")
+TASK_SH="$PLUGIN_ROOT/skills/worker/task.sh"
 WQ_PROGRESS=0
 WQ_TODO=0
 WQ_TRIAGE=0
 WQ_DONE=0
 
-_count_issues() { local out; out=$(glab issue list --repo "$REPO" -l "$1" 2>/dev/null) || true; echo "$out" | grep -c '^#[0-9]' || true; }
-
-if [[ -n "$REPO" && "$REPO" != "null" ]]; then
-  WQ_PROGRESS=$(_count_issues status:in-progress)
-  WQ_TODO=$(_count_issues status:todo)
-  WQ_TRIAGE=$(_count_issues status:triage)
-  WQ_DONE=$(glab api "projects/$(echo "$REPO" | sed 's|/|%2F|g')/issues?state=closed&labels=result:done&updated_after=${TODAY}T00:00:00Z&per_page=100" 2>/dev/null | jq 'length // 0' 2>/dev/null || echo 0)
-else
-  WARNINGS+=("GitLab repo not configured")
+if [[ -x "$TASK_SH" ]]; then
+  WQ_PROGRESS=$("$TASK_SH" count in-progress 2>/dev/null || echo 0)
+  WQ_TODO=$("$TASK_SH" count todo 2>/dev/null || echo 0)
+  WQ_TRIAGE=$("$TASK_SH" count triage 2>/dev/null || echo 0)
+  # Create today marker if missing (must exist before find -newer)
+  [[ -f "${PWD}/state/tasks/.today-marker" ]] || touch -d "${TODAY} 00:00:00" "${PWD}/state/tasks/.today-marker" 2>/dev/null || true
+  # Done today: count files in done/ modified today
+  WQ_DONE=$(find "${PWD}/state/tasks/done/" -name "*.md" -newer "${PWD}/state/tasks/.today-marker" 2>/dev/null | wc -l || echo 0)
 fi
 
 # ---------------------------------------------------------------------------

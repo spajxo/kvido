@@ -34,7 +34,7 @@ Read `state/today.md` and `state/current.md` for context.
 
 Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from a previous iteration (orphaned agents):
 - `chat:*` in_progress -- mark `completed` (chat agent from previous session is gone, next new message will create fresh task)
-- `worker:*` in_progress -- leave as-is (worker tracks state via GitLab Issues independently)
+- `worker:*` in_progress -- leave as-is (worker tracks state via local task files independently)
 - `planner` in_progress -- mark `completed` (planner will be re-dispatched on next due interval)
 - `triage:*` in_progress -- mark `completed` (will be re-created by planner)
 - `notify:*` in_progress -- mark `completed` (delivery attempt was interrupted, log as potentially missed notification)
@@ -66,9 +66,10 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
      TURBO_UNTIL=$(date -d "+30 min" -Iseconds)  # or parsed duration
      skills/heartbeat/heartbeat-state.sh set turbo_until "$TURBO_UNTIL"
      ```
-   - Cancel ("zruš #NNN", "cancel #NNN"):
+   - Cancel ("zruš <slug>", "cancel <slug>"):
      ```bash
-     skills/worker/work-cancel.sh --issue <NNN> --reason "Cancelled via chat"
+     skills/worker/task.sh note <slug> "Cancelled via chat"
+     skills/worker/task.sh move <slug> cancelled
      ```
    - Simple status questions answerable from loaded state/current.md and state/today.md
 
@@ -104,15 +105,15 @@ Triage TODOs are created in Step 2c when heartbeat delivers a `triage-item` noti
 Use `TodoRead` to find all `triage:*` tasks (not completed). Build JSON input and delegate to bash:
 
 ```bash
-# Build input: [{"issue":"7","ts":"1773..."},...]
+# Build input: [{"slug":"fix-auth-bug","ts":"1773..."},...]
 echo "$TRIAGE_JSON" | skills/heartbeat/triage-poll.sh
 ```
 
-Output: `[{"issue":"7","result":"approved|rejected|pending"},...]`
+Output: `[{"slug":"fix-auth-bug","result":"approved|rejected|pending"},...]`
 
 For each result:
-- `approved` → log `- **HH:MM** [triage] #<N> approved -> status:todo`, mark `triage:<issue_id>` TODO completed
-- `rejected` → log `- **HH:MM** [triage] #<N> rejected -> cancelled`, mark TODO completed
+- `approved` → log `- **HH:MM** [triage] <slug> approved -> todo`, mark `triage:<slug>` TODO completed
+- `rejected` → log `- **HH:MM** [triage] <slug> rejected -> cancelled`, mark TODO completed
 - `pending` → skip
 
 ---
@@ -160,7 +161,7 @@ Rules:
    - Parse output line-by-line — planner uses prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:`
    - If `No notifications.` → mark planner completed, skip delivery
    - For each notification item: choose matching template from `skills/slack/templates/`, apply delivery rules, deliver via `slack.sh`
-   - For triage items delivered as `immediate`: create `triage:<issue_id>` TODO with returned `ts` for reaction polling
+   - For triage items delivered as `immediate`: create `triage:<slug>` TODO with returned `ts` for reaction polling
    - For each `Dispatch: <agent-name>` line: dispatch named agent in background
    - Mark `planner` task as completed
 
@@ -220,30 +221,35 @@ Check for any `notify:*` TODOs with status `pending` (serialized batch payload f
 ## Step 4: Worker Dispatch
 
 1. Use `TodoRead` -- check if any `worker:*` task exists with status `in_progress`. If yes -- skip (max 1 concurrent worker).
-2. `NEXT_TASK` from heartbeat.sh output -- issue number (or empty -- skip)
-3. `skills/worker/work-start.sh --issue <NEXT_TASK>` -- if exit 1 -- skip
-4. Load task attributes:
+2. Find next task:
    ```bash
-   skills/worker/work-task-info.sh <NEXT_TASK>
+   NEXT_TASK=$(skills/worker/task.sh list todo --sort priority | head -1)
    ```
-   Output: `TASK_ID=..., SIZE=..., PRIORITY=..., SOURCE_REF=..., INSTRUCTION=..., PHASE=..., WORKTREE=...`
-5. `TodoWrite` task `worker:<NEXT_TASK>` with status `in_progress` and description `"Worker #<id>: <instruction[:60]>"`
-6. Load model from `.claude/kvido.local.md`: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent)
-7. Dispatch `worker` agent (`run_in_background: true`, model per size):
+   Empty → skip. Also check WIP limit: `skills/worker/task.sh count in-progress` >= max_concurrent → skip.
+3. Move to in-progress and load attributes:
+   ```bash
+   skills/worker/task.sh move "$NEXT_TASK" in-progress
+   skills/worker/task.sh read "$NEXT_TASK"
    ```
-   TASK_ISSUE=<NEXT_TASK>, TASK_ID, INSTRUCTION, SIZE, SOURCE_REF, PHASE, CURRENT_STATE, MEMORY
+   Output: `SLUG=..., SIZE=..., PRIORITY=..., SOURCE_REF=..., INSTRUCTION=..., PHASE=..., WORKTREE=...`
+   If pipeline task without phase, set default: `skills/worker/task.sh update "$NEXT_TASK" phase brainstorm|implement`
+4. `TodoWrite` task `worker:<NEXT_TASK>` with status `in_progress` and description `"Worker <slug>: <instruction[:60]>"`
+5. Load model from `.claude/kvido.local.md`: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent)
+6. Dispatch `worker` agent (`run_in_background: true`, model per size):
+   ```
+   TASK_SLUG=<NEXT_TASK>, INSTRUCTION, SIZE, SOURCE_REF, PHASE, CURRENT_STATE, MEMORY
    ```
    - If `WORKTREE=true`: add `isolation: "worktree"` to Agent tool call
    - If `WORKTREE=false`: dispatch without isolation
-8. Log activity: `skills/heartbeat/heartbeat-state.sh log-activity worker dispatch --detail "#<id>: <instruction[:60]>" --task_id <NEXT_TASK>`
-9. Log: `- **HH:MM** [worker] Dispatched #<id> (<size>/<priority>): <instruction[:60]>`
-10. If SOURCE_REF not empty, send acknowledgement directly:
+7. Log activity: `skills/heartbeat/heartbeat-state.sh log-activity worker dispatch --detail "<slug>: <instruction[:60]>" --task_id <NEXT_TASK>`
+8. Log: `- **HH:MM** [worker] Dispatched <slug> (<size>/<priority>): <instruction[:60]>`
+9. If SOURCE_REF not empty, send acknowledgement directly:
    - Create `notify:ack:<NEXT_TASK>` TODO (in_progress)
    - Decide `LEVEL=immediate`, template `chat`
    - Call:
      ```bash
      skills/slack/slack.sh reply "<SOURCE_REF>" chat \
-       --var message="Přijat úkol #<NEXT_TASK>: <instruction[:60]>"
+       --var message="Přijat úkol <NEXT_TASK>: <instruction[:60]>"
      ```
    - Mark TODO completed on success, otherwise log warning and mark completed
 

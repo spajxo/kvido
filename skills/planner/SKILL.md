@@ -29,7 +29,7 @@ Projdi `memory/planner.md`. Hledej časové triggery:
 - Formát: `- HH:MM: <instrukce>` nebo `- <den>: <instrukce>`
 - Pokud je čas na akci a nebyla provedena dnes (check planner-state.md) → proveď nebo vytvoř worker task přes:
   ```bash
-  skills/worker/work-add.sh --instruction "<instrukce>" --size s --priority high --source planner
+  skills/worker/task.sh create --instruction "<instrukce>" --size s --priority high --source planner
   ```
 - Zapiš do planner-state.md že akce provedena
 
@@ -141,19 +141,19 @@ Dispatch: eod
 
 ### 6a: Triage queue (jen agent items ke schválení)
 
-Načti GitLab Issues s labelem `status:triage`:
+Načti tasky ve stavu triage:
 ```bash
-glab issue list --repo "$GITLAB_REPO" --label "status:triage" --output json | jq '[.[] | {iid, title, labels, created_at}]'
+skills/worker/task.sh list triage
 ```
 
-**Triage items se NESCHVALUJÍ automaticky.** Zůstávají jako `status:triage` dokud uživatel explicitně neschválí.
+**Triage items se NESCHVALUJÍ automaticky.** Zůstávají v `triage` dokud uživatel explicitně neschválí.
 
-Pro každý issue (max 3 per běh):
-1. Přečti title a labels — pochop co se požaduje
+Pro každý task (max 3 per běh):
+1. Přečti task detail: `skills/worker/task.sh read <slug>` — pochop co se požaduje
 2. Vyhodnoť relevanci a urgentnost
 3. **Jasné zadání** → zařaď do approval batche:
    - Navrhni: title (max 8 slov), priority, size, assignee=agent, stručný popis
-4. **Nejasné** → zahrň do výstupu: `Question: #<N> '<title>' — <otázka pro uživatele>. Urgency: normal.` Nech issue na příště.
+4. **Nejasné** → zahrň do výstupu: `Question: <slug> '<title>' — <otázka pro uživatele>. Urgency: normal.` Nech task na příště.
 
 ### 6b: User context reminders (memory/state-first)
 
@@ -168,27 +168,27 @@ Výstupem nejsou nové GitLab issues. Výstupem jsou jen připomínky a návrhy 
 - při silném signálu navrhni explicitně, co připnout do `state/current.md`
 
 Legacy compatibility:
-- Pokud najdeš staré GitLab issues s `assignee:user`, nikdy z nich nevytvářej nový workflow
+- Pokud najdeš staré tasky přiřazené uživateli, nikdy z nich nevytvářej nový workflow
 - Můžeš je jen jednou denně připomenout v textu výstupu, pokud jsou stále relevantní
 - Evidenci připomenutí drž v `state/planner-state.md`:
 ```markdown
 ## User Task Reminders
-- #<N>: last_reminded=<YYYY-MM-DD>
+- <slug>: last_reminded=<YYYY-MM-DD>
 ```
 
 ### Individual triage messages
 
 Pro každý triage item zahrň do výstupu:
 ```
-Triage: #<N> '<title>' — <popis>. Priority: <priority>. Size: <size>. Assignee: <assignee>. URL: <issue_url>.
+Triage: <slug> '<title>' — <popis>. Priority: <priority>. Size: <size>. Assignee: <assignee>.
 ```
 
-Stále zapiš komentář na GitLab issue s poznámkou že triage item byl odeslán — ale BEZ Slack ts (ten doplní heartbeat po doručení):
+Stále zapiš note na task s poznámkou že triage item byl odeslán — ale BEZ Slack ts (ten doplní heartbeat po doručení):
 ```bash
-glab issue note <N> --repo "$GITLAB_REPO" --message "Triage: odesláno ke schválení. Čeká na rozhodnutí uživatele."
+skills/worker/task.sh note <slug> "Triage: odesláno ke schválení. Čeká na rozhodnutí uživatele."
 ```
 
-**Pozor:** Planner běží jako subagent a NEMÁ přístup k TodoWrite. Heartbeat (hlavní session) si po doručení přes `slack.sh` sám vytvoří `triage:<issue_id>` todo tasky pro polling. Planner jen zapisuje komentáře na issues a vrací NL výstup.
+**Pozor:** Planner běží jako subagent a NEMÁ přístup k TodoWrite. Heartbeat (hlavní session) si po doručení přes `slack.sh` sám vytvoří `triage:<slug>` todo tasky pro polling. Planner jen zapisuje notes na tasky a vrací NL výstup.
 
 Stale user task připomínky zahrň do výstupu:
 ```
@@ -211,7 +211,7 @@ Při vytváření worker tasků přidávej `--goal <id>` na základě kontextu. 
 ### Memory health
 Přečti `memory/memory.md` — pokud > 100 řádků nebo `memory/learnings.md` má entries s Recurrence-Count >= 3:
 ```bash
-skills/worker/work-add.sh \
+skills/worker/task.sh create \
   --instruction "Consolidation mode. Přečti a postupuj dle agents/librarian.md" \
   --size m --priority medium --source planner --goal maintenance
 ```
@@ -220,7 +220,7 @@ Max 1 librarian task denně (check planner-state.md `last_librarian_date`).
 ### Project enrichment
 Přečti `memory/projects/` — najdi projekt s nejstarší aktualizací. Pokud > 7 dní:
 ```bash
-skills/worker/work-add.sh \
+skills/worker/task.sh create \
   --instruction "Enrichment: <projekt>. Přečti a postupuj dle agents/project-enricher.md" \
   --size s --priority low --source planner --goal maintenance
 ```
@@ -229,24 +229,35 @@ Max 1 enrichment denně.
 ### Self-improvement
 Pokud dnes ještě neproběhla (check planner-state.md `last_self_improve_date`):
 ```bash
-skills/worker/work-add.sh \
+skills/worker/task.sh create \
   --instruction "Analýza dnešních sessions. Přečti a postupuj dle agents/self-improver.md" \
   --size m --priority low --source planner --goal maintenance
 ```
 
 ### Stale workers
-Zkontroluj GitLab Issues s labelem `status:in-progress` — issues s `updatedAt` starším než 10 minut:
+Zkontroluj tasky v `in-progress` — soubory nemodifikované déle než 10 minut:
 ```bash
-glab issue list --repo "$GITLAB_REPO" --label "status:in-progress" --output json | jq '[.[] | {iid, title, updated_at}]'
+# Stale = file not modified in 10+ minutes
+find state/tasks/in-progress/ -name "*.md" -mmin +10 2>/dev/null
+# Or list all and check updated_at:
+skills/worker/task.sh list in-progress
 ```
 Pokud stale → warning:
 
-Zahrň do výstupu: `Event: 📊 Stale worker — Issue #<iid> (<title>) je in-progress přes 10 minut bez aktivity. Source: planner. Reference: #<iid>. Urgency: normal.`
+Zahrň do výstupu: `Event: 📊 Stale worker — Task <slug> (<title>) je in-progress přes 10 minut bez aktivity. Source: planner. Reference: <slug>. Urgency: normal.`
 
 ### Backlog hygiene
-- Projdi GitLab Issues s `priority:low,status:todo` a `createdAt` > 30 dní → zapiš suggestion do state/today.md
+- Projdi tasky v `todo` s `priority: low` a `created_at` > 30 dní → zapiš suggestion do state/today.md:
+  ```bash
+  for f in state/tasks/todo/*.md; do
+    [[ -f "$f" ]] || continue
+    priority=$(yq --front-matter=extract '.priority' "$f" 2>/dev/null)
+    created=$(yq --front-matter=extract '.created_at' "$f" 2>/dev/null)
+    [[ "$priority" == "low" ]] && echo "$(basename "$f" .md) created=$created"
+  done
+  ```
 - User-assignee stale reminders → zpracováváno v Step 6b (triage batch)
-- Triage overflow: spočítej issues s labelem `status:triage` — pokud >= 10:
+- Triage overflow: `skills/worker/task.sh count triage` — pokud >= 10:
 
   Zahrň do výstupu: `Event: 📋 Triage overflow — <N> položek čeká v triage. Spusť /triage pro zpracování. Source: planner. Reference: triage queue. Urgency: normal.`
 
@@ -295,7 +306,7 @@ Aktualizuj `state/planner-state.md`:
 - <HH:MM instrukce>
 
 ## User Task Reminders
-- task-NNN: last_reminded=<YYYY-MM-DD>
+- <slug>: last_reminded=<YYYY-MM-DD>
 
 ## Reported Events
 - <event_key> | first_seen: <ts> | last_reported: <ts>
@@ -311,7 +322,7 @@ Vrať natural language souhrn všech notifikací. Formát per položka:
 
 - **Event:** `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: <high|normal|low>.`
 - **Event (batch):** `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal.`
-- **Triage:** `Triage: #<N> '<title>' — <popis>. Priority: <p>. Size: <s>. Assignee: <a>. URL: <url>.`
+- **Triage:** `Triage: <slug> '<title>' — <popis>. Priority: <p>. Size: <s>. Assignee: <a>.`
 - **Reminder:** `Reminder: <text>. Urgency: normal.`
 - **Dispatch:** `Dispatch: <agent-name> KEY1=value1 KEY2=value2 ...` — heartbeat dispatchne uvedeného agenta s parametry.
 

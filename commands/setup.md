@@ -11,14 +11,14 @@ Setup a self-healing command. Spouštěj při prvním spuštění, po instalaci 
 ## Step 0: Prerequisites
 
 ```bash
-for cmd in glab jq yq; do
+for cmd in jq yq; do
   if command -v "$cmd" &>/dev/null; then
     echo "OK: $cmd $(command -v $cmd)"
   else
     echo "MISSING: $cmd — required"
   fi
 done
-for cmd in acli gws; do
+for cmd in glab acli gws; do
   if command -v "$cmd" &>/dev/null; then
     echo "OK: $cmd $(command -v $cmd)"
   else
@@ -81,16 +81,7 @@ Vytvoř chybějící adresáře:
 
 ```bash
 mkdir -p memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
-mkdir -p state
-```
-
-Ověř že na repu existují požadované work-queue labels:
-```bash
-GITLAB_REPO=$(skills/config.sh '.sources.gitlab.repo')
-LABEL_COUNT=$(glab label list --repo "$GITLAB_REPO" --output json | jq '[.[].name | select(startswith("status:"))] | length')
-if [ "$LABEL_COUNT" -lt 4 ]; then
-  echo "WARNING: Expected 4 status: labels, found $LABEL_COUNT. Required: status:triage, status:todo, status:in-progress, status:review"
-fi
+mkdir -p state/tasks/{triage,todo,in-progress,done,failed,cancelled}
 ```
 
 Pro každý chybějící soubor vytvoř s minimálním obsahem:
@@ -144,7 +135,7 @@ Chybějící nebo prázdné → log warning.
 
 ### Binary check
 ```bash
-for cmd in glab jq yq acli gws; do
+for cmd in jq yq glab acli gws; do
   command -v "$cmd" &>/dev/null || echo "WARNING: $cmd not found"
 done
 ```

@@ -17,22 +17,28 @@ Přečti `.claude/kvido.local.md`. Pro každé téma kde je čas na check (podle
 
 1. Prohledej web (WebSearch tool) s query z config
 2. Porovnej s předchozím stavem v `state/interests.md`
-3. Pokud nové relevantní info → vytvoř triage issue:
+3. Pokud nové relevantní info → vytvoř triage úkol:
    ```bash
-   skills/worker/work-add.sh \
+   skills/worker/task.sh create \
      --title "[INTERESTS] popis" \
+     --instruction "popis nálezu" \
      --source interests \
      --source-ref topic-slug \
-     --assignee user \
      --priority medium
    ```
 4. Aktualizuj `last_checked` v `state/interests.md`
 5. Vrať findings s `urgency` z config (heartbeat rozhodne o notification tieru)
 
 ## Dedup
-Nenavrhuj triage item pokud podobný topic už existuje jako issue:
+Nenavrhuj triage item pokud podobný topic už existuje jako úkol:
 ```bash
-glab issue list --repo "$GITLAB_REPO" --state all --search "<title>" --output json | jq '[.[] | {iid, title}]'
+# Projdi všechny statusy a hledej podle titulku
+for d in state/tasks/*/; do
+  for f in "$d"*.md; do
+    [[ -f "$f" ]] || continue
+    yq --front-matter=extract '.title' "$f" 2>/dev/null
+  done
+done | grep -i "<hledaný výraz>"
 ```
 
 ## State format

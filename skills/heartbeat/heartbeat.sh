@@ -152,9 +152,9 @@ else
 fi
 # Empty string means no messages — that is valid (no fallback needed)
 
-# Check next worker task (returns issue number or empty)
-WORK_NEXT_SH="$PLUGIN_ROOT/skills/worker/work-next.sh"
-NEXT_TASK=$("$WORK_NEXT_SH" 2>/dev/null || echo "")
+# Check next worker task (returns slug or empty)
+TASK_SH="$PLUGIN_ROOT/skills/worker/task.sh"
+NEXT_TASK=$("$TASK_SH" list todo --sort priority 2>/dev/null | head -1 || echo "")
 
 # Update state — increment iteration and set last_quick
 "$SCRIPT_DIR/heartbeat-state.sh" increment iteration_count

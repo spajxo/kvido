@@ -12,7 +12,7 @@ It is **not** a traditional application. There is no compilation, no test suite,
 
 ## Prerequisites (pro uživatelův workspace)
 
-Required: `glab`, `jq`, `yq`. Optional: `acli` (Jira), `gws` (Google Workspace).
+Required: `jq`, `yq`. Optional: `glab` (GitLab monitoring), `acli` (Jira), `gws` (Google Workspace).
 
 ## Architecture
 
@@ -24,14 +24,14 @@ Claude Code plugin (`.claude-plugin/plugin.json`). Installed via `claude plugin 
 
 1. **Heartbeat** (`skills/heartbeat/`) — cron-based orchestrator (default 10min). Manages chat, worker, planner dispatch via TodoWrite/TodoRead. Owns all Slack delivery through `skills/slack/slack.sh`.
 2. **Planner** (`agents/planner.md` + `skills/planner/`) — runs every Nth heartbeat. Fetches data from sources, detects changes, generates notifications/triage items, dispatches agents (morning/eod).
-3. **Worker** (`agents/worker.md` + `skills/worker/`) — async task queue backed by GitLab Issues. Max 1 concurrent. Model selected by task size (s/m → sonnet, l/xl → opus).
+3. **Worker** (`agents/worker.md` + `skills/worker/`) — async task queue backed by local markdown files in `state/tasks/`. Max 1 concurrent. Model selected by task size (s/m → sonnet, l/xl → opus). All task operations via `skills/worker/task.sh`.
 4. **Chat-agent** (`agents/chat-agent.md`) — dispatched by heartbeat for non-trivial Slack DM messages (lookups, task creation, pipeline responses). Trivial messages (greetings, sleep, turbo, cancel) heartbeat handles inline.
 
 ### Data flow
 
 - **Sources** (`skills/source-*/`) — bash fetch scripts for GitLab, Jira, Slack, Calendar, Gmail, Sessions
 - **Config** — `skills/config.sh '<yq_expression>'` reads YAML frontmatter from `.claude/kvido.local.md`
-- **State** (`state/`) — ephemeral runtime: `current.md`, `today.md`, `heartbeat-state.json`
+- **State** (`state/`) — ephemeral runtime: `current.md`, `today.md`, `heartbeat-state.json`, `tasks/{triage,todo,in-progress,done,failed,cancelled}/`
 - **Memory** (`memory/`) — persistent: `memory.md`, journals, projects, people, decisions, learnings
 - **Librarian** (`agents/librarian.md`) — memory consolidation, extraction from journals, cleanup, auto-memory sync
 
@@ -52,7 +52,7 @@ All agents are dispatched by heartbeat with `run_in_background: true`. They retu
 | Agent | Trigger | Purpose |
 |-------|---------|---------|
 | planner | Every Nth heartbeat | Change detection, notifications, agent dispatch |
-| worker | Heartbeat when queue non-empty | Async task execution (GitLab Issues) |
+| worker | Heartbeat when queue non-empty | Async task execution (local task files) |
 | chat-agent | Heartbeat on non-trivial Slack DM | Lookups, task creation, pipeline responses |
 | librarian | EOD / maintenance | Memory consolidation, extraction, cleanup |
 | morning | Dispatched by planner | Daily briefing (also available as `/morning`) |
@@ -64,7 +64,7 @@ All agents are dispatched by heartbeat with `run_in_background: true`. They retu
 
 - All bash scripts use `set -euo pipefail`
 - Config access: `skills/config.sh '.path.to.key'` (never parse kvido.local.md directly)
-- Worker queue: GitLab Issues with labels `status:triage`, `status:todo`, `status:in-progress`, `status:review`
+- Worker queue: local markdown files in `state/tasks/` organized by status folders (triage, todo, in-progress, done, failed, cancelled). All operations via `skills/worker/task.sh`
 - Dispatch tracking: TodoWrite/TodoRead (not file-based locks)
 - Language: Czech (codebase, prompts, agent output)
 - Hook: `hooks/pre-compact.sh` injects state summary before context compaction

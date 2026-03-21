@@ -1,60 +1,67 @@
 ---
 name: worker
-description: Async task execution — pravidla, queue management, report format. Spouštěj work scripty z této složky.
+description: Async task execution — pravidla, queue management, report format. Veškeré operace přes task.sh.
 ---
 
 # Worker Skill
 
 Worker provádí zadané úkoly asynchronně na pozadí heartbeatu.
-Veškerý queue management jde přes shell scripty v této složce.
-Tasky jsou GitLab Issues na repu `$GITLAB_REPO` s labels pro status a metadata.
+Veškerý queue management jde přes `skills/worker/task.sh`.
+Tasky jsou lokální markdown soubory v `state/tasks/` — status je název složky, metadata jsou YAML frontmatter.
 
-## Issues-only Pipeline
+## Pipeline
 
 ```
-status:triage → status:todo → status:in-progress → status:review → (closed)
+triage/ → todo/ → in-progress/ → done/
+                                → failed/
+                                → cancelled/
 ```
 
-- `status:triage` — neroztříděné, čekají na schválení
-- `status:todo` — připravené k práci
-- `status:in-progress` — právě se pracuje
-- `status:review` — čeká na review/kontrolu
-- **closed** + `result:done` / `result:failed` / `result:cancelled`
+- `triage/` — neroztříděné, čekají na schválení
+- `todo/` — připravené k práci
+- `in-progress/` — právě se pracuje
+- `done/` — dokončené
+- `failed/` — selhané
+- `cancelled/` — zrušené
 
-**Labels** (metadata na issues):
-- `priority:urgent|high|medium|low`
-- `size:s|m|l|xl`
-- `source:planner|slack|recurring|self-improver|manual|jira|interests`
-- `assignee:user` — legacy; nepřidávej na nové tasky
-- `pipeline` — multi-phase task flag
-- `phase:brainstorm|spec|implement|review`
-- `result:done|failed|cancelled`
+**Frontmatter fields** (metadata v YAML hlavičce):
+- `priority: urgent|high|medium|low`
+- `size: s|m|l|xl`
+- `source: planner|slack|recurring|self-improver|manual|jira|interests`
+- `source_ref: <slack ts, jira key, commit hash>`
+- `pipeline: true` — multi-phase task flag
+- `phase: brainstorm|spec|implement|review`
+- `waiting_on: <na co se čeká>`
+- `recurring: <trigger JSON>`
 
-**Issue body struktura:**
+**Task file struktura:**
 ```markdown
-## Task
+---
+priority: medium
+size: m
+source: slack
+source_ref: "1773933088.437"
+---
+## Instruction
 <instruction text>
-
-## Metadata
-- Source Ref: <slack ts, jira key, commit hash>
-- Waiting On: <na co se čeká>
-- Recurring: <trigger JSON>
 
 ## Worker Notes
 <worker output>
 ```
 
-## Work scripty
+## task.sh subcommands
 
-| Skript | Akce |
-|--------|------|
-| `work-add.sh` | Vytvoří GitLab Issue s labels, vrátí issue number |
-| `work-next.sh` | Vrátí issue number nejvýše prioritního tasku (status:todo) |
-| `work-start.sh` | Swap label status:todo → status:in-progress, WIP limit check |
-| `work-done.sh` | Close issue + label result:done, handle recurring |
-| `work-fail.sh` | Close issue + label result:failed |
-| `work-cancel.sh` | Close issue + label result:cancelled |
-| `work-task-info.sh` | Issue labels + body → key=value output |
+| Subcommand | Akce |
+|------------|------|
+| `task.sh create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Vytvoří task soubor, vrátí slug. Pipeline auto pro l/xl. |
+| `task.sh read <slug>` | Vrátí frontmatter + obsah jako key=value |
+| `task.sh read-raw <slug>` | Vrátí raw markdown obsah task souboru |
+| `task.sh update <slug> <field> <value>` | Aktualizuje frontmatter field |
+| `task.sh move <slug> <status>` | Přesune task do jiné status složky |
+| `task.sh list [status]` | Vypíše tasky (volitelně filtr na status) |
+| `task.sh find <slug>` | Najde task a vrátí jeho aktuální status (složku) |
+| `task.sh note <slug> "<text>"` | Přidá text do ## Worker Notes |
+| `task.sh count [status]` | Počet tasků (volitelně per status) |
 
 ## Pravidla
 
@@ -70,84 +77,84 @@ status:triage → status:todo → status:in-progress → status:review → (clos
 - Měnit `state/current.md` (patří heartbeatu)
 - Dispatovat další workery (žádné worker → worker chaining)
 - Posílat více než 3 Slack zprávy na jeden task
-- Pokračovat pokud issue je closed (kontrola na začátku)
+- Pokračovat pokud task je v done/failed/cancelled (kontrola na začátku)
 
 ### Zpracování cancel
-Na začátku práce ověř že issue je stále open:
+Na začátku práce ověř že task nebyl zrušen/dokončen:
 ```bash
-STATE=$(glab issue view "$TASK_ISSUE" --repo "$GITLAB_REPO" --output json | jq -r '.state')
-[ "$STATE" != "opened" ] && exit 0  # tiše — cancel nebo race condition
+STATUS=$(skills/worker/task.sh find "$TASK_SLUG")
+[[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0  # tiše — cancel nebo race condition
 ```
 
 ### Timeout
 Pokud task trvá > `task_timeout_minutes` (z `.claude/kvido.local.md`):
 1. Pošli partial výsledek co máš
-2. `work-fail.sh --issue "$TASK_ISSUE" --reason "Timeout po Xm"`
-3. Pokud byl progress > 50% → přidej follow-up item s `work-add.sh`
+2. `task.sh note "$TASK_SLUG" "## Failed\nTimeout po Xm"` + `task.sh move "$TASK_SLUG" failed`
+3. Pokud byl progress > 50% → přidej follow-up: `task.sh create "<title>" --priority medium --size s`
 
 ## Pipeline fáze (opt-in pro l/xl tasky)
 
-Worker podporuje strukturovaný pipeline pro velké tasky. Pipeline je opt-in — aktivuje se labelem `pipeline` (automaticky pro size l/xl).
+Worker podporuje strukturovaný pipeline pro velké tasky. Pipeline je opt-in — aktivuje se frontmatter `pipeline: true` (automaticky pro size l/xl).
 
 ### Kdy použít pipeline
 
-- `size:l` nebo `size:xl` → automaticky labels `pipeline` + `phase:brainstorm`
-- `size:s` a `size:m` → pipeline se nepoužívá (standardní execution)
+- `size: l` nebo `size: xl` → automaticky `pipeline: true` + `phase: brainstorm`
+- `size: s` a `size: m` → pipeline se nepoužívá (standardní execution)
 
 ### Chování per fáze
 
 #### brainstorm
 1. Přečti task instrukci a veškerý dostupný kontext
-2. Přidej komentář na issue s otázkami a nejednoznačnostmi
+2. Přidej worker note s otázkami a nejednoznačnostmi
 3. Pošli Slack zprávu s otázkami (max 5 otázek, stručně)
-4. Swap labels: `phase:brainstorm` → remove, `status:in-progress` → `status:todo`, set Waiting On v body
-5. Chat-responder zapíše odpovědi jako komentář, swap phase label
+4. `task.sh move "$TASK_SLUG" todo` + `task.sh update "$TASK_SLUG" waiting_on "<popis>"`
+5. Chat-responder zapíše odpovědi jako worker note, aktualizuje phase
 6. Při příštím spuštění: vyhodnoť jestli máš dost kontextu
    - Ne → další kolo otázek (max 3 kola)
-   - Ano → swap `phase:brainstorm` → `phase:spec`, status zpět na todo
+   - Ano → `task.sh update "$TASK_SLUG" phase spec` + `task.sh move "$TASK_SLUG" todo`
 
 #### spec
 1. Navrhni 2–3 přístupy (minimal, clean, pragmatic)
-2. Komentář na issue + Slack zpráva
-3. Swap labels, set Waiting On
-4. Chat-responder zapíše volbu, swap `phase:spec` → `phase:implement`
+2. Worker note + Slack zpráva
+3. `task.sh update "$TASK_SLUG" waiting_on "<čeká na volbu>"`
+4. Chat-responder zapíše volbu, `task.sh update "$TASK_SLUG" phase implement`
 
 #### implement
 Standardní worker execution dle zvolené spec.
-Po dokončení: swap `phase:implement` → `phase:review`, status → todo.
+Po dokončení: `task.sh update "$TASK_SLUG" phase review` + `task.sh move "$TASK_SLUG" todo`.
 
 #### review
 1. Projdi implementaci — bugs, konvence, zjednodušení
-2. Komentář + Slack zpráva
-3. Pokud blokery → Waiting On
-4. Pokud OK → `work-done.sh`
+2. Worker note + Slack zpráva
+3. Pokud blokery → `task.sh update "$TASK_SLUG" waiting_on "<blocker>"`
+4. Pokud OK → `task.sh move "$TASK_SLUG" done`
 
 ### Pipeline pravidla
-- Worker vždy zkontroluje phase label z `work-task-info.sh` na začátku
+- Worker vždy zkontroluje phase z `task.sh read` na začátku
 - Každá fáze je separátní worker run (task se vrací do todo mezi fázemi)
 - Max 3 Slack zprávy celkem na celý pipeline
-- Uživatel může přerušit cancel (#NNN přes chat)
+- Uživatel může přerušit cancel (slug přes chat)
 
 ## Worktree & PR mode
 
-Pokud issue má label `worktree`, worker běží v izolovaném git worktree (heartbeat nastaví `isolation: "worktree"` na Agent tool).
+Pokud task má frontmatter `worktree: true`, worker běží v izolovaném git worktree (heartbeat nastaví `isolation: "worktree"` na Agent tool).
 
-**Auto-worktree pro assistant repo:** Pokud task modifikuje soubory v repozitáři asistenta, vždy použij worktree mode a vytvoř MR — i bez explicitního labelu `worktree`. Nepushuj přímo do main.
+**Auto-worktree pro assistant repo:** Pokud task modifikuje soubory v repozitáři asistenta, vždy použij worktree mode — i bez explicitního `worktree: true`. Nepushuj přímo do main.
 
 ### Pravidla
 - Všechny změny commitni do worktree branch
-- Po dokončení vytvoř MR: `glab mr create --title "<title>" --description "Closes #<issue>" --target-branch main --assignee @me --remove-source-branch --yes`
-- PR title = issue title (nebo zkrácená verze)
-- PR body obsahuje `Closes #<N>` pro auto-close issue při merge
+- `git push -u origin HEAD`
+- Uživatel vytvoří MR manuálně
 - Nepushuj přímo do main
 - Branch name: automaticky z worktree (Claude Code ji vytvoří)
 
 ### Commit message
 Použij konvenční commit message (feat/fix/chore) dle typu změny.
 
-### Po vytvoření PR
-- `work-done.sh --issue <N> --summary "PR #<X>: <title>"`
-- Slack report obsahuje link na PR
+### Po dokončení worktree tasku
+- `task.sh note "$TASK_SLUG" "## Result\nBranch: <branch>, pushed. <popis změn>"`
+- `task.sh move "$TASK_SLUG" done`
+- Slack report obsahuje název branch
 
 ---
 
@@ -165,7 +172,7 @@ Výsledný vzhled:
 ✅ <konkrétní výsledek 2>
 ⚠️ <upozornění — jen pokud relevantní>
 
-#<id> · <Xm Ys>
+<slug> · <Xm Ys>
 ```
 
 **Konkrétnost je povinná.**

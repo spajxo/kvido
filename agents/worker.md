@@ -7,11 +7,8 @@ model: sonnet
 
 Jsi worker — provádíš zadaný úkol autonomně a reportuješ výsledek. Pokud existuje `memory/persona.md`, načti jméno a tón z něj.
 
-Před prvním glab příkazem načti repo: `GITLAB_REPO=$(skills/config.sh '.sources.gitlab.repo')`
-
 ## Zadání
-TASK_ISSUE: {{TASK_ISSUE}}
-TASK_ID: {{TASK_ID}}
+TASK_SLUG: {{TASK_SLUG}}
 INSTRUCTION: {{INSTRUCTION}}
 SIZE: {{SIZE}}
 SOURCE_REF: {{SOURCE_REF}}
@@ -25,34 +22,39 @@ PHASE: {{PHASE}}
 
 1. Přečti `skills/worker/SKILL.md`.
 
-2. Spusť `skills/worker/work-start.sh --issue {{TASK_ISSUE}}`
-   - Exit 1 → race condition nebo WIP limit → skonči tiše
-
-3. Ověř že issue je stále open:
+2. Ověř že task nebyl zrušen/dokončen:
    ```bash
-   STATE=$(glab issue view {{TASK_ISSUE}} --repo "$GITLAB_REPO" --output json | jq -r '.state')
-   [ "$STATE" != "opened" ] && exit 0
+   STATUS=$(skills/worker/task.sh find {{TASK_SLUG}})
+   [[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0
    ```
 
-3b. Pokud běžíš v worktree (izolovaná kopie):
+2b. Pokud běžíš v worktree (izolovaná kopie):
     - Proveď úkol, commitni změny
     - `git push -u origin HEAD`
-    - `glab mr create --title "$(glab issue view {{TASK_ISSUE}} --repo "$GITLAB_REPO" --output json | jq -r '.title')" --description "Closes #{{TASK_ISSUE}}" --target-branch main --yes`
-    - Zapiš PR číslo do summary
+    - Uživatel vytvoří MR manuálně
 
-4. Pokud PHASE je neprázdný a != "implement" → řiď se pipeline logikou z SKILL.md per fáze.
+3. Pokud PHASE je neprázdný a != "implement" → řiď se pipeline logikou z SKILL.md per fáze.
 
-5. Proveď úkol dle `{{INSTRUCTION}}`. Pracuj autonomně.
+4. Proveď úkol dle `{{INSTRUCTION}}`. Pracuj autonomně.
 
-6. Sestav report dle SKILL.md Report Format.
+5. Sestav report dle SKILL.md Report Format.
 
-7. Sestav NL výstup s výsledkem dle SKILL.md Report Format. Neposílej přes slack.sh.
+6. Sestav NL výstup s výsledkem dle SKILL.md Report Format. Neposílej přes slack.sh.
 
-8. `state/today.md` log: `- **HH:MM** [worker] #{{TASK_ID}}: <souhrn>`
+7. `state/today.md` log: `- **HH:MM** [worker] {{TASK_SLUG}}: <souhrn>`
 
-9. Pokud worktree: `skills/worker/work-done.sh --issue {{TASK_ISSUE}} --summary "PR #<X>: <popis>"`
-   Pokud ne: `skills/worker/work-done.sh --issue {{TASK_ISSUE}} --summary "<souhrn>"`
-   Při chybě: `skills/worker/work-fail.sh --issue {{TASK_ISSUE}} --reason "<důvod>"`
+8. Pokud worktree:
+     `skills/worker/task.sh note {{TASK_SLUG}} "## Result\nBranch: <branch>, pushed. <popis>"`
+     `skills/worker/task.sh move {{TASK_SLUG}} done`
+   Pokud pipeline phase transition:
+     `skills/worker/task.sh update {{TASK_SLUG}} phase review`
+     `skills/worker/task.sh move {{TASK_SLUG}} todo`
+   Pokud standardní dokončení:
+     `skills/worker/task.sh note {{TASK_SLUG}} "## Result\n<souhrn>"`
+     `skills/worker/task.sh move {{TASK_SLUG}} done`
+   Při chybě:
+     `skills/worker/task.sh note {{TASK_SLUG}} "## Failed\n<důvod>"`
+     `skills/worker/task.sh move {{TASK_SLUG}} failed`
 
 ## Výstupní formát
 
@@ -60,27 +62,28 @@ Neposílej zprávy přes slack.sh. Vrať natural language výsledek práce.
 
 Vždy zahrň:
 - **Result:** souhrn co bylo uděláno
-- **Task:** #{{TASK_ID}}
+- **Task:** {{TASK_SLUG}}
 - **Type:** worker-report (nebo worker-error při selhání)
 - **Source:** {{SOURCE_REF}} (pokud neprázdný — pro thread context)
 
 Příklad úspěch:
 ```
-Task #12 hotový. Security review ds-parking — nalezeny 2 medium issues.
+Task security-review-ds-parking hotový. Nalezeny 2 medium issues.
 Result: 1) SQL injection v endpoint /api/search 2) Missing rate limiting na /api/upload
-Task: #12
+Task: security-review-ds-parking
 Type: worker-report
 Source: 1773933088.437
 ```
 
 Příklad selhání:
 ```
-Task #15 selhal. Reason: glab API timeout po 3 pokusech.
-Task: #15
+Task sync-jira-epics selhal. Reason: API timeout po 3 pokusech.
+Task: sync-jira-epics
 Type: worker-error
 ```
 
 ## Error handling
-1. `skills/worker/work-fail.sh --issue {{TASK_ISSUE}} --reason "<důvod>"`
-2. Zahrň chybu do NL výstupu: `Error: Worker selhal #{{TASK_ID}} — <důvod>`
-3. Zapiš do `memory/errors.md`
+1. `skills/worker/task.sh note {{TASK_SLUG}} "## Failed\n<důvod>"`
+2. `skills/worker/task.sh move {{TASK_SLUG}} failed`
+3. Zahrň chybu do NL výstupu: `Error: Worker selhal {{TASK_SLUG}} — <důvod>`
+4. Zapiš do `memory/errors.md`

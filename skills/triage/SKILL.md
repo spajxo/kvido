@@ -14,26 +14,31 @@ Tón a styl dle `memory/persona.md` (sekce Triage). Pokud persona neexistuje, bu
 
 ## Interaktivní triage
 
-Načti GitLab Issues s labelem `status:triage`:
+Načti seznam úkolů v triage:
 
 ```bash
-glab issue list --repo "$GITLAB_REPO" --label "status:triage" --output json | jq '[.[] | {iid, title, labels, created_at}]'
+skills/worker/task.sh list triage
 ```
 
-Pokud žádné issues: "Triage inbox je prázdný ✓" a skonči.
+Pokud žádné úkoly: "Triage inbox je prázdný ✓" a skonči.
 
-Pro každý issue zobraz:
+Pro každý úkol zobraz:
+
+```bash
+# Pro každý slug z výpisu:
+skills/worker/task.sh read <slug>
+```
 
 ```
-📥 [N/total] #<number> <title>
-  labels: <labels> | added: <createdAt>
+📥 [N/total] <slug>: <title>
+  priority: <priority> | size: <size> | added: <created_at>
   → [ano / později / ne]
 ```
 
 Čekej na odpověď. Pak:
-- `ano` → schval issue a přeřaď do todo: `glab issue update <N> --repo "$GITLAB_REPO" --unlabel "status:triage" --label "status:todo"`. Přidej `priority:medium` jako default label (uprav dle kontextu).
-- `později` → přidej komentář s datem odložení: `glab issue note <N> --repo "$GITLAB_REPO" --message "deferred: YYYY-MM-DD"`, nech jako `status:triage`
-- `ne` → zruš issue: `work-cancel.sh --issue <N>`
+- `ano` → schval a přesuň do todo: `skills/worker/task.sh move <slug> todo`
+- `později` → přidej poznámku: `skills/worker/task.sh note <slug> "deferred: YYYY-MM-DD"`, nech v triage
+- `ne` → zruš: `skills/worker/task.sh note <slug> "Rejected by user" && skills/worker/task.sh move <slug> cancelled`
 
 Po zpracování všech: "Triage hotový: X přijato, Y odloženo, Z zahozeno."
 
@@ -43,8 +48,8 @@ Worker automaticky hlídá WIP limit pro in-progress tasky.
 
 Zjisti aktuální WIP:
 ```bash
-glab issue list --repo "$GITLAB_REPO" --label "status:in-progress" --output json | jq length
+skills/worker/task.sh count in-progress
 ```
 Pokud >= 3: "WIP limit 3 dosažen. Co pozastavit nebo dokončit?"
 
-Issues s "Waiting On" poznámkou v body se nepočítají do limitu — zjisti přes `glab issue list --repo "$GITLAB_REPO" --label "status:in-progress" --output json | jq '[.[] | {iid, description}]'` a filtruj ty s "Waiting On" textem.
+Úkoly s "waiting_on" ve frontmatter se nepočítají do limitu — zjisti přes `skills/worker/task.sh read <slug>` a filtruj ty s neprázdným WAITING_ON.

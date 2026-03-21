@@ -115,10 +115,9 @@ Buď stručný. Bullet points. Žádné vycpávky.
 
 ### Triage check
 
-Spočítej triage issues:
+Spočítej triage úkoly:
 ```bash
-GITLAB_REPO=$(skills/config.sh '.sources.gitlab.repo')
-glab issue list --repo "$GITLAB_REPO" --label "status:triage" --output json | jq length
+skills/worker/task.sh count triage
 ```
 Pokud > 0:
 > "X položek v agent triage — spusť `/triage` pro zpracování."

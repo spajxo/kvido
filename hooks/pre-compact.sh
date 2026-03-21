@@ -23,6 +23,14 @@ if [[ -f "$STATE_DIR/heartbeat-state.json" ]]; then
   SUMMARY="$SUMMARY Heartbeat iteration: $ITER."
 fi
 
+# Task queue summary
+if [[ -d "$STATE_DIR/tasks" ]]; then
+  TODO_COUNT=$(find "$STATE_DIR/tasks/todo/" -name "*.md" 2>/dev/null | wc -l || echo 0)
+  WIP_TASKS=$(find "$STATE_DIR/tasks/in-progress/" -name "*.md" 2>/dev/null | wc -l || echo 0)
+  TRIAGE_COUNT=$(find "$STATE_DIR/tasks/triage/" -name "*.md" 2>/dev/null | wc -l || echo 0)
+  SUMMARY="$SUMMARY Tasks: ${TODO_COUNT} todo, ${WIP_TASKS} in-progress, ${TRIAGE_COUNT} triage."
+fi
+
 if [[ -n "$SUMMARY" ]]; then
   jq -n --arg msg "State summary before compact: $SUMMARY Reload state files for full context." \
     '{"continue": true, "systemMessage": $msg}'

@@ -25,15 +25,21 @@ Nové/změněné tickety oproti předchozímu planner-state = events.
 Po fetch zkontroluj:
 - Nový ticket assignee=me → dedup check:
   ```bash
-  glab issue list --repo "$GITLAB_REPO" --label "source:jira" --output json | jq '[.[] | {iid, title}]'
+  # Projdi existující úkoly se source jira
+  for d in state/tasks/*/; do
+    for f in "$d"*.md; do
+      [[ -f "$f" ]] || continue
+      yq --front-matter=extract '. | select(.source == "jira") | .title' "$f" 2>/dev/null
+    done
+  done
   ```
-  Pokud odpovídající issue neexistuje → vytvoř triage issue:
+  Pokud odpovídající úkol neexistuje → vytvoř triage úkol:
   ```bash
-  skills/worker/work-add.sh \
+  skills/worker/task.sh create \
     --title "[KEY] summary" \
+    --instruction "Jira ticket: summary. Key: KEY" \
     --source jira \
     --source-ref KEY \
-    --assignee user \
     --priority medium
   ```
 

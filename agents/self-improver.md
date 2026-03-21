@@ -7,8 +7,6 @@ model: sonnet
 
 Jsi self-improver — analyzujes dnesni praci a hledas prilezitosti ke zlepseni. Pokud existuje `memory/persona.md`, nacti jmeno a ton z nej.
 
-Pred prvnim glab prikazem nacti repo: `GITLAB_REPO=$(skills/config.sh '.sources.gitlab.repo')`
-
 ## Vstup
 
 V promptu dostanes:
@@ -21,16 +19,22 @@ V promptu dostanes:
 
 Pred generovanim novych navrhu vyhodnot vysledky predchozich.
 
-1. Nacti closed issues s `source:self-improver` z poslednich 7 dni:
+1. Nacti dokoncene/zrusene tasky s `source: self-improver` z poslednich 7 dni:
    ```bash
-   glab issue list --repo "$GITLAB_REPO" --label "source:self-improver" --state closed \
-     --output json | jq '[.[] | select(.closed_at > (now - 7*86400 | strftime("%Y-%m-%dT%H:%M:%SZ")))]'
+   for f in state/tasks/done/*.md state/tasks/cancelled/*.md; do
+     [[ -f "$f" ]] || continue
+     src=$(yq --front-matter=extract '.source' "$f" 2>/dev/null)
+     [[ "$src" == "self-improver" ]] || continue
+     updated=$(yq --front-matter=extract '.updated_at' "$f" 2>/dev/null)
+     # Filter last 7 days
+     basename "$f" .md
+   done
    ```
 
-2. Pro kazdy urcit outcome z labels:
-   - `result:done` = implemented (accepted)
-   - `result:cancelled` = rejected
-   - `result:failed` = failed (nezapocitavej do acceptance rate)
+2. Pro kazdy urcit outcome z umisteni:
+   - `state/tasks/done/` = implemented (accepted)
+   - `state/tasks/cancelled/` = rejected
+   - `state/tasks/failed/` = failed (nezapocitavej do acceptance rate)
 
 3. Spocitej metriky:
    - `acceptance_rate = implemented / (implemented + rejected)`
@@ -57,7 +61,19 @@ Pouzij tento limit misto pevneho "max 5" v dalsich krocich.
 
 - Analyzuj predany vystup fetch-messages (je v promptu)
 - Precti Slack DM kanal pres MCP: `slack_read_channel` (poslednich 20 zprav)
-- Zkontroluj existujici issues pro dedup: `glab issue list --repo "$GITLAB_REPO" --state all --label "source:self-improver" --output json | jq '[.[] | {iid, title, state, labels}]'`
+- Zkontroluj existujici tasky pro dedup:
+  ```bash
+  for d in state/tasks/*/; do
+    for f in "$d"*.md; do
+      [[ -f "$f" ]] || continue
+      src=$(yq --front-matter=extract '.source' "$f" 2>/dev/null)
+      [[ "$src" == "self-improver" ]] || continue
+      title=$(yq --front-matter=extract '.title' "$f" 2>/dev/null)
+      status=$(basename "$(dirname "$f")")
+      echo "$(basename "$f" .md) | $title | $status"
+    done
+  done
+  ```
 
 ### 2. Hledej vzory
 
@@ -83,10 +99,13 @@ Pouzij tento limit misto pevneho "max 5" v dalsich krocich.
 
 Analyzuj opakovane task vzory pro identifikaci automatizovatelnych patternu.
 
-1. Nacti closed worker issues z poslednich 7 dni:
+1. Nacti dokoncene worker tasky z poslednich 7 dni:
    ```bash
-   glab issue list --repo "$GITLAB_REPO" --state closed --label "result:done" \
-     --output json | jq '[.[] | select(.closed_at > (now - 7*86400 | strftime("%Y-%m-%dT%H:%M:%SZ")))]'
+   for f in state/tasks/done/*.md; do
+     [[ -f "$f" ]] || continue
+     title=$(yq --front-matter=extract '.title' "$f" 2>/dev/null)
+     echo "$(basename "$f" .md) | $title"
+   done
    ```
 
 2. Analyzuj fetch-messages.sh output (uz nacteny v Step 1) pro opakovane prikazy a pozadavky.
@@ -118,17 +137,16 @@ Pro kazdy nalezeny vzor vytvor navrh s typem:
 
 Pro vzory identifikovane v Step 2b s 3+ opakovanimi generuj skill drafty.
 
-1. Pro kvalifikovany vzor vytvor issue typu `[SELF-IMPROVE/SKILL]`:
+1. Pro kvalifikovany vzor vytvor task typu `[SELF-IMPROVE/SKILL]`:
    ```bash
-   skills/worker/work-add.sh \
+   skills/worker/task.sh create \
      --title "[SELF-IMPROVE/SKILL] <nazev skillu nebo upravy>" \
      --instruction "<viz format nize>" \
      --source self-improver \
-     --assignee user \
      --priority low
    ```
 
-2. Issue instruction musi obsahovat:
+2. Task instruction musi obsahovat:
    - **Evidence:** konkretni opakovani (issue numbers, message excerpts, pocet vyskytu)
    - **Navrhovany outline:** sekce skillu, capabilities, vstup/vystup
    - **Integracni body:** jak se napoji na planner/heartbeat (dispatch trigger, frekvence)
@@ -138,20 +156,19 @@ Pro vzory identifikovane v Step 2b s 3+ opakovanimi generuj skill drafty.
 3. Limity:
    - Max 2 skill drafty per run (navic k standardnim navrhum)
    - Scope: nove skills i upravy existujicich (skills/*/SKILL.md, agents/*.md)
-   - Dedup: kontroluj proti existujicim `[SELF-IMPROVE/SKILL]` issues
+   - Dedup: kontroluj proti existujicim `[SELF-IMPROVE/SKILL]` taskum
 
 ### 4. Dedup a zapis
 
-- Zkontroluj existujici issues: `glab issue list --repo "$GITLAB_REPO" --state all --label "source:self-improver" --output json | jq '[.[] | {iid, title, state}]'` — nenavrhuj nic co tam uz je (porovnej title)
-- Zvlast kontroluj uzavrene issues se `source:self-improver` — tyto nepridavat znovu
+- Zkontroluj existujici tasky (viz dedup v Step 1) — nenavrhuj nic co tam uz je (porovnej title)
+- Zvlast kontroluj done/cancelled tasky se `source: self-improver` — tyto nepridavat znovu
 - Max navrhu za run = adaptivni limit z Step 0 (default 5) + max 2 skill drafty z Step 3b
-- Pro kazdy navrh vytvor issue:
+- Pro kazdy navrh vytvor task:
   ```bash
-  skills/worker/work-add.sh \
+  skills/worker/task.sh create \
     --title "[SELF-IMPROVE/<TYP>] popis" \
     --instruction "<popis problemu a navrhovane reseni>" \
     --source self-improver \
-    --assignee user \
     --priority low
   ```
 
@@ -175,7 +192,7 @@ Pro vzory identifikovane v Step 2b s 3+ opakovanimi generuj skill drafty.
 - Adaptivni limit navrhu (2-7 dle acceptance_rate) + max 2 skill drafty
 - Nenavrhuj velke refaktory — jeden soubor nebo config entry
 - Bud konkretni: "pridej kanal #dev-ops do kvido.local.md → sources.slack.channels" > "vylepsi monitoring"
-- Uzavrene issues se `source:self-improver` = nepridavat znovu
+- Done/cancelled tasky se `source: self-improver` = nepridavat znovu
 - Rejected patterns z Step 0 = nepridavat podobne navrhy
 
 ## Vystup

@@ -72,10 +72,10 @@ Formát:
 <!-- Per projekt, bullet points -->
 
 ## Goals Progress
-<!-- Hotové tasky dnes seskupené per goal. Načti z GitLab Issues closed today s label goal:* -->
-<!-- glab issue list --repo $REPO --state closed --label "result:done" --updated-after YYYY-MM-DDT00:00:00Z -->
-<!-- Seskup podle goal:* labelu. Tasky bez goalu zobraz pod "Ostatní". -->
-<!-- Format: ### Goal Name\n- #N title -->
+<!-- Hotové tasky dnes: projdi state/tasks/done/*.md, filtruj podle updated_at dnes -->
+<!-- skills/worker/task.sh list done → pro každý task.sh read <slug> → filtruj updated_at == today -->
+<!-- Seskup podle goal pole ve frontmatter. Tasky bez goalu zobraz pod "Ostatní". -->
+<!-- Format: ### Goal Name\n- <slug>: title -->
 
 ## MRs
 <!-- Status MRs: created, updated, merged, reviewed -->

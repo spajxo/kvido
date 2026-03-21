@@ -8,16 +8,16 @@ Kvido is a Claude Code plugin — rezidentni asistent ktery bezi ve vlastni work
 
 - **Heartbeat** — periodic background monitoring, chat dispatch, worker orchestration
 - **Planner** — change detection, triage, notifications, daily context
-- **Worker** — async task queue via GitLab Issues
+- **Worker** — async task queue via local markdown files
 - **Morning / EOD** — daily briefing and end-of-day journal
 
 ## Prerequisites
 
 | Tool | Required | Purpose |
 |------|----------|---------|
-| glab | Yes | Worker queue (GitLab Issues) |
 | jq | Yes | JSON parsing |
-| yq | Yes | YAML parsing (kvido.local.md) |
+| yq | Yes | YAML parsing (kvido.local.md, task frontmatter) |
+| glab | No | GitLab monitoring (MR status, git activity) |
 | acli | No | Jira integration |
 | gws | No | Google Workspace (Gmail, Calendar) |
 
@@ -62,6 +62,7 @@ kvido/                        # vase workspace slozka
 ├── .claude/kvido.local.md    # konfigurace zdroju a skillu (gitignored)
 ├── .env                      # Slack tokens, IDs (gitignored)
 ├── state/                    # ephemeral runtime (gitignored)
+│   └── tasks/                # work queue (triage/, todo/, in-progress/, done/, ...)
 ├── memory/                   # persistent kontext (gitignored)
 └── CLAUDE.md                 # instrukce pro Claude Code
 ```
