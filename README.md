@@ -4,8 +4,9 @@ Personal AI workflow assistant for Claude Code — heartbeat, planner, worker, t
 
 ## What is kvido
 
-Kvido is a Claude Code plugin that turns your project directory into a living workspace:
-- **Heartbeat** — periodic background monitoring of Jira, GitLab, Slack, Calendar, Gmail
+Kvido is a Claude Code plugin — rezidentni asistent ktery bezi ve vlastni workspace slozce. Monitoruje vase pracovni nastroje (Jira, GitLab, Slack, Calendar, Gmail) a komunikuje s vami pres Slack DM.
+
+- **Heartbeat** — periodic background monitoring, chat dispatch, worker orchestration
 - **Planner** — change detection, triage, notifications, daily context
 - **Worker** — async task queue via GitLab Issues
 - **Morning / EOD** — daily briefing and end-of-day journal
@@ -22,43 +23,60 @@ Kvido is a Claude Code plugin that turns your project directory into a living wo
 
 ## Installation
 
+1. Vytvor si workspace slozku:
+   ```bash
+   mkdir ~/kvido && cd ~/kvido
+   git init
+   ```
+
+2. Nainstaluj plugin lokalne:
+   ```bash
+   claude plugin install kvido --scope local
+   ```
+
+3. Spust Claude Code a proved onboarding:
+   ```bash
+   claude
+   ```
+   Uvnitr session spust `/setup` — vytvori runtime adresare (`state/`, `memory/`), config sablony (`.claude/kvido.local.md`, `.env`), `.gitignore` a `CLAUDE.md`.
+
+4. Vyplň config (`.claude/kvido.local.md`) a env promenne (`.env`) — `/setup` te provede.
+
+## Daily usage
+
 ```bash
-claude plugin install --plugin-dir /path/to/kvido-plugin
+cd ~/kvido && claude
 ```
 
-Then run `/setup` inside Claude Code to complete the onboarding:
+- **Rano:** rekni "dobre rano" → spusti ranní briefing
+- **Heartbeat:** rekni "spust heartbeat" nebo `/heartbeat` → nastavi cron loop (default 10min), monitoruje zdroje, odpovida na Slack DM
+- **Konec dne:** rekni "koncim" nebo `/eod` → denni journal, worklog check
+- **Pauza:** rekni "jdu spat" → uspí heartbeat do rana
 
-1. Verify prerequisites (glab, jq, yq)
-2. Create runtime directories (`state/`, `memory/`)
-3. Copy config templates (`.claude/kvido.local.md`, `.env`)
-4. Update `.gitignore`
-5. Copy `CLAUDE.md.template` as project `CLAUDE.md`
-6. Run `/setup` for verification
+Heartbeat bezi na pozadi — muzete nechat terminal otevreny a kvido pracuje autonomne.
 
 ## Structure
 
 ```
-kvido/
-├── .claude-plugin/
-│   └── plugin.json          # Plugin manifest
-├── CLAUDE.md.template       # Template for project CLAUDE.md
-├── kvido.local.md.example   # Config template (sources, skills, runtime)
-├── skills/                  # Skill definitions (SKILL.md + bash scripts)
-│   ├── config.sh            # Unified config loader
-│   ├── heartbeat/           # Orchestrator
-│   ├── planner/             # Central brain
-│   ├── worker/              # Task queue scripts
-│   ├── morning/             # Daily briefing
-│   ├── eod/                 # End of day
-│   ├── triage/              # Inbox processing
-│   ├── slack/               # Slack transport + templates
-│   ├── source-*/            # Data source fetchers
-│   └── ...                  # glab, acli-jira, gws-*, interests, etc.
-├── agents/                  # Subagent definitions
-├── commands/                # Slash commands (/morning, /eod, /heartbeat, /triage, /setup)
-└── hooks/                   # hooks.json + pre-compact.sh
+kvido/                        # vase workspace slozka
+├── .claude/kvido.local.md    # konfigurace zdroju a skillu (gitignored)
+├── .env                      # Slack tokens, IDs (gitignored)
+├── state/                    # ephemeral runtime (gitignored)
+├── memory/                   # persistent kontext (gitignored)
+└── CLAUDE.md                 # instrukce pro Claude Code
+```
+
+Plugin samotny (toto repo):
+
+```
+kvido-plugin/
+├── .claude-plugin/plugin.json
+├── skills/                   # SKILL.md + bash helpers
+├── agents/                   # subagent definitions
+├── commands/                 # slash commands (/morning, /eod, /heartbeat, /triage, /setup)
+└── hooks/                    # pre-compact state injection
 ```
 
 ## Status
 
-Version 0.1.0 — plugin packaged with full content. Ready for `--plugin-dir` testing.
+Version 0.1.0 — plugin packaged with full content.
