@@ -1,4 +1,5 @@
 state/
 memory/
+docs/
 .env
 .claude/kvido.local.md
