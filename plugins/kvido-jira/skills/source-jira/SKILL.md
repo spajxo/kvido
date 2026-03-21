@@ -30,6 +30,7 @@ Output: plain text, one block per project.
 
 ### watch
 Run fetch with `--since YYYY-MM-DD` (today's date).
+If fetch.sh returns exit code 10, follow the MCP fallback from the fetch section above, adding `AND updated >= "<today>"` to each JQL filter.
 New/changed tickets compared to previous planner-state = events.
 
 ### triage-detect

@@ -34,6 +34,8 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 - **All bash scripts** use `set -euo pipefail`.
 - **Agents never send Slack messages directly** — they return NL output. Heartbeat delivers via `slack.sh`.
 - **Prompts default to English**. Runtime language is configured in the user's `memory/persona.md`.
+- **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The SKILL.md for each source plugin documents the MCP fallback procedure.
+- **config.sh is duplicated** across all source plugins (each has its own copy). When modifying config.sh, update all copies.
 
 ## Working on this codebase
 

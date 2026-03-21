@@ -25,7 +25,8 @@ Returns pre-categorized data per kvido.local.md `categories` + total meeting tim
 
 ### watch
 If `state/today.md` contains Today's Schedule, use existing data.
-Otherwise run `fetch.sh` and filter meetings starting in the next 60 min → reminder event.
+Otherwise run `fetch.sh`. If it returns exit code 10, follow the MCP fallback from the fetch section above.
+Filter meetings starting in the next 60 min → reminder event.
 
 ## Schedule
 - morning: fetch (today)
