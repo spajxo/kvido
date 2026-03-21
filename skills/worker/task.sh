@@ -148,31 +148,41 @@ cmd_create() {
 
   local file="$TASKS_DIR/$STATUS/$slug.md"
 
-  cat > "$file" <<TASKEOF
----
-title: "$TITLE"
-priority: $PRIORITY
-size: $SIZE
-source: $SOURCE
-source_ref: "$SOURCE_REF"
-pipeline: $PIPELINE
-phase: $PHASE
-worktree: $WORKTREE
-goal: ${GOAL:-null}
-recurring: ${RECURRING:-null}
-waiting_on: ""
-created_at: "$NOW"
-updated_at: "$NOW"
-triage_slack_ts: ""
----
+  # Generate YAML frontmatter via yq for safe escaping of special characters
+  local frontmatter
+  frontmatter=$(
+    jq -n \
+      --arg title "$TITLE" \
+      --arg priority "$PRIORITY" \
+      --arg size "$SIZE" \
+      --arg source "$SOURCE" \
+      --arg source_ref "$SOURCE_REF" \
+      --argjson pipeline "$PIPELINE" \
+      --arg phase "$PHASE" \
+      --argjson worktree "$WORKTREE" \
+      --arg goal "${GOAL:-null}" \
+      --arg recurring "${RECURRING:-null}" \
+      --arg now "$NOW" \
+      '{
+        title: $title,
+        priority: $priority,
+        size: $size,
+        source: $source,
+        source_ref: $source_ref,
+        pipeline: $pipeline,
+        phase: (if $phase == "null" then null else $phase end),
+        worktree: $worktree,
+        goal: (if $goal == "null" then null else $goal end),
+        recurring: (if $recurring == "null" then null else $recurring end),
+        waiting_on: "",
+        created_at: $now,
+        updated_at: $now,
+        triage_slack_ts: ""
+      }' | yq -P
+  )
 
-## Instruction
-
-$INSTRUCTION
-
-## Worker Notes
-
-TASKEOF
+  printf '%s\n---\n\n## Instruction\n\n%s\n\n## Worker Notes\n\n' "---
+${frontmatter}" "$INSTRUCTION" > "$file"
 
   echo "$slug"
 }

@@ -52,10 +52,10 @@ Pokud zpráva obsahuje akční sloveso s rozsahem > 1 lookup ("projdi", "sepiš"
 
 Pokud zpráva je reply na thread worker tasku nebo obsahuje "pipeline"/"brainstorm"/odpověď na otázky workera:
 
-1. Zjisti task:
+1. Zjisti task (pipeline tasky čekají na odpověď v todo/ i in-progress/):
    ```bash
-   # Find pipeline tasks in in-progress:
-   for f in state/tasks/in-progress/*.md; do
+   # Find pipeline tasks waiting for user input:
+   for f in state/tasks/todo/*.md state/tasks/in-progress/*.md; do
      [[ -f "$f" ]] || continue
      if yq --front-matter=extract '.pipeline' "$f" 2>/dev/null | grep -q 'true'; then
        SLUG=$(basename "$f" .md)
