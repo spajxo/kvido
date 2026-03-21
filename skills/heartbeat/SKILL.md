@@ -22,11 +22,11 @@ All dispatch tracking uses **TodoWrite/TodoRead** (Claude Code native task primi
 
 | Type | ID format | Example |
 |------|-----------|---------|
-| Listener dispatch | `listener:<slack_ts>` | `listener:1773933088.437799` |
+| Chat dispatch | `chat:<slack_ts>` | `chat:1773933088.437799` |
 | Worker dispatch | `worker:<issue_id>` | `worker:20` |
 | Planner dispatch | `planner` | `planner` |
 | Triage poll | `triage:<issue_id>` | `triage:7` |
-| Notify listener | `notify:listener:<ts>` | `notify:listener:1773933088.437` |
+| Notify chat | `notify:chat:<ts>` | `notify:chat:1773933088.437` |
 | Notify planner | `notify:planner:<iteration>` | `notify:planner:42` |
 | Notify worker | `notify:worker:<issue_id>` | `notify:worker:20` |
 | Notify triage | `notify:triage:<issue_id>` | `notify:triage:15` |
@@ -68,7 +68,7 @@ Read `state/today.md` and `state/current.md` for context.
 ### Recovery check
 
 Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from a previous iteration (orphaned agents):
-- `listener:*` in_progress -- mark `completed` (listener from previous session is gone, next new message will create fresh task)
+- `chat:*` in_progress -- mark `completed` (chat agent from previous session is gone, next new message will create fresh task)
 - `worker:*` in_progress -- leave as-is (worker tracks state via GitLab Issues independently)
 - `planner` in_progress -- mark `completed` (planner will be re-dispatched on next due interval)
 - `triage:*` in_progress -- mark `completed` (will be re-created by planner)
@@ -81,31 +81,47 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
 
 1. **Filter new messages:** Messages in `CHAT_MESSAGES` block, field `user` == `SLACK_USER_ID`, `ts` > `last_chat_ts`, ignore bot messages.
 
-2. **Check for active chat agent:** Use `TodoRead` -- look for any `listener:*` task with status `in_progress`.
+2. **Check for active chat agent:** Use `TodoRead` -- look for any `chat:*` task with status `in_progress`.
 
-3. **New message + no active chat task -- dispatch listener:**
-   - `TodoWrite` task `listener:<ts>` with status `in_progress` and description with message summary
-   - Load last 10 messages; if thread reply, load whole thread
-   - **THREAD_TS derivation:** If message has field `thread_ts` (is thread reply) -- `THREAD_TS = thread_ts value`. If no `thread_ts` (top-level message) -- `THREAD_TS = ""`. **Never pass `ts` as THREAD_TS.**
-   - Build prompt (CHAT_HISTORY, NEW_MESSAGE, THREAD_TS, CURRENT_STATE, MEMORY), check TodoRead for any `listener:*` tasks with status `pending` (queued messages from previous iterations)
-   - Dispatch `listener` agent (`run_in_background: true`)
-   - Update: `heartbeat-state.sh set last_chat_ts "<ts>"` + `heartbeat-state.sh set last_interaction_ts "$(date -Iseconds)"`
+3. **Classify and handle new message:**
 
-4. **New message + active chat task exists -- queue:**
-   - Create `notify:queue:<ts>` TODO (in_progress)
-   - Decide delivery inline: `chat-reply` is always immediate
-   - Send acknowledgement immediately through `skills/slack/slack.sh`:
+   Read the message and decide: **triviální** (answer inline) or **netriviální** (dispatch subagent).
+
+   **THREAD_TS derivation:** If message has field `thread_ts` (is thread reply) -- `THREAD_TS = thread_ts value`. If no `thread_ts` (top-level message) -- `THREAD_TS = ""`. **Never pass `ts` as THREAD_TS.**
+
+   **Triviální** — heartbeat handles inline, no agent dispatch:
+   - Pozdravy, potvrzení, díky ("ahoj", "ok", "díky", "jasné", "super")
+   - Sleep mode ("jdu spát", "dobrou noc", "pauza", "sleep"):
      ```bash
-     skills/slack/slack.sh send chat \
-       --var message="Ještě pracuju na předchozím úkolu, moment..."
+     SLEEP_UNTIL=$(date -d "tomorrow 06:00" -Iseconds)  # or parsed time
+     skills/heartbeat/heartbeat-state.sh set sleep_until "$SLEEP_UNTIL"
      ```
-   - If send succeeds -- capture returned `ts`, mark `notify:queue:<ts>` completed and log summary
-   - If send fails -- log warning to `state/today.md`, still mark `notify:queue:<ts>` completed
-   - `TodoWrite` task `listener:<ts>` with status `pending` and description with message text
-   - Update: `heartbeat-state.sh set last_chat_ts "<ts>"` + `heartbeat-state.sh set last_interaction_ts "$(date -Iseconds)"`
+   - Turbo mode ("turbo"):
+     ```bash
+     TURBO_UNTIL=$(date -d "+30 min" -Iseconds)  # or parsed duration
+     skills/heartbeat/heartbeat-state.sh set turbo_until "$TURBO_UNTIL"
+     ```
+   - Cancel ("zruš #NNN", "cancel #NNN"):
+     ```bash
+     skills/worker/work-cancel.sh --issue <NNN> --reason "Cancelled via chat"
+     ```
+   - Simple status questions answerable from loaded state/current.md and state/today.md
 
-5. **Agent completion:** When a dispatched listener agent completes (background task finishes), in the next heartbeat iteration:
-   - `TodoRead` -- find `listener:*` tasks with status `in_progress`
+   For triviální: compose response, create `notify:chat:<ts>` TODO (in_progress), deliver via `slack.sh send|reply chat --var message="<response>"`, mark notify TODO completed. Log: `- **HH:MM** [chat] <summary>`
+
+   **Netriviální** — requires MCP lookup, research, task creation, or pipeline response:
+   - If no active `chat:*` task:
+     - `TodoWrite` task `chat:<ts>` with status `in_progress`
+     - Load last 10 messages; if thread reply, load whole thread
+     - Dispatch `chat-agent` (`run_in_background: true`) with template vars: CHAT_HISTORY, NEW_MESSAGE, THREAD_TS, CURRENT_STATE, MEMORY
+   - If active `chat:*` task exists:
+     - Send ack: `skills/slack/slack.sh send chat --var message="Moment..."`
+     - `TodoWrite` task `chat:<ts>` with status `pending`
+
+   Update: `heartbeat-state.sh set last_chat_ts "<ts>"` + `heartbeat-state.sh set last_interaction_ts "$(date -Iseconds)"`
+
+4. **Agent completion:** When a dispatched chat-agent completes (background task finishes), in the next heartbeat iteration:
+   - `TodoRead` -- find `chat:*` tasks with status `in_progress`
    - Since the agent has already finished, proceed to **Step 2c** for output processing and inline delivery
    - After delivery is processed, mark chat task as `completed`
    - Check for `pending` chat tasks -- if any exist, dispatch next one (FIFO) -- but only AFTER delivery is processed for the completed task
@@ -120,35 +136,19 @@ Triage TODOs are created in Step 2c when heartbeat delivers a `triage-item` noti
 
 ### Polling reactions
 
-Use `TaskList` to find all `triage:*` tasks (not completed). These replace `state/triage-messages.json`.
-
-For each `triage:<issue_id>` task, the description contains `ts=<slack_ts>`:
+Use `TodoRead` to find all `triage:*` tasks (not completed). Build JSON input and delegate to bash:
 
 ```bash
-REACTIONS=$(skills/slack/slack.sh reactions "$TS")
-APPROVED=$(echo "$REACTIONS" | jq -r '.white_check_mark // .thumbsup // "false"')
-REJECTED=$(echo "$REACTIONS" | jq -r '.x // .thumbsdown // "false"')
+# Build input: [{"issue":"7","ts":"1773..."},...]
+echo "$TRIAGE_JSON" | skills/heartbeat/triage-poll.sh
 ```
 
-**If approved (white_check_mark or thumbsup == true):**
-1. Move issue to todo:
-   ```bash
-   glab issue update "$ISSUE" --repo "$GITLAB_REPO" --unlabel "status:triage" --label "status:todo"
-   ```
-2. Log: `- **HH:MM** [triage] #<N> approved -> status:todo`
-3. `TodoWrite` update task `triage:<issue_id>` to status `completed`
+Output: `[{"issue":"7","result":"approved|rejected|pending"},...]`
 
-**If rejected (x or thumbsdown == true):**
-1. Cancel issue:
-   ```bash
-   skills/worker/work-cancel.sh --issue "$ISSUE"
-   ```
-2. Log: `- **HH:MM** [triage] #<N> rejected -> cancelled`
-3. `TodoWrite` update task `triage:<issue_id>` to status `completed`
-
-**If neither -- skip** (wait for next iteration).
-
-Max 5 items per iteration.
+For each result:
+- `approved` → log `- **HH:MM** [triage] #<N> approved -> status:todo`, mark `triage:<issue_id>` TODO completed
+- `rejected` → log `- **HH:MM** [triage] #<N> rejected -> cancelled`, mark TODO completed
+- `pending` → skip
 
 ---
 
@@ -171,22 +171,22 @@ Rules:
 - `immediate` -- use returned `ts` for follow-up flows (triage polling, thread replies)
 - shell failure -- log warning to `state/today.md`, mark notify TODO completed
 
-### Listener completion
+### Chat-agent completion
 
-1. When listener agent completes (background task returns result):
-   - Read listener's NL output (returned natively by Agent tool)
+1. When chat-agent completes (background task returns result):
+   - Read chat-agent's NL output (returned natively by Agent tool)
    - Parse `total_tokens` and `duration_ms` from Agent tool `<usage>` tag
-   - Log: `skills/heartbeat/heartbeat-state.sh log-activity listener execute --tokens <total_tokens> --duration_ms <duration_ms> --detail "<message summary[:60]>"`
+   - Log: `skills/heartbeat/heartbeat-state.sh log-activity chat execute --tokens <total_tokens> --duration_ms <duration_ms> --detail "<message summary[:60]>"`
    - Parse output for: `Odpověď`, `Thread`, `Type`
-   - Create `notify:listener:<ts>` TODO (in_progress)
+   - Create `notify:chat:<ts>` TODO (in_progress)
    - Decide `LEVEL=immediate`, template `chat`
    - Deliver inline:
      ```bash
      skills/slack/slack.sh <send|reply> <thread handling> chat \
        --var message="<parsed Odpověď>"
      ```
-   - Mark `listener:*` task as completed
-   - Check for `pending` chat tasks — if any, dispatch next listener (existing FIFO logic)
+   - Mark `chat:*` task as completed
+   - Check for `pending` chat tasks — if any, dispatch next chat-agent (FIFO)
 
 ### Planner completion
 
@@ -341,7 +341,7 @@ If nothing to report -- no output.
 ### Sleep mode
 
 If `SLEEP_ACTIVE == true`, `heartbeat.sh` set `TARGET_PRESET="sleep"` and `ZONE="sleep"`.
-Sleep is activated by keywords in Slack DM (processed by listener). Default until 06:00 tomorrow, custom time supported.
+Sleep is activated by keywords in Slack DM (handled inline by heartbeat in Step 2). Default until 06:00 tomorrow, custom time supported.
 
 When activating sleep mode:
 1. Log: `- **HH:MM** [heartbeat] Sleep mode until $(date -d "$SLEEP_UNTIL" +%H:%M)`
@@ -363,7 +363,7 @@ After waking (heartbeat fired by one-shot cron):
 ### Turbo mode
 
 If `TURBO_ACTIVE == true`, `heartbeat.sh` set `TARGET_PRESET="1m"` and `ZONE="turbo"`.
-Turbo is activated by "turbo" message in Slack DM (processed by listener). Default 30 min.
+Turbo is activated by "turbo" message in Slack DM (handled inline by heartbeat in Step 2). Default 30 min.
 After `turbo_until` expires, heartbeat.sh clears key and returns normal adaptive flow.
 
 1. If `TARGET_PRESET != ACTIVE_PRESET`:
@@ -385,9 +385,9 @@ After `turbo_until` expires, heartbeat.sh clears key and returns normal adaptive
 - **Extremely brief.** One line per event.
 - **State-first.** Read from files, write to files.
 - **Time from system.** `date -Iseconds`.
-- **Max 1 worker per iteration.** Planner + 1 worker + listener is maximum.
+- **Max 1 worker per iteration.** Planner + 1 worker + 1 chat-agent is maximum.
 - **TodoWrite is the single source of truth** for dispatch tracking. No file-based locks.
-- **Dependency rule:** Do not dispatch listener if one is already `in_progress`. Do not dispatch worker if one is already `in_progress`. Planner can run alongside listener but not alongside another planner.
+- **Dependency rule:** Do not dispatch chat-agent if one is already `in_progress`. Do not dispatch worker if one is already `in_progress`. Planner can run alongside chat-agent but not alongside another planner.
 - **No business agent calls slack.sh directly.** Heartbeat owns Slack delivery via `slack.sh`.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
 - **batched_events deprecated.** Batch notifications use notify TODOs with pending status, not heartbeat-state.json array.

@@ -25,7 +25,7 @@ Claude Code plugin (`.claude-plugin/plugin.json`). Installed via `claude plugin 
 1. **Heartbeat** (`skills/heartbeat/`) — cron-based orchestrator (default 10min). Manages chat, worker, planner dispatch via TodoWrite/TodoRead. Owns all Slack delivery through `skills/slack/slack.sh`.
 2. **Planner** (`agents/planner.md` + `skills/planner/`) — runs every Nth heartbeat. Fetches data from sources, detects changes, generates notifications/triage items, dispatches agents (morning/eod).
 3. **Worker** (`agents/worker.md` + `skills/worker/`) — async task queue backed by GitLab Issues. Max 1 concurrent. Model selected by task size (s/m → sonnet, l/xl → opus).
-4. **Listener** (`agents/listener.md`) — handles Slack DM messages. Classifies intent as chat-reply vs worker-task. Supports sleep mode, turbo mode, triage approval, pipeline responses.
+4. **Chat-agent** (`agents/chat-agent.md`) — dispatched by heartbeat for non-trivial Slack DM messages (lookups, task creation, pipeline responses). Trivial messages (greetings, sleep, turbo, cancel) heartbeat handles inline.
 
 ### Data flow
 
@@ -47,13 +47,13 @@ Claude Code plugin (`.claude-plugin/plugin.json`). Installed via `claude plugin 
 
 ### Agents
 
-All agents are dispatched by heartbeat with `run_in_background: true`. They return NL output — **never send Slack messages directly**. Heartbeat parses output and delivers via `slack.sh`.
+All agents are dispatched by heartbeat with `run_in_background: true`. They return NL output — **never send Slack messages directly**. Heartbeat parses output and delivers via `slack.sh`. Triviální chat zprávy (pozdravy, sleep, turbo, cancel) heartbeat řeší inline bez dispatch agenta.
 
 | Agent | Trigger | Purpose |
 |-------|---------|---------|
 | planner | Every Nth heartbeat | Change detection, notifications, agent dispatch |
 | worker | Heartbeat when queue non-empty | Async task execution (GitLab Issues) |
-| listener | Heartbeat on new Slack DM | Chat replies, task creation, mode switching |
+| chat-agent | Heartbeat on non-trivial Slack DM | Lookups, task creation, pipeline responses |
 | librarian | EOD / maintenance | Memory consolidation, extraction, cleanup |
 | morning | Dispatched by planner | Daily briefing (also available as `/morning`) |
 | eod | Dispatched by planner | End-of-day journal (also available as `/eod`) |
