@@ -7,113 +7,115 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `.claude/kvido.local.md` pro focus mode a batching nastavení.
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
+> **Configuration:** Read `.claude/kvido.local.md` for focus mode and batching settings.
 
 # Slack
 
-Slack je primární komunikační kanál. Všechny zprávy jdou přes `slack.sh` wrapper nad Slack Web API (curl + jq) s bot tokenem.
-Heartbeat je jediný orchestrátor delivery policy; `slack.sh` je LLM-facing Slack interface.
+Slack is the primary communication channel. All messages go through the `slack.sh` wrapper over the Slack Web API (curl + jq) with a bot token.
+Heartbeat is the sole orchestrator of delivery policy; `slack.sh` is the LLM-facing Slack interface.
 
-## Použití
+## Usage
 
-Heartbeat sám rozhoduje, zda zprávu poslat hned, batchnout nebo jen zalogovat. Pokud se posílá, používá přímo `slack.sh`.
+Heartbeat decides whether to send a message immediately, batch it, or just log it. When sending, it calls `slack.sh` directly.
 
-### Odeslání zprávy
+### Send a message
 
 ```bash
 skills/slack/slack.sh send <channel> <template> [--var key=value]...
 ```
 
-### Reply do vlákna
+### Reply to a thread
 
 ```bash
 skills/slack/slack.sh reply <channel> <thread_ts> <template> [--var key=value]...
 ```
 
-### Editace zprávy
+### Edit a message
 
 ```bash
 skills/slack/slack.sh edit <channel> <message_ts> <template> [--var key=value]...
 ```
 
-### Čtení zpráv
+### Read messages
 
 ```bash
 skills/slack/slack.sh read <channel> [--limit N] [--oldest ts] [--thread ts]
 ```
 
-Bez `--thread`: čte channel history (`conversations.history`).
-S `--thread <ts>`: čte replies v daném vlákně (`conversations.replies`).
+Without `--thread`: reads channel history (`conversations.history`).
+With `--thread <ts>`: reads replies in the given thread (`conversations.replies`).
 
-### Smazání zprávy
+### Delete a message
 
 ```bash
 skills/slack/slack.sh delete <channel> <message_ts>
 ```
 
-## Šablony
+## Templates
 
-V `templates/` — JSON soubory s `{{placeholder}}` proměnnými. Unified formát: `section` + `context`, emoji prefix dle typu, separátor `━━━`.
+In `templates/` — JSON files with `{{placeholder}}` variables. Unified format: `section` + `context`, emoji prefix by type, separator `━━━`.
 
-| Šablona | Emoji | Vars | Použití |
-|---------|-------|------|---------|
-| `morning` | ☀️ | `date`, `briefing`, `triage_count`, `meeting_time`, `deepwork_time` | Morning briefing souhrn |
-| `eod` | 🌙 | `date`, `summary`, `session_time`, `done_count`, `open_count` | EOD souhrn |
-| `event` | (custom `{{emoji}}`) | `emoji`, `title`, `description`, `source`, `reference`, `timestamp` | Planner notifikace, heartbeat events |
-| `worker-report` | 🔧 | `title`, `results`, `task_id`, `duration` | Worker task dokončení |
-| `triage-item` | 📋 | `issue`, `title`, `description`, `priority`, `size`, `assignee`, `issue_url` | Individuální triage položka |
-| `maintenance` | 🔧 | `librarian`, `enricher`, `self_improver`, `health`, `timestamp` | Maintenance souhrn |
-| `chat` | 💬 | `message` | Obecné zprávy, chat odpovědi |
+| Template | Emoji | Vars | Usage |
+|----------|-------|------|-------|
+| `morning` | ☀️ | `date`, `briefing`, `triage_count`, `meeting_time`, `deepwork_time` | Morning briefing summary |
+| `eod` | 🌙 | `date`, `summary`, `session_time`, `done_count`, `open_count` | EOD summary |
+| `event` | (custom `{{emoji}}`) | `emoji`, `title`, `description`, `source`, `reference`, `timestamp` | Planner notifications, heartbeat events |
+| `worker-report` | 🔧 | `title`, `results`, `task_id`, `duration` | Worker task completion |
+| `triage-item` | 📋 | `issue`, `title`, `description`, `priority`, `size`, `assignee`, `issue_url` | Individual triage item |
+| `maintenance` | 🔧 | `librarian`, `enricher`, `self_improver`, `health`, `timestamp` | Maintenance summary |
+| `chat` | 💬 | `message` | General messages, chat replies |
 
-**Emoji konvence:**
+**Emoji conventions:**
 - 📋 triage, triage overflow
 - 🔧 worker report, maintenance
-- 📊 planner notifikace (použij jako `emoji` var v `event`)
+- 📊 planner notifications (use as `emoji` var in `event`)
 - ☀️ morning
 - 🌙 eod
-- 💬 chat, obecné zprávy
+- 💬 chat, general messages
 
-## Úrovně notifikací
+## Notification Levels
 
-| Úroveň | Chování |
-|---------|---------|
-| `silent` | Jen zápis do `state/today.md`, žádná Slack zpráva |
-| `batch` | Heartbeat vytvoří notify TODO s pending statusem, doručí při dalším full heartbeatu |
-| `immediate` | `slack.sh send` s odpovídající šablonou — okamžitě |
+| Level | Behavior |
+|-------|----------|
+| `silent` | Write to `state/today.md` only, no Slack message |
+| `batch` | Heartbeat creates a notify TODO with pending status, delivers at next full heartbeat |
+| `immediate` | `slack.sh send` with the appropriate template — sent immediately |
 
 ## Threading
 
-Flat zprávy jako default. Thread jen při eskalaci:
-1. První notifikace → `slack.sh send` → uložit `ts` do `reported` entry
-2. Eskalace téhož eventu → `slack.sh reply` do vlákna původní zprávy
+Flat messages as default. Thread only on escalation:
+1. First notification → `slack.sh send` → save `ts` to `reported` entry
+2. Escalation of the same event → `slack.sh reply` into the original message's thread
 
 ## Focus Mode
 
-Přečti `.claude/kvido.local.md` → `focus_mode`. Beze změny — suppress, batching, after_focus_summary fungují identicky.
+Read `.claude/kvido.local.md` → `focus_mode`. Unchanged — suppress, batching, after_focus_summary work identically.
 
 ## Batching
 
-Přečti `.claude/kvido.local.md` → `batching`. Batch notifikace řídí heartbeat přes notify TODO s pending statusem — flush při full heartbeatu nebo změně focus mode.
+Read `.claude/kvido.local.md` → `batching`. Batch notifications are managed by heartbeat via notify TODOs with pending status — flushed at full heartbeat or on focus mode change.
 
 ## Auth
 
-`SLACK_BOT_TOKEN` (xoxb) z `.env`.
+`SLACK_BOT_TOKEN` (xoxb) from `.env`.
 
-Minimální required scopes (dle skutečně volaných API metod):
+Minimum required scopes (based on actually called API methods):
 
-| Scope | API metoda |
+| Scope | API method |
 |-------|-----------|
 | `chat:write` | `chat.postMessage`, `chat.update`, `chat.delete` |
-| `im:history` | `conversations.history`, `conversations.replies` (DM kanál) |
+| `im:history` | `conversations.history`, `conversations.replies` (DM channel) |
 | `reactions:write` | `reactions.add` |
 | `reactions:read` | `reactions.get` |
 
-Volitelné (jen pokud asistent čte kanály mimo DM):
-- `groups:history` — soukromé kanály
-- `channels:history` — veřejné kanály
+Optional (only if the assistant reads channels outside DM):
+- `groups:history` — private channels
+- `channels:history` — public channels
 - `mpim:history` — group DM
 
-Scopes `channels:read`, `groups:read`, `im:read`, `im:write`, `users:read` a `incoming-webhook` asistent nepoužívá — nepřidávat.
+Scopes `channels:read`, `groups:read`, `im:read`, `im:write`, `users:read` and `incoming-webhook` are not used by the assistant — do not add them.
 
 ## Common Mistakes
 
@@ -128,4 +130,4 @@ Scopes `channels:read`, `groups:read`, `im:read`, `im:write`, `users:read` a `in
 
 ## Fallback
 
-Pokud `slack.sh` selže → loguj error, vrať exit 1. Slack MCP zůstává dostupný jako manuální fallback pro search.
+If `slack.sh` fails → log error, return exit 1. Slack MCP remains available as a manual fallback for search.

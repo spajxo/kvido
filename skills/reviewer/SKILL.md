@@ -5,15 +5,17 @@ allowed-tools: Read, Glob, Grep, Bash
 user-invocable: false
 ---
 
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
 # Reviewer
 
-Instrukce pro worker task provádějící MR review summary.
+Instructions for a worker task performing an MR review summary.
 
-## Postup
-1. Spusť `glab mr view <iid>` v příslušném repo
-2. Spusť `glab mr diff <iid> | head -200`
-3. Vrať shrnutí (max 5 řádků):
-   - Co se mění (1 věta)
-   - Rozsah (soubory, řádky)
+## Steps
+1. Run `glab mr view <iid>` in the relevant repo
+2. Run `glab mr diff <iid> | head -200`
+3. Return a summary (max 5 lines):
+   - What is changing (1 sentence)
+   - Scope (files, lines)
    - Risk level: low/medium/high
-   - Doporučení: approve/comment/needs-deep-review
+   - Recommendation: approve/comment/needs-deep-review

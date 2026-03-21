@@ -4,52 +4,54 @@ description: Use when processing untriaged items in state/tasks/triage/ or enfor
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 ---
 
-> **Konfigurace:** WIP limit a práhy z `.claude/kvido.local.md` → `skills.triage` (přes `config.sh`). Defaults: wip_limit=3, triage_overflow_threshold=10.
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
+> **Configuration:** WIP limit and thresholds from `.claude/kvido.local.md` → `skills.triage` (via `config.sh`). Defaults: wip_limit=3, triage_overflow_threshold=10.
 
 # Triage & Backlog
 
 ## Tone Guidelines
 
-Tón a styl dle `memory/persona.md` (sekce Triage). Pokud persona neexistuje, buď stručný a věcný.
+Tone and style per `memory/persona.md` (Triage section). If persona does not exist, be concise and factual.
 
-## Interaktivní triage
+## Interactive triage
 
-Načti seznam úkolů v triage:
+Load the list of tasks in triage:
 
 ```bash
 skills/worker/task.sh list triage
 ```
 
-Pokud žádné úkoly: "Triage inbox je prázdný ✓" a skonči.
+If no tasks: "Triage inbox is empty ✓" and stop.
 
-Pro každý úkol zobraz:
+For each task display:
 
 ```bash
-# Pro každý slug z výpisu:
+# For each slug from the listing:
 skills/worker/task.sh read <slug>
 ```
 
 ```
 📥 [N/total] <slug>: <title>
   priority: <priority> | size: <size> | added: <created_at>
-  → [ano / později / ne]
+  → [yes / later / no]
 ```
 
-Čekej na odpověď. Pak:
-- `ano` → schval a přesuň do todo: `skills/worker/task.sh move <slug> todo`
-- `později` → přidej poznámku: `skills/worker/task.sh note <slug> "deferred: YYYY-MM-DD"`, nech v triage
-- `ne` → zruš: `skills/worker/task.sh note <slug> "Rejected by user" && skills/worker/task.sh move <slug> cancelled`
+Wait for a response. Then:
+- `yes` → approve and move to todo: `skills/worker/task.sh move <slug> todo`
+- `later` → add a note: `skills/worker/task.sh note <slug> "deferred: YYYY-MM-DD"`, leave in triage
+- `no` → cancel: `skills/worker/task.sh note <slug> "Rejected by user" && skills/worker/task.sh move <slug> cancelled`
 
-Po zpracování všech: "Triage hotový: X přijato, Y odloženo, Z zahozeno."
+After processing all: "Triage done: X accepted, Y deferred, Z discarded."
 
 ## WIP Limit
 
-Worker automaticky hlídá WIP limit pro in-progress tasky.
+Worker automatically enforces the WIP limit for in-progress tasks.
 
-Zjisti aktuální WIP:
+Get current WIP:
 ```bash
 skills/worker/task.sh count in-progress
 ```
-Pokud >= 3: "WIP limit 3 dosažen. Co pozastavit nebo dokončit?"
+If >= 3: "WIP limit of 3 reached. What should be paused or completed?"
 
-Úkoly s "waiting_on" ve frontmatter se nepočítají do limitu — zjisti přes `skills/worker/task.sh read <slug>` a filtruj ty s neprázdným WAITING_ON.
+Tasks with "waiting_on" in frontmatter do not count toward the limit — check via `skills/worker/task.sh read <slug>` and filter those with a non-empty WAITING_ON.

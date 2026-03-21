@@ -1,6 +1,6 @@
 [
   {"type":"section","text":{"type":"mrkdwn","text":"📋 *Triage #{{issue}}* — {{title}}\n{{description}}\n<{{issue_url}}|GitLab #{{issue}}>"}},
   {"type":"context","elements":[
-    {"type":"mrkdwn","text":"{{priority}} · {{size}} · {{assignee}} · reaguj ✅ schválit / ❌ zamítnout"}
+    {"type":"mrkdwn","text":"{{priority}} · {{size}} · {{assignee}} · reply ✅ approve / ❌ reject"}
   ]}
 ]

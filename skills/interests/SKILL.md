@@ -5,41 +5,43 @@ allowed-tools: Read, Write, Bash, WebSearch, WebFetch
 user-invocable: true
 ---
 
-> **Konfigurace:** Přečti `.claude/kvido.local.md` pro témata a intervaly.
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
+> **Configuration:** Read `.claude/kvido.local.md` for topics and intervals.
 
 # Interests
 
-## Manuální použití
-Uživatel řekne "research X" nebo "zjisti stav X" → prohledej web a zapiš výsledky.
+## Manual usage
+User says "research X" or "check status of X" → search the web and write up results.
 
-## Automatické použití (maintenance heartbeat)
-Přečti `.claude/kvido.local.md`. Pro každé téma kde je čas na check (podle `check_interval` a `last_checked` v `state/interests.md`):
+## Automatic usage (maintenance heartbeat)
+Read `.claude/kvido.local.md`. For each topic where it is time to check (based on `check_interval` and `last_checked` in `state/interests.md`):
 
-1. Prohledej web (WebSearch tool) s query z config
-2. Porovnej s předchozím stavem v `state/interests.md`
-3. Pokud nové relevantní info → vytvoř triage úkol:
+1. Search the web (WebSearch tool) with query from config
+2. Compare with previous state in `state/interests.md`
+3. If new relevant info → create a triage task:
    ```bash
    skills/worker/task.sh create \
-     --title "[INTERESTS] popis" \
-     --instruction "popis nálezu" \
+     --title "[INTERESTS] description" \
+     --instruction "description of finding" \
      --source interests \
      --source-ref topic-slug \
      --priority medium
    ```
-4. Aktualizuj `last_checked` v `state/interests.md`
-5. Vrať findings s `urgency` z config (heartbeat rozhodne o notification tieru)
+4. Update `last_checked` in `state/interests.md`
+5. Return findings with `urgency` from config (heartbeat decides on notification tier)
 
 ## Dedup
-Nenavrhuj triage item pokud podobný topic už existuje jako úkol:
+Do not suggest a triage item if a similar topic already exists as a task:
 ```bash
-# Projdi všechny statusy a hledej podle titulku
+# Iterate all statuses and search by title
 for d in state/tasks/*/; do
   for f in "$d"*.md; do
     [[ -f "$f" ]] || continue
     SLUG=$(basename "$f" .md)
     skills/worker/task.sh read "$SLUG" 2>/dev/null | grep '^TITLE=' | cut -d= -f2-
   done
-done | grep -i "<hledaný výraz>"
+done | grep -i "<search term>"
 ```
 
 ## State format
