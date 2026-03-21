@@ -5,23 +5,25 @@ allowed-tools: Read, Write
 user-invocable: false
 ---
 
-> **Konfigurace:** Přečti `.claude/kvido.local.md`. Pokud `enabled: false`, přeskoč.
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
+> **Configuration:** Read `.claude/kvido.local.md`. If `enabled: false`, skip.
 
 # Daily Questions
 
-Voláno z EOD skill (po journal entry, před confirm).
+Called from EOD skill (after journal entry, before confirm).
 
-## Postup
+## Procedure
 
-1. Přečti `.claude/kvido.local.md` — pokud `enabled: false`, přeskoč.
-2. Zkontroluj `frequency`:
-   - `weekdays` → přeskoč sobotu a neděli
-   - `friday_only` → přeskoč pokud není pátek
-   - `daily` → vždy
-3. Vyber 1-2 otázky kontextově (max dle `max_questions`):
-   - Porovnej Active Focus z morning (`state/today.md`) vs skutečná git activity → "Podařilo se zaměřit na plán?"
-   - Check Jira deadlines na zítřek → "Máš na zítřek něco co vyžaduje přípravu?"
-   - Pokud byl frustrující den (hodně error/blocker entries v `state/today.md`) → "Co tě dneska nejvíc brzdilo?"
-   - Random reflective: "Co bys dneska udělal jinak?"
-4. Zeptej se uživatele. Zapiš odpovědi do journalu (`memory/journal/YYYY-MM-DD.md`) jako sekce `## Reflection`.
-5. Po 20+ odpovědích (spočítej `## Reflection` sekce v `memory/journal/`): analyzuj patterns a zapiš do `memory/learnings.md`.
+1. Read `.claude/kvido.local.md` — if `enabled: false`, skip.
+2. Check `frequency`:
+   - `weekdays` → skip Saturday and Sunday
+   - `friday_only` → skip if not Friday
+   - `daily` → always
+3. Select 1-2 questions contextually (max per `max_questions`):
+   - Compare Active Focus from morning (`state/today.md`) vs actual git activity → "Did you manage to stay focused on the plan?"
+   - Check Jira deadlines for tomorrow → "Is there anything tomorrow that requires preparation?"
+   - If it was a frustrating day (many error/blocker entries in `state/today.md`) → "What slowed you down the most today?"
+   - Random reflective: "What would you do differently today?"
+4. Ask the user. Write responses to the journal (`memory/journal/YYYY-MM-DD.md`) as section `## Reflection`.
+5. After 20+ responses (count `## Reflection` sections in `memory/journal/`): analyze patterns and write to `memory/learnings.md`.

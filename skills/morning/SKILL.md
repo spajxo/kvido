@@ -4,151 +4,153 @@ description: Use when the user says good morning or invokes /morning for a daily
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel
 ---
 
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
 # Morning Briefing
 
-Postupuj krok za krokem. Buď stručný. Nepřeskakuj kroky.
+Proceed step by step. Be concise. Do not skip steps.
 
 ## Tone Guidelines
 
-Tón a styl dle `memory/persona.md` (sekce Morning). Pokud persona neexistuje, buď stručný a věcný.
+Tone and style per `memory/persona.md` (Morning section). If persona does not exist, be concise and factual.
 
 ---
 
 ## Step 1: Load Context
 
-### Activity log rotace
+### Activity log rotation
 
-Rotuj včerejší activity log do archivu:
+Rotate yesterday's activity log to archive:
 ```bash
 mkdir -p state/archive
 YESTERDAY=$(date -d yesterday +%Y-%m-%d)
 if [[ -f state/activity-log.jsonl ]]; then
   mv state/activity-log.jsonl "state/archive/activity-log-${YESTERDAY}.jsonl"
 fi
-# Smazat archivy starší 7 dní
+# Delete archives older than 7 days
 find state/archive -name "activity-log-*.jsonl" -mtime +7 -delete 2>/dev/null || true
 ```
 
 ### Load state
 
-Přečti `state/current.md`. Poznamenej si Active Focus, WIP, Blockers, Parked, Notes for Tomorrow.
+Read `state/current.md`. Note Active Focus, WIP, Blockers, Parked, Notes for Tomorrow.
 
-Přečti `memory/memory.md` pro dlouhodobý kontext.
+Read `memory/memory.md` for long-term context.
 
-List files v `memory/journal/`. Pokud existují, přečti nejnovější (nejvyšší datum v názvu). Poznamenej si co se včera dělalo a co zůstalo otevřené.
+List files in `memory/journal/`. If any exist, read the most recent (highest date in filename). Note what was worked on yesterday and what remains open.
 
 ---
 
 ## Step 2: Gather Fresh Data
 
-Zjisti včerejší datum (YYYY-MM-DD).
+Determine yesterday's date (YYYY-MM-DD).
 
-Spusť source skills pro morning data:
-- `skills/source-gitlab/fetch-activity.sh <včerejší-datum>` + `skills/source-gitlab/fetch-mrs.sh`
-- `skills/source-sessions/fetch.sh <včerejší-datum>`
+Run source skills for morning data:
+- `skills/source-gitlab/fetch-activity.sh <yesterday-date>` + `skills/source-gitlab/fetch-mrs.sh`
+- `skills/source-sessions/fetch.sh <yesterday-date>`
 - `skills/source-jira/fetch.sh`
 - `skills/source-slack/SKILL.md` → watch-channels + search overnight mentions
 - `skills/source-calendar/fetch.sh`
 - `skills/source-gmail/fetch.sh`
 
-Datum předej jako literal string (ne command substitution).
+Pass the date as a literal string (not command substitution).
 
-Extrahuj: aktivní repo, délky sessions, dotčené úkoly, MR status.
+Extract: active repo, session durations, touched tasks, MR status.
 
 ---
 
 ## Step 3: Query External Sources
 
-Spusť všechny dotazy před syntézou.
+Run all queries before synthesizing.
 
 ### Jira
 
-Jira data jsou součástí gather morning režimu (source-jira fetch).
-Zaznamenej klíče, summary, statusy. Poznamenej issues se změnami statusu.
+Jira data are part of the morning gather mode (source-jira fetch).
+Record keys, summaries, statuses. Note issues with status changes.
 
 ### Google Calendar
 
-Calendar data přijdou z gather (source-calendar fetch.sh) — kategorizace a deep-work výpočet je součástí fetch.sh výstupu.
-Extrahuj: přehled událostí dle kategorie, celkový meeting čas, zbývající free deep-work čas.
+Calendar data comes from gather (source-calendar fetch.sh) — categorization and deep-work calculation are part of the fetch.sh output.
+Extract: event overview by category, total meeting time, remaining free deep-work time.
 
 ### Slack
 
-Slack data jsou součástí gather morning režimu (source-slack watch-channels).
-Přečti `.claude/kvido.local.md` → `sources.slack` pro priority kanálů.
+Slack data are part of the morning gather mode (source-slack watch-channels).
+Read `.claude/kvido.local.md` → `sources.slack` for channel priorities.
 
-Filtruj na: přímé mentions, odpovědi ve vláknech, DMs.
+Filter for: direct mentions, thread replies, DMs.
 
-Mentions z nesledovaných kanálů → zapiš do Recommendations: "Zmínky z nesledovaného kanálu #X — přidat do sources?"
+Mentions from unmonitored channels → write to Recommendations: "Mentions from unmonitored channel #X — add to sources?"
 
 ---
 
 ## Step 4: Synthesize Briefing
 
-Vypiš briefing v tomto formátu:
+Output the briefing in this format:
 
 ```
 # Morning Briefing — YYYY-MM-DD
 
 ## Yesterday's Work
-<!-- Pro každý projekt s > 30 min: jeden řádek s popisem aktivit.
-     Zdroje (dle priority): 1. git commity (subject lines, max 3), 2. user messages ze sessions (klíčová slova).
-     Formát: - projekt (~Xh Ym) — co se dělalo, max 10 slov
-     Projekty s ≤ 30 min: jen - projekt (~Xm) bez popisu -->
+<!-- For each project with > 30 min: one line describing activities.
+     Sources (by priority): 1. git commits (subject lines, max 3), 2. user messages from sessions (keywords).
+     Format: - project (~Xh Ym) — what was done, max 10 words
+     Projects with <= 30 min: just - project (~Xm) with no description -->
 
 ## Overnight Changes
-<!-- Nové commity ostatních, MR status changes, Jira updates, Slack mentions -->
+<!-- New commits from others, MR status changes, Jira updates, Slack mentions -->
 
 ## Today's Schedule
-<!-- Události chronologicky s kategorií -->
-<!-- Celkový meeting čas + free time -->
+<!-- Events chronologically with category -->
+<!-- Total meeting time + free time -->
 
 ## Inbox
-<!-- Počet nepřečtených emailů celkem -->
-<!-- Důležité emaily od priority senderů (dle kvido.local.md) — od, předmět -->
-<!-- Pokud prázdno: "Inbox: prázdno" -->
+<!-- Total unread email count -->
+<!-- Important emails from priority senders (per kvido.local.md) — from, subject -->
+<!-- If empty: "Inbox: empty" -->
 
 ## Recommendations
-<!-- 2-3 akční položky s konkrétními referencemi (MR čísla, ticket keys) -->
+<!-- 2-3 action items with specific references (MR numbers, ticket keys) -->
 ```
 
-Buď stručný. Bullet points. Žádné vycpávky.
+Be concise. Bullet points. No filler.
 
 ### Triage check
 
-Spočítej triage úkoly:
+Count triage tasks:
 ```bash
 skills/worker/task.sh count triage
 ```
-Pokud > 0:
-> "X položek v agent triage — spusť `/triage` pro zpracování."
+If > 0:
+> "X items in agent triage — run `/triage` to process."
 
 ---
 
 ## Step 5: Set Today's Focus
 
-Zeptej se:
+Ask:
 
-> "Na čem se dneska chceš zaměřit?"
+> "What do you want to focus on today?"
 
-Počkej na odpověď. Pak aktualizuj `state/current.md`:
+Wait for a response. Then update `state/current.md`:
 
-- **Active Focus** — co uživatel řekl
-- **Pinned Today** — 1-3 nejdůležitější priority dne odvozené z focusu a ranního kontextu
-- **Work in Progress** — ponech otevřené, odstraň dokončené
-- **Blockers** — vyčisti vyřešené, ponech nevyřešené
-- **Parked** — beze změny
-- **Notes for Tomorrow** — vyčisti (bylo surfacnuto)
+- **Active Focus** — what the user said
+- **Pinned Today** — 1-3 most important priorities for the day derived from focus and morning context
+- **Work in Progress** — keep open items, remove completed ones
+- **Blockers** — clear resolved, keep unresolved
+- **Parked** — no change
+- **Notes for Tomorrow** — clear (surfaced)
 
-Zapiš aktualizovaný `state/current.md`.
+Write updated `state/current.md`.
 
-Zapiš briefing do `state/today.md` (přepiš pokud existuje).
+Write briefing to `state/today.md` (overwrite if exists).
 
-Vrať NL výstup s přehledem dne — heartbeat ho doručí do Slacku přímo přes `slack.sh`. Neposílej přes `slack.sh` přímo. Výstup strukturuj dle `morning` šablony (date, briefing body, triage_count, meeting_time, deepwork_time).
+Return NL output with day overview — heartbeat will deliver it to Slack via `slack.sh`. Do not call `slack.sh` directly. Structure output per `morning` template (date, briefing body, triage_count, meeting_time, deepwork_time).
 
 ---
 
 ## Step 6: Start Heartbeat
 
-> "Spouštím heartbeat. Spouštím `/loop 10m`."
+> "Starting heartbeat. Running `/loop 10m`."
 
-Spusť `/loop 10m`.
+Run `/loop 10m`.

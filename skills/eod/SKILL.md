@@ -4,108 +4,110 @@ description: Use when the user ends their day or invokes /eod for journal entry 
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronList, CronDelete, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__addWorklogToJiraIssue
 ---
 
+**Language:** Communicate in the language set in memory/persona.md. Default: English.
+
 # End-of-Day
 
-Postupuj krok za krokem.
+Proceed step by step.
 
 ## Tone Guidelines
 
-Tón a styl dle `memory/persona.md` (sekce EOD). Pokud persona neexistuje, buď stručný a věcný.
+Tone and style per `memory/persona.md` (EOD section). If persona does not exist, be concise and factual.
 
 ---
 
 ## Step 1: Gather Today's Data
 
-Přečti `state/today.md` (heartbeat log) a `state/current.md` (focus, WIP).
+Read `state/today.md` (heartbeat log) and `state/current.md` (focus, WIP).
 
-Zjisti dnešní datum (YYYY-MM-DD).
+Determine today's date (YYYY-MM-DD).
 
-### Activity log sumarizace
+### Activity log summarization
 
-Pokud existuje `state/activity-log.jsonl`, spočítej dnešní statistiky:
+If `state/activity-log.jsonl` exists, calculate today's stats:
 ```bash
 TODAY=$(date +%Y-%m-%d)
 jq -s --arg today "${TODAY}T00:00:00" '[.[] | select(.ts >= $today)]' state/activity-log.jsonl
 ```
 
-Z filtrovaných záznamů extrahuj:
-- **Celkové tokeny za den:** `map(.tokens // 0) | add`
+From the filtered records extract:
+- **Total tokens for the day:** `map(.tokens // 0) | add`
 - **Top agent by tokens:** `group_by(.agent) | map({agent: .[0].agent, tokens: (map(.tokens // 0) | add)}) | sort_by(-.tokens)`
-- **Počet tasků:** `map(.task_id // empty) | unique | length`
-- **Počet dispatch/execute cyklů:** `map(select(.action == "execute")) | length`
+- **Task count:** `map(.task_id // empty) | unique | length`
+- **Dispatch/execute cycle count:** `map(select(.action == "execute")) | length`
 
-Zahrň souhrn do journal entry (Step 2) jako sekci `## Token Usage`.
+Include summary in the journal entry (Step 2) as section `## Token Usage`.
 
-Spusť source skills pro EOD data:
-- `skills/source-sessions/fetch.sh <dnešní-datum>`
-- `skills/source-gitlab/fetch-activity.sh <dnešní-datum>`
+Run source skills for EOD data:
+- `skills/source-sessions/fetch.sh <today-date>`
+- `skills/source-gitlab/fetch-activity.sh <today-date>`
 
-**Detekce uncommitted work** — přečti `.claude/kvido.local.md`, pro každý repo:
+**Uncommitted work detection** — read `.claude/kvido.local.md`, for each repo:
 
 ```bash
 git -C <repo_path> status --porcelain
 git -C <repo_path> stash list
 ```
 
-Sbírej repo s uncommitted changes nebo stashes.
+Collect repos with uncommitted changes or stashes.
 
 ---
 
 ## Step 2: Create Journal Entry
 
-Vytvoř journal kombinací:
-- Session parser (na čem, jak dlouho)
-- Git activity (commity dnes)
-- Heartbeat log z `state/today.md`
-- WIP a blocker status z `state/current.md`
+Create journal by combining:
+- Session parser (what was worked on, how long)
+- Git activity (commits today)
+- Heartbeat log from `state/today.md`
+- WIP and blocker status from `state/current.md`
 - Uncommitted work (repo: N modified, M untracked, K stashes)
 
-Formát:
+Format:
 
 ```
 # Journal — YYYY-MM-DD
 
 ## Summary
-<!-- 2-3 věty: hlavní focus, co se udělalo -->
+<!-- 2-3 sentences: main focus, what was accomplished -->
 
 ## Work Done
-<!-- Per projekt, bullet points -->
+<!-- Per project, bullet points -->
 
 ## Goals Progress
-<!-- Hotové tasky dnes: projdi state/tasks/done/*.md, filtruj podle updated_at dnes -->
-<!-- skills/worker/task.sh list done → pro každý task.sh read <slug> → filtruj updated_at == today -->
-<!-- Seskup podle goal pole ve frontmatter. Tasky bez goalu zobraz pod "Ostatní". -->
+<!-- Completed tasks today: check state/tasks/done/*.md, filter by updated_at today -->
+<!-- skills/worker/task.sh list done → for each task.sh read <slug> → filter updated_at == today -->
+<!-- Group by goal field in frontmatter. Tasks without goal shown under "Other". -->
 <!-- Format: ### Goal Name\n- <slug>: title -->
 
 ## MRs
-<!-- Status MRs: created, updated, merged, reviewed -->
+<!-- MR status: created, updated, merged, reviewed -->
 
 ## Blockers & Issues
-<!-- Nevyřešené, carry forward -->
+<!-- Unresolved, carry forward -->
 
 ## Token Usage
-<!-- Celkové tokeny, top agent, počet runs — z activity-log.jsonl. Přeskoč pokud JSONL neexistuje. -->
+<!-- Total tokens, top agent, run count — from activity-log.jsonl. Skip if JSONL does not exist. -->
 
 ## Unfinished Work
-<!-- Repos s uncommitted changes -->
+<!-- Repos with uncommitted changes -->
 
 ## Tomorrow
-<!-- Co pokračovat, deadlines -->
+<!-- What to continue, deadlines -->
 ```
 
-Zapiš do `memory/journal/YYYY-MM-DD.md`.
+Write to `memory/journal/YYYY-MM-DD.md`.
 
 ---
 
 ## Step 3: Worklog Check
 
-Sestav přehled odpracovaného času ze session-parser + git-activity + kalendáře:
-- Seskup podle Jira ticketu/projektu
-- Odhadni čas (zaokrouhli na 15 min; git-only = 15 min/commit, max 2h)
-- Meetingy z `state/today.md` jako samostatné řádky
-- Bez ticketu = `(interní)`
+Build time summary from session-parser + git-activity + calendar:
+- Group by Jira ticket/project
+- Estimate time (round to 15 min; git-only = 15 min/commit, max 2h)
+- Meetings from `state/today.md` as separate lines
+- No ticket = `(internal)`
 
-Načti existující worklogy přes Atlassian MCP:
+Fetch existing worklogs via Atlassian MCP:
 ```
 searchJiraIssuesUsingJql:
   cloudId: $ATLASSIAN_CLOUD_ID  # from .env
@@ -113,118 +115,118 @@ searchJiraIssuesUsingJql:
   fields: ["summary", "worklog", "timespent"]
 ```
 
-Porovnej. Tolerance: ±30 min. Vypiš tabulku:
+Compare. Tolerance: +-30 min. Output table:
 
 ```
 ## Worklog — YYYY-MM-DD
 
-| Ticket | Projekt | Čas | Popis | Status |
-|--------|---------|-----|-------|--------|
-| PROJ-123 | my-project | 3h | Feature implementation | ✗ nezalogováno |
+| Ticket | Project | Time | Description | Status |
+|--------|---------|------|-------------|--------|
+| PROJ-123 | my-project | 3h | Feature implementation | not logged |
 ```
 
-Pokud vše ✓: "Vše zalogováno ✓". Jinak zobraz tabulku + "Chceš zalogovat?"
+If all logged: "All logged." Otherwise show table + "Do you want to log?"
 
-Na potvrzení zaloguj přes `addWorklogToJiraIssue`.
+On confirmation, log via `addWorklogToJiraIssue`.
 
 ---
 
 ## Step 4: Dispatch Librarian
 
-Dispatni librarian subagent pro extraction:
+Dispatch librarian subagent for extraction:
 
 ```
 Agent tool:
-  prompt: "Extraction mode. Parsuj memory/journal/YYYY-MM-DD.md, extrahuj fakta do memory/projects/, memory/people/, memory/decisions/. Aktualizuj memory/this-week.md. Aktualizuj memory/memory.md pokud se změnil stav projektů nebo rozhodnutí."
+  prompt: "Extraction mode. Parse memory/journal/YYYY-MM-DD.md, extract facts into memory/projects/, memory/people/, memory/decisions/. Update memory/this-week.md. Update memory/memory.md if project state or decisions have changed."
 ```
 
 ---
 
 ## Step 5: Work Sync
 
-Zjisti stav osobní práce z `state/current.md`, dnešních změn a živých zdrojů. GitLab work queue kontroluj jen pro assistant tasky.
+Determine personal work status from `state/current.md`, today's changes and live sources. Check GitLab work queue only for assistant tasks.
 
-- Jira / GitLab / mail / kalendář:
-  - zapiš, co se dnes skutečně posunulo
-  - zvýrazni, co zůstává rozdělané nebo čeká na reakci
-  - pokud dnes proběhla práce mimo předchozí current context, doplň ji do journalu a `state/current.md`; nevytvářej kvůli tomu user issue
+- Jira / GitLab / mail / calendar:
+  - record what actually moved forward today
+  - highlight what remains incomplete or awaiting a response
+  - if work happened outside previous current context, add it to the journal and `state/current.md`; do not create a user issue for this
 - Assistant work queue:
-  - můžeš zkontrolovat `status:todo|status:in-progress` pro worker tasky a zmínit relevantní stav v journalu, pokud je to důležité
+  - you may check `status:todo|status:in-progress` for worker tasks and mention relevant status in the journal if important
 
 ---
 
 ## Step 6: Update Working Memory
 
-Aktualizuj `state/current.md`:
-- **Active Focus** — vyčisti
-- **Pinned Today** — vyčisti nebo převeď do `Notes for Tomorrow`
-- **Work in Progress** — aktualizuj statusy, označ dokončené, přidej nové
-- **Blockers** — aktuální stav
-- **Parked** — beze změny
+Update `state/current.md`:
+- **Active Focus** — clear
+- **Pinned Today** — clear or move to `Notes for Tomorrow`
+- **Work in Progress** — update statuses, mark completed, add new
+- **Blockers** — current state
+- **Parked** — no change
 - **Notes for Tomorrow** — uncommitted work, follow-ups, deadlines
 
-Reset `state/heartbeat-state.json`: `iteration_count` na 0, vyčisti `reported`.
+Reset `state/heartbeat-state.json`: `iteration_count` to 0, clear `reported`.
 
 ---
 
 ## Step 7: Friday — Weekly Summary
 
-Zjisti den v týdnu. Pokud pátek:
+Determine day of week. If Friday:
 
-Přečti všechny journaly z tohoto týdne v `memory/journal/`.
+Read all journals from this week in `memory/journal/`.
 
-Vytvoř weekly summary:
+Create weekly summary:
 
 ```
 # Weekly Summary — YYYY-Www
 
 ## Highlights
-<!-- 3-5 klíčových accomplishments -->
+<!-- 3-5 key accomplishments -->
 
 ## Per Project
-<!-- Projekt — co se dělalo — aktuální stav -->
+<!-- Project — what was done — current status -->
 
 ## MRs
-<!-- Created, merged, reviewed tento týden -->
+<!-- Created, merged, reviewed this week -->
 
 ## Blockers & Carry-forward
-<!-- Co se nestihlo a proč -->
+<!-- What was not finished and why -->
 
 ## Backlog Stats
-<!-- Done items tento týden, open items count -->
+<!-- Done items this week, open items count -->
 
 ## Next Week
-<!-- Priority, deadlines -->
+<!-- Priorities, deadlines -->
 ```
 
-Zapiš do `memory/weekly/YYYY-Www.md`.
+Write to `memory/weekly/YYYY-Www.md`.
 
 **Archive rotation:**
 ```bash
 mkdir -p memory/archive/journal memory/archive/weekly memory/archive/decisions
 ```
 
-Přesuň journals starší 14 dní do `memory/archive/journal/`.
-Přesuň weekly starší 8 týdnů do `memory/archive/weekly/`.
+Move journals older than 14 days to `memory/archive/journal/`.
+Move weeklies older than 8 weeks to `memory/archive/weekly/`.
 
 ---
 
 ## Step 7b: Daily Questions
 
-Přečti `skills/daily-questions/SKILL.md` a postupuj dle instrukcí.
-Pokud je skill disabled nebo není pracovní den, přeskoč.
+Read `skills/daily-questions/SKILL.md` and follow the instructions.
+If the skill is disabled or it is not a work day, skip.
 
 ---
 
 ## Step 8: Cleanup & Confirm
 
-Heartbeat loop běží dál v night mode (jen chat check + silent git watch). Neruš cron.
+Heartbeat loop continues in night mode (chat check + silent git watch only). Do not remove cron.
 
-Vrať NL výstup se souhrnem dne — heartbeat ho doručí do Slacku přímo přes `slack.sh`. Neposílej přes `slack.sh` přímo. Výstup strukturuj dle `eod` šablony (date, summary, session_time, done_count, open_count).
+Return NL output with day summary — heartbeat will deliver it to Slack via `slack.sh`. Do not call `slack.sh` directly. Structure output per `eod` template (date, summary, session_time, done_count, open_count).
 
-Výstup:
-> "Journal zapsán do `memory/journal/YYYY-MM-DD.md`. Heartbeat přechází do nočního režimu. Hezký večer!"
+Output:
+> "Journal written to `memory/journal/YYYY-MM-DD.md`. Heartbeat switching to night mode. Have a good evening!"
 
-Pokud weekly: přidej info o weekly summary.
+If weekly: add info about the weekly summary.
 
-Buď stručný.
+Be concise.
