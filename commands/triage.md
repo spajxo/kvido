@@ -1,6 +1,6 @@
 ---
-description: Triage — zpracování neroztříděných úkolů v backlogu
+description: Triage — processing unsorted tasks in the backlog
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 ---
 
-Přečti a postupuj dle `skills/triage/SKILL.md`.
+Read and follow `skills/triage/SKILL.md`.

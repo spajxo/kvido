@@ -1,19 +1,19 @@
 ---
-description: Heartbeat — orchestrátor, chat check, worker dispatch, log, adaptive interval
+description: Heartbeat — orchestrator, chat check, worker dispatch, log, adaptive interval
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, mcp__claude_ai_Slack__slack_read_channel
 ---
 
-## Krok 0: Nastav cron (pouze jednou za session)
+## Step 0: Set up cron (once per session only)
 
-Zavolej `CronList`. Pokud žádný job neobsahuje slovo `heartbeat`, zavolej `CronCreate`:
-- `cron`: `*/10 * * * *` (výchozí 10m — adaptive interval pak přepne dle kontextu)
+Call `CronList`. If no job contains the word `heartbeat`, call `CronCreate`:
+- `cron`: `*/10 * * * *` (default 10m — adaptive interval will switch based on context)
 - `recurring`: `true`
-- `prompt`: `Přečti a postupuj dle skills/heartbeat/SKILL.md.`
+- `prompt`: `Read and follow skills/heartbeat/SKILL.md.`
 
-Po vytvoření cronu ulož job ID do `state/heartbeat-state.json` jako `cron_job_id` a nastav `active_preset: "10m"`.
+After creating the cron, save the job ID to `state/heartbeat-state.json` as `cron_job_id` and set `active_preset: "10m"`.
 
-Cron vytvoř tiše — nevypisuj nic, pokud nedojde k chybě.
+Create the cron silently — print nothing unless an error occurs.
 
-## Krok 1+: Spusť heartbeat
+## Step 1+: Run heartbeat
 
-Přečti a postupuj dle `skills/heartbeat/SKILL.md`.
+Read and follow `skills/heartbeat/SKILL.md`.
