@@ -115,6 +115,17 @@ Volitelné (jen pokud asistent čte kanály mimo DM):
 
 Scopes `channels:read`, `groups:read`, `im:read`, `im:write`, `users:read` a `incoming-webhook` asistent nepoužívá — nepřidávat.
 
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Agent calling `slack.sh` directly | Only heartbeat calls `slack.sh`. Agents return NL output. |
+| Using `ts` as `thread_ts` for replies | `thread_ts` is the parent message ts, not the reply ts |
+| Sending without template | Always use a template from `templates/`. Raw text goes through `chat` template. |
+| Threading by default | Flat messages are default. Thread only for escalation of same event. |
+| Adding unauthorized scopes | Only `chat:write`, `im:history`, `reactions:write`, `reactions:read` are required. |
+| Ignoring `slack.sh` exit code | Exit 1 = failure. Log error, don't retry silently. |
+
 ## Fallback
 
 Pokud `slack.sh` selže → loguj error, vrať exit 1. Slack MCP zůstává dostupný jako manuální fallback pro search.

@@ -302,6 +302,18 @@ After `turbo_until` expires, heartbeat.sh clears key and returns normal adaptive
 
 ---
 
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
+| Dispatching chat-agent for trivial messages ("ok", "díky") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
+| Sending Slack directly from agents | Only heartbeat calls `slack.sh`. Agents return NL output. |
+| Dispatching worker when one is already `in_progress` | Check TodoRead for `worker:*` in_progress first |
+| Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 1 |
+| Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |
+| Not updating `last_chat_ts` after processing | Always `heartbeat-state.sh set last_chat_ts` after chat handling |
+
 ## Critical Rules
 
 - **NEVER output if nothing to report.** Silent exit is default.

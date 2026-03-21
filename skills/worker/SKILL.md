@@ -158,6 +158,18 @@ Použij konvenční commit message (feat/fix/chore) dle typu změny.
 
 ---
 
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Sending Slack messages directly via `slack.sh` | Worker returns NL output — heartbeat handles all delivery |
+| Chaining workers (dispatching another worker from worker) | Forbidden. Create a follow-up task via `task.sh create` instead. |
+| Modifying `state/current.md` | Owned by heartbeat. Worker writes only to `state/today.md` and task notes. |
+| Skipping cancel check at start | Always `task.sh find` first — task may have been cancelled while queued |
+| Continuing past timeout | Check elapsed time; if > `task_timeout_minutes`, emit partial result and move to `failed/` |
+| Ignoring pipeline phase | Always read `phase` from `task.sh read` — execute only the current phase, not the whole task |
+| Pushing to main in worktree mode | Always push to feature branch. Never push directly to main. |
+
 ## Report format
 
 Vrať NL výstup — heartbeat zajistí doručení. Neposílej přes `slack.sh` přímo.

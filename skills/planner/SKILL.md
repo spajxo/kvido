@@ -332,6 +332,18 @@ Pokud žádné notifikace nejsou potřeba, vrať: `No notifications.`
 
 ---
 
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Sending duplicate notification for already reported event | Always check Reported Events keys before notifying |
+| Auto-approving triage items | Triage items stay in `triage/` until user explicitly approves via reaction |
+| Creating worker tasks for things planner can log | Planner only creates tasks for actual work; status updates and reminders go into output as `Event:` or `Reminder:` |
+| Calling `slack.sh` directly | Planner runs as subagent — no Slack access. Return NL output with prefixed lines. |
+| Skipping `last_*_date` update after maintenance task creation | Always update planner-state.md timestamps to prevent duplicate maintenance tasks |
+| Notifying `immediate` during focus mode | Check calendar for active focus events — suppress to `batch` |
+| Creating user-facing tasks from legacy assigned tickets | Only remind in text output, never create new workflow from old tickets |
+
 ## Critical Rules
 
 - **Buď stručný.** Žádné omáčky, jen data a akce.
