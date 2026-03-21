@@ -5,7 +5,7 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Configuration:** Read `.claude/kvido.local.md` for event categorization.
+> **Configuration:** Via `skills/config.sh` (`sources.calendar.*` keys).
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 

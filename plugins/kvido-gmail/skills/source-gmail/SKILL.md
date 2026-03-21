@@ -5,7 +5,7 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Configuration:** Read `.claude/kvido.local.md` for filters and priority senders.
+> **Configuration:** Via `skills/config.sh` (`sources.gmail.*` keys).
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
