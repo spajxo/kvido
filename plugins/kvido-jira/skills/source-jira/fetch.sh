@@ -14,8 +14,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
 
 if ! command -v acli &>/dev/null; then
-  echo "ERROR: acli not installed" >&2
-  exit 1
+  echo "FALLBACK: acli not available, use MCP" >&2
+  exit 10
 fi
 
 SINCE=""

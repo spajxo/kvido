@@ -1,7 +1,7 @@
 ---
 name: source-gmail
 description: Use when fetching unread emails or watching for priority sender messages.
-allowed-tools: Read, Bash
+allowed-tools: Read, Bash, mcp__claude_ai_Gmail__gmail_search_messages, mcp__claude_ai_Gmail__gmail_read_message
 user-invocable: false
 ---
 
@@ -14,8 +14,15 @@ user-invocable: false
 ## Capabilities
 
 ### fetch
-Run `fetch.sh`. Returns formatted summary of unread emails filtered per kvido.local.md.
+Run `fetch.sh`. Returns formatted summary of unread emails filtered per config.
 Output: human-readable summary — from, subject, date, snippet. Max `max_results` items.
+
+**MCP fallback:** If fetch.sh exits with code 10 (`gws` not available), use Gmail MCP directly:
+
+1. Read config: `skills/config.sh 'sources.gmail.watch_query'` and `sources.gmail.max_results`
+2. Call `mcp__claude_ai_Gmail__gmail_search_messages(query="<watch_query>", max_results=<max_results>)`
+3. For each message, call `mcp__claude_ai_Gmail__gmail_read_message(message_id="<id>")`
+4. Format output: `- From: ... / Subject: ... / Date: ... / Preview: ...` per message
 
 ### watch
 Quick check of unread count from priority senders since last check.

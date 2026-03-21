@@ -21,6 +21,13 @@ skills/source-jira/fetch.sh [--since YYYY-MM-DD] [--project KEY]
 ```
 Output: plain text, one block per project.
 
+**MCP fallback:** If fetch.sh exits with code 10 (`acli` not available), use Atlassian MCP directly:
+
+1. Read project config via `skills/config.sh --keys 'sources.jira.projects'`
+2. For each project, get its JQL filter: `skills/config.sh 'sources.jira.projects.<KEY>.filter'`
+3. Call `mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql(jql="<filter>", maxResults=20)`
+4. Format output the same way: `=== Project (N issues) ===` then `  KEY [status] summary` per issue
+
 ### watch
 Run fetch with `--since YYYY-MM-DD` (today's date).
 New/changed tickets compared to previous planner-state = events.

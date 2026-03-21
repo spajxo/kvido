@@ -1,7 +1,7 @@
 ---
 name: source-calendar
 description: Use when fetching today's calendar events or generating meeting reminders.
-allowed-tools: Read, Bash
+allowed-tools: Read, Bash, mcp__claude_ai_Google_Calendar__gcal_list_events
 user-invocable: false
 ---
 
@@ -16,6 +16,12 @@ user-invocable: false
 ### fetch
 Run `fetch.sh [YYYY-MM-DD]` for the given day.
 Returns pre-categorized data per kvido.local.md `categories` + total meeting time and free deep-work time.
+
+**MCP fallback:** If fetch.sh exits with code 10 (`gws` not available), use Google Calendar MCP directly:
+
+1. Call `mcp__claude_ai_Google_Calendar__gcal_list_events(calendarId="primary", timeMin="<date>T00:00:00Z", timeMax="<date>T23:59:59Z", singleEvents=true, orderBy="startTime")`
+2. Categorize events using config: `skills/config.sh --keys 'sources.calendar.categories'`
+3. Format output: `- HH:MM–HH:MM — Summary [category]` per event, then total count
 
 ### watch
 If `state/today.md` contains Today's Schedule, use existing data.

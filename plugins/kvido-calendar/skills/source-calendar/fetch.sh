@@ -13,6 +13,11 @@ TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
 TIME_MIN="${TARGET_DATE}T00:00:00Z"
 TIME_MAX="${TARGET_DATE}T23:59:59Z"
 
+if ! command -v gws &>/dev/null; then
+  echo "FALLBACK: gws not available, use MCP" >&2
+  exit 10
+fi
+
 # Fetch events
 EVENTS=$(gws calendar events list primary \
   --timeMin "$TIME_MIN" \

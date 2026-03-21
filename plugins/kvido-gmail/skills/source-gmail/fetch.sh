@@ -8,6 +8,11 @@ set -euo pipefail
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="$(cd "$SKILL_DIR/.." && pwd)/config.sh"
 
+if ! command -v gws &>/dev/null; then
+  echo "FALLBACK: gws not available, use MCP" >&2
+  exit 10
+fi
+
 # Parse config
 WATCH_QUERY=$($CONFIG 'sources.gmail.watch_query')
 MAX_RESULTS=$($CONFIG 'sources.gmail.max_results')
