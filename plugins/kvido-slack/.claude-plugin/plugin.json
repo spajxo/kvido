@@ -1,0 +1,9 @@
+{
+  "name": "kvido-slack",
+  "version": "0.1.0",
+  "description": "Kvido source plugin for Slack — channel monitoring, message watching",
+  "keywords": ["kvido", "source", "slack"],
+  "homepage": "https://github.com/spajxo/kvido",
+  "repository": "https://github.com/spajxo/kvido",
+  "author": { "name": "Pavel Stejskal" }
+}

@@ -5,12 +5,39 @@
   },
   "plugins": [
     {
-      "name": "kvido",
-      "source": {
-        "source": "url",
-        "url": "git@github.com:spajxo/kvido.git"
-      },
-      "description": "Personal AI workflow assistant — heartbeat, planner, worker, triage"
+      "name": "kvido-assistant",
+      "source": "./plugins/kvido",
+      "description": "Core assistant — heartbeat, planner, worker, triage"
+    },
+    {
+      "name": "kvido-gitlab",
+      "source": "./plugins/kvido-gitlab",
+      "description": "GitLab source — MR tracking, activity monitoring (requires glab)"
+    },
+    {
+      "name": "kvido-jira",
+      "source": "./plugins/kvido-jira",
+      "description": "Jira source — issue tracking, status changes (requires acli or Atlassian MCP)"
+    },
+    {
+      "name": "kvido-slack",
+      "source": "./plugins/kvido-slack",
+      "description": "Slack source — channel monitoring, message watching"
+    },
+    {
+      "name": "kvido-calendar",
+      "source": "./plugins/kvido-calendar",
+      "description": "Google Calendar source — schedule tracking, meeting alerts"
+    },
+    {
+      "name": "kvido-gmail",
+      "source": "./plugins/kvido-gmail",
+      "description": "Gmail source — email monitoring, priority filtering (requires gws)"
+    },
+    {
+      "name": "kvido-sessions",
+      "source": "./plugins/kvido-sessions",
+      "description": "Sessions source — Claude Code session analysis"
     }
   ]
 }

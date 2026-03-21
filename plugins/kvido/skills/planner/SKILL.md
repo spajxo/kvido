@@ -39,16 +39,34 @@ If `memory/planner.md` does not exist → skip silently.
 
 ## Step 3: Data Gathering
 
+### Source discovery
+
+Run the discovery script to find installed source plugins:
+
+```bash
+skills/discover-sources.sh
+```
+
+Output: one line per installed source — `name<TAB>install_path`. If empty, no source plugins are installed — skip data gathering.
+
+### Fetching data
+
+For each discovered source plugin, read its `skills/source-*/SKILL.md` from the `install_path` and call the appropriate fetch command based on the current schedule:
+
+| Schedule | Sources to call |
+|----------|----------------|
+| morning | All installed sources (full fetch) |
+| heartbeat-quick | Only sources with `--priority high` support |
+| heartbeat-full | All installed sources |
+| eod | All installed sources; kvido-sessions only when `eod_pending: true` |
+
+Each source SKILL.md defines its own fetch commands and capabilities. Read it and follow its instructions.
+
+### Non-source data
+
 | Source | Command | When |
 |--------|---------|------|
-| GitLab activity | `skills/source-gitlab/fetch-activity.sh <today>` | always |
-| GitLab MRs | `skills/source-gitlab/fetch-mrs.sh` | always |
-| Jira | `skills/source-jira/fetch.sh` | always |
-| Slack channels | see `skills/source-slack/SKILL.md` watch-channels | always |
-| Calendar | `skills/source-calendar/fetch.sh` | always |
-| Gmail | `skills/source-gmail/fetch.sh` | always |
 | Interests | see `skills/interests/SKILL.md` | if `last_interests_check` > `check_interval_hours` |
-| Sessions | `skills/source-sessions/fetch.sh <today>` | only when `eod_pending: true` |
 
 ---
 

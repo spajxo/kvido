@@ -45,15 +45,9 @@ List files in `memory/journal/`. If any exist, read the most recent (highest dat
 
 Determine yesterday's date (YYYY-MM-DD).
 
-Run source skills for morning data:
-- `skills/source-gitlab/fetch-activity.sh <yesterday-date>` + `skills/source-gitlab/fetch-mrs.sh`
-- `skills/source-sessions/fetch.sh <yesterday-date>`
-- `skills/source-jira/fetch.sh`
-- `skills/source-slack/SKILL.md` → watch-channels + search overnight mentions
-- `skills/source-calendar/fetch.sh`
-- `skills/source-gmail/fetch.sh`
+Run `skills/discover-sources.sh` to find installed source plugins. For each discovered source, read its `skills/source-*/SKILL.md` from the install path and call the morning fetch command. Pass the date as a literal string (not command substitution).
 
-Pass the date as a literal string (not command substitution).
+If no source plugins are installed, skip to Step 3.
 
 Extract: active repo, session durations, touched tasks, MR status.
 

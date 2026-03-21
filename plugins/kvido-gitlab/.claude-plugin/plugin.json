@@ -1,0 +1,9 @@
+{
+  "name": "kvido-gitlab",
+  "version": "0.1.0",
+  "description": "Kvido source plugin for GitLab — MR tracking, activity monitoring (requires glab)",
+  "keywords": ["kvido", "source", "gitlab"],
+  "homepage": "https://github.com/spajxo/kvido",
+  "repository": "https://github.com/spajxo/kvido",
+  "author": { "name": "Pavel Stejskal" }
+}
