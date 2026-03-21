@@ -171,16 +171,67 @@ For patterns identified in Step 2b with 3+ repetitions generate skill drafts.
 - Check existing tasks (see dedup in Step 1) — don't propose anything already there (compare title)
 - Separately check done/cancelled tasks with `source: self-improver` — don't re-add these
 - Max proposals per run = adaptive limit from Step 0 (default 5) + max 2 skill drafts from Step 3b
-- For each proposal create a task:
-  ```bash
-  skills/worker/task.sh create \
-    --title "[SELF-IMPROVE/<TYPE>] description" \
-    --instruction "<description of problem and proposed solution>" \
-    --source self-improver \
-    --priority low
-  ```
 
-- **Confidence scoring** — each proposal must have a Metadata section in the instruction:
+**Decide delivery for each proposal:**
+
+```
+IF proposal targets a workspace file (new skill, local skill edit, config, memory):
+  → create local worker task
+
+IF proposal targets plugin code (shipped skill/agent/command from plugin cache):
+  → create GitHub issue
+```
+
+**Workspace files** = files in `$PWD` (user's workspace): `memory/`, `.claude/kvido.local.md`, locally created skills.
+**Plugin files** = files shipped with marketplace plugins (read from `installPath`): core kvido skills, agents, commands, source plugin skills.
+
+#### Local proposals (workspace changes)
+
+```bash
+skills/worker/task.sh create \
+  --title "[SELF-IMPROVE/<TYPE>] description" \
+  --instruction "<description of problem and proposed solution>" \
+  --source self-improver \
+  --priority low
+```
+
+#### Plugin proposals (GitHub issues)
+
+Check if `gh` is available and authenticated:
+```bash
+gh auth status 2>/dev/null
+```
+
+If yes:
+```bash
+gh issue create \
+  --repo spajxo/kvido \
+  --title "[self-improver] <concise description>" \
+  --body "## Evidence
+
+<what was detected — patterns, occurrences, error messages>
+
+## Proposed change
+
+**Plugin:** <kvido / kvido-gitlab / kvido-jira / ...>
+**File:** <target file path within plugin>
+
+<proposed solution or outline>
+
+## Context
+
+- Confidence: <high|medium|low>
+- Source: <conversation analysis / task patterns / error patterns>
+- Occurrences: <N in last 7 days>
+
+---
+*Automatically created by kvido self-improver*" \
+  --label "self-improver"
+```
+
+If `gh` not available: write proposal to `state/plugin-proposals/<YYYY-MM-DD>-<slug>.md` and include in output so heartbeat delivers via Slack.
+
+- **Confidence scoring** — each proposal (local or issue) must include:
   ```
   ## Metadata
   - Confidence: high|medium|low
@@ -207,7 +258,9 @@ For patterns identified in Step 2b with 3+ repetitions generate skill drafts.
 
 Return summary:
 ```
-"Outcome review: X% acceptance (Y/Z in 7d). Added N proposals (A skill, B config, ...) + M skill drafts. Adaptive limit: L."
+"Outcome review: X% acceptance (Y/Z in 7d). Local: N tasks (A skill, B config, ...). Plugin: M GitHub issues. Skill drafts: K. Adaptive limit: L."
 ```
 
 If no proposals: `"Outcome review: X% acceptance. No proposals."`
+
+For plugin issues include the issue URL. For gh fallback include: `"Plugin proposal saved to state/plugin-proposals/ (gh not available)."`
