@@ -29,15 +29,15 @@ claude plugin install kvido-slack
 claude    # launch Claude Code
 ```
 
-Run `/setup` inside the session — it bootstraps `state/`, `memory/`, `.claude/kvido.local.md`, `.env`, `.gitignore`, and `CLAUDE.md`. It detects installed source plugins and offers to install missing ones.
+Run `/kvido:setup` inside the session — it bootstraps `state/`, `memory/`, `.claude/kvido.local.md`, `.env`, `.gitignore`, and `CLAUDE.md`. It detects installed source plugins and offers to install missing ones.
 
 ## Quick Launch
 
-After setup, use the shell alias (offered during `/setup`) or:
+After setup, use the shell alias (offered during `/kvido:setup`) or:
 
 ```bash
-./assistant.sh                    # default: /loop 5m /heartbeat
-./assistant.sh /morning           # morning briefing
+kvido                             # default: /loop 5m /kvido:heartbeat
+kvido /kvido:morning              # morning briefing
 ```
 
 Kvido-specific environment variables (set in `.env` or shell):
@@ -54,9 +54,9 @@ All official `ANTHROPIC_*` and `CLAUDE_CODE_*` env vars (model, effort, API key,
 
 | Trigger | Action |
 |---------|--------|
-| "good morning" / `/morning` | Daily briefing — schedule, overnight changes, focus |
-| "start heartbeat" / `/heartbeat` | Start the cron loop (default 10 min) |
-| "done for today" / `/eod` | End-of-day journal, worklog check |
+| "good morning" / `/kvido:morning` | Daily briefing — schedule, overnight changes, focus |
+| "start heartbeat" / `/kvido:heartbeat` | Start the cron loop (default 10 min) |
+| "done for today" / `/kvido:eod` | End-of-day journal, worklog check |
 | "going to sleep" | Pause heartbeat until morning |
 | "turbo" | Switch to faster heartbeat interval for 30 min |
 
@@ -64,7 +64,7 @@ Leave the terminal open — the heartbeat loop runs unattended in the background
 
 ## Configuration
 
-All gitignored, created by `/setup`:
+All gitignored, created by `/kvido:setup`:
 
 | File | Purpose |
 |------|---------|

@@ -1,6 +1,6 @@
 ---
 name: morning
-description: Use when the user says good morning or invokes /morning for a daily briefing.
+description: Use when the user says good morning or invokes /kvido:morning for a daily briefing.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel
 ---
 
@@ -116,7 +116,7 @@ Count triage tasks:
 kvido skills/worker/task.sh count triage
 ```
 If > 0:
-> "X items in agent triage — run `/triage` to process."
+> "X items in agent triage — run `/kvido:triage` to process."
 
 ---
 
