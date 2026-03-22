@@ -114,15 +114,30 @@ build_blocks() {
       echo "Error: template '$template_name' not found at $template_file" >&2
       exit 1
     fi
+    local rendered
     if [[ ${#jq_args[@]} -eq 0 ]]; then
-      cat "$template_file"
+      rendered=$(cat "$template_file")
     else
-      jq "${jq_args[@]}" '
+      rendered=$(jq "${jq_args[@]}" '
         walk(if type == "string" then
           reduce ($ARGS.named | to_entries[]) as $e (.; gsub("{{" + $e.key + "}}"; $e.value))
         else . end)
-      ' "$template_file"
+      ' "$template_file")
     fi
+
+    # Validate: fail if any {{placeholder}} remains unresolved
+    local unresolved
+    unresolved=$(echo "$rendered" | jq -r '
+      [.. | strings | [capture("\\{\\{(?<var>[^}]+)\\}\\}"; "g")] | .[].var]
+      | unique | .[]
+    ' 2>/dev/null || true)
+    if [[ -n "$unresolved" ]]; then
+      echo "Error: template '$template_name' has unresolved variables: $(echo "$unresolved" | tr '\n' ', ' | sed 's/,$//')" >&2
+      echo "Hint: pass --var <name>=<value> for each variable" >&2
+      exit 1
+    fi
+
+    echo "$rendered"
   fi
 }
 
