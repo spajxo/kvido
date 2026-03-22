@@ -31,13 +31,15 @@ claude    # launch Claude Code
 
 Run `/kvido:setup` inside the session — it bootstraps `state/`, `memory/`, `.claude/kvido.local.md`, `.env`, `.gitignore`, and `CLAUDE.md`. It detects installed source plugins and offers to install missing ones.
 
-## Quick Launch
+## Quick Commands
 
 After setup, use the shell alias (offered during `/kvido:setup`) or:
 
 ```bash
-kvido                             # default: /loop 5m /kvido:heartbeat
-kvido /kvido:morning              # morning briefing
+kvido setup                       # launch Claude Code with /kvido:setup
+kvido morning                     # launch Claude Code with /kvido:morning
+kvido heartbeat                   # launch Claude Code with /kvido:heartbeat
+kvido task list todo              # worker queue helper
 ```
 
 Kvido-specific environment variables (set in `.env` or shell):

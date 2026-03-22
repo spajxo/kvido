@@ -2,12 +2,13 @@
 # =============================================================================
 # kvido — CLI for kvido assistant plugin
 # =============================================================================
-# Combined launcher + script dispatcher. Resolves plugin install path from
+# Combined command dispatcher. Resolves plugin install path from
 # the Claude Code plugin registry. Designed to be symlinked to ~/.local/bin/kvido.
 #
 # Usage:
-#   kvido                                     # launch Claude with heartbeat loop
-#   kvido /kvido:morning                      # launch Claude with custom prompt
+#   kvido setup                               # launch Claude with /kvido:setup
+#   kvido morning                             # launch Claude with /kvido:morning
+#   kvido heartbeat                           # run heartbeat data gather
 #   kvido task list todo                      # shortcut for skills/worker/task.sh
 #   kvido heartbeat-state set key value       # shortcut for skills/heartbeat/heartbeat-state.sh
 #   kvido config 'sources.gitlab.repos'       # shortcut for skills/config.sh
@@ -16,9 +17,10 @@
 #
 # Routing:
 #   --root / --install    → built-in commands
+#   setup/morning/...     → explicit Claude commands
 #   skills/* / agents/*   → direct dispatch (backward compat)
 #   <name> [args]         → auto-resolve script by name from skills/
-#   everything else       → Claude launcher
+#   everything else       → error
 # =============================================================================
 
 set -euo pipefail
@@ -55,6 +57,28 @@ _resolve_root() {
 
 KVIDO_ROOT="$(_resolve_root)"
 
+_exec_claude_prompt() {
+  local prompt="$1"
+
+  # Claude Code reads official env vars automatically. Only KVIDO_* vars map
+  # to CLI flags that have no env var equivalent.
+  if [[ -f .env ]]; then
+    set -a; source .env; set +a
+  fi
+
+  local args=(
+    --name "${KVIDO_NAME:-kvido}"
+    --permission-mode "${KVIDO_PERMISSION_MODE:-default}"
+  )
+
+  if [[ -n "${KVIDO_EXTRA_ARGS:-}" ]]; then
+    # shellcheck disable=SC2086
+    args+=($KVIDO_EXTRA_ARGS)
+  fi
+
+  exec claude "${args[@]}" "$prompt"
+}
+
 case "${1:-}" in
   --root)
     echo "$KVIDO_ROOT"
@@ -74,6 +98,31 @@ WRAPPER
     chmod +x "$HOME/.local/bin/kvido"
     echo "Installed: ~/.local/bin/kvido (registry-based wrapper)"
     ;;
+  setup)
+    shift
+    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido setup' takes no arguments" >&2; exit 1; }
+    _exec_claude_prompt "/kvido:setup"
+    ;;
+  morning)
+    shift
+    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido morning' takes no arguments" >&2; exit 1; }
+    _exec_claude_prompt "/kvido:morning"
+    ;;
+  eod)
+    shift
+    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido eod' takes no arguments" >&2; exit 1; }
+    _exec_claude_prompt "/kvido:eod"
+    ;;
+  triage)
+    shift
+    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido triage' takes no arguments" >&2; exit 1; }
+    _exec_claude_prompt "/kvido:triage"
+    ;;
+  heartbeat)
+    shift
+    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido heartbeat' takes no arguments" >&2; exit 1; }
+    _exec_claude_prompt "/kvido:heartbeat"
+    ;;
   skills/*|agents/*)
     # Script dispatch — resolve to plugin install path
     TARGET="$KVIDO_ROOT/$1"
@@ -86,8 +135,8 @@ WRAPPER
     ;;
   *)
     # Try auto-resolve as short command name → skills/*.sh
-    _RESOLVED=""
-    if [[ -n "${1:-}" ]]; then
+    if [[ $# -gt 0 ]]; then
+      _RESOLVED=""
       _NAME="${1%.sh}"
       if [[ -f "$KVIDO_ROOT/skills/$_NAME.sh" ]]; then
         _RESOLVED="$KVIDO_ROOT/skills/$_NAME.sh"
@@ -97,32 +146,18 @@ WRAPPER
         _MATCH=$(find "$KVIDO_ROOT/skills" -name "$_NAME.sh" -type f 2>/dev/null | head -1)
         [[ -n "$_MATCH" ]] && _RESOLVED="$_MATCH"
       fi
+
+      if [[ -n "$_RESOLVED" ]]; then
+        shift
+        exec bash "$_RESOLVED" "$@"
+      fi
+
+      echo "ERROR: Unknown kvido command: $1" >&2
+      echo "Use an explicit subcommand such as 'kvido setup' or 'kvido morning'." >&2
+      exit 1
     fi
-
-    if [[ -n "$_RESOLVED" ]]; then
-      shift
-      exec bash "$_RESOLVED" "$@"
-    fi
-
-    # Claude launcher — official env vars (ANTHROPIC_*, CLAUDE_CODE_*) are
-    # read automatically by Claude Code. Only KVIDO_* vars map to CLI flags
-    # that have no env var equivalent.
-    if [[ -f .env ]]; then
-      set -a; source .env; set +a
-    fi
-
-    PROMPT="${*:-/loop 5m /kvido:heartbeat}"
-
-    ARGS=(
-      --name "${KVIDO_NAME:-kvido}"
-      --permission-mode "${KVIDO_PERMISSION_MODE:-default}"
-    )
-
-    if [[ -n "${KVIDO_EXTRA_ARGS:-}" ]]; then
-      # shellcheck disable=SC2086
-      ARGS+=($KVIDO_EXTRA_ARGS)
-    fi
-
-    exec claude "${ARGS[@]}" "$PROMPT"
+    echo "ERROR: Missing kvido command" >&2
+    echo "Use an explicit subcommand such as 'kvido setup' or 'kvido morning'." >&2
+    exit 1
     ;;
 esac
