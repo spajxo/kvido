@@ -3,7 +3,9 @@ set -euo pipefail
 
 # Discover installed kvido-* source plugins
 # Reads ~/.claude/plugins/installed_plugins.json
-# Expected schema: array of objects with .name (string) and .installPath (string)
+# Supports both registry schemas:
+#   - v2: {version: N, plugins: {"name@registry": [{installPath, ...}], ...}}
+#   - legacy: [{name, installPath, ...}, ...]
 #
 # Usage:
 #   discover-sources.sh                     → list all: "name\tinstall_path" per line
@@ -21,9 +23,34 @@ if [[ "${1:-}" == "--check" ]]; then
   # Accept both "gitlab" and "kvido-gitlab"
   local_name="${2#kvido-}"
   jq -e --arg name "kvido-${local_name}" \
-    '.[] | select(.name == $name) | .installPath' "$REGISTRY" >/dev/null 2>&1
+    'if type == "object" and has("plugins") then
+       .plugins
+       | to_entries[]
+       | select(.key | split("@")[0] == $name)
+       | .value[0].installPath
+     elif type == "array" then
+       .[]
+       | select(.name == $name)
+       | .installPath
+     else
+       empty
+     end' \
+    "$REGISTRY" >/dev/null 2>&1
   exit $?
 fi
 
-jq -r '.[] | select(.name | startswith("kvido-")) | select(.installPath) | "\(.name)\t\(.installPath)"' \
+jq -r 'if type == "object" and has("plugins") then
+    .plugins
+    | to_entries[]
+    | select(.key | split("@")[0] | startswith("kvido-"))
+    | select(.value[0].installPath)
+    | "\(.key | split("@")[0])\t\(.value[0].installPath)"
+  elif type == "array" then
+    .[]
+    | select(.name | startswith("kvido-"))
+    | select(.installPath)
+    | "\(.name)\t\(.installPath)"
+  else
+    empty
+  end' \
   "$REGISTRY"

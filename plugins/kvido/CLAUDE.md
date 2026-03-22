@@ -36,7 +36,7 @@ This repo is a Claude Code plugin marketplace. Each plugin is in `plugins/<name>
 
 The `kvido` dispatcher script (`plugins/kvido/kvido`) resolves the plugin install path from the Claude Code registry (`~/.claude/plugins/installed_plugins.json`) and dispatches to target scripts. Commands use short names (e.g. `kvido task`, `kvido slack`) — auto-resolved from `skills/`.
 
-Installation: `kvido --install` (symlinks to `~/.local/bin/kvido`). Done automatically by `/kvido:setup`.
+Installation: `kvido --install` (writes a registry-based wrapper to `~/.local/bin/kvido`). Done automatically by `/kvido:setup`.
 
 Usage:
 ```bash

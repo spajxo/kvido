@@ -14,14 +14,14 @@ Setup and self-healing command. Run on first launch, after plugin installation, 
 
 ### kvido CLI
 
-Install the `kvido` CLI wrapper to `~/.local/bin/`:
+Install or refresh the `kvido` CLI wrapper in `~/.local/bin/`:
 
 ```bash
-kvido --root 2>/dev/null && echo "OK: kvido CLI available" || {
-  KVIDO_ROOT=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json)
-  bash "$KVIDO_ROOT/kvido" --install
-}
+KVIDO_ROOT=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json)
+bash "$KVIDO_ROOT/kvido" --install
 ```
+
+This always refreshes `~/.local/bin/kvido` to a registry-based wrapper, which avoids stale symlinks after plugin upgrades.
 
 Verify `~/.local/bin` is in PATH. If not, inform the user.
 
