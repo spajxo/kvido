@@ -106,6 +106,12 @@ memory/
 
 If the project does not have a `CLAUDE.md`, copy `CLAUDE.md.template` from the plugin as a starting point.
 
+If `CLAUDE.md` exists, check for stale patterns that indicate an outdated version:
+- `.claude/skills/` paths (should be `kvido <command>`)
+- Unprefixed slash commands like `/heartbeat` (should be `/kvido:heartbeat`)
+
+If stale patterns are found, inform the user and offer to replace `CLAUDE.md` with the current `CLAUDE.md.template` from the plugin. Always ask before overwriting — the user may have custom additions.
+
 ### f) Shell alias
 
 Offer the user a shell alias for quick launching:
