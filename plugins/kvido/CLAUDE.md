@@ -8,13 +8,13 @@ Kvido is a **Claude Code plugin marketplace** containing the core assistant and 
 
 It is **not** a traditional application. There is no compilation, no test suite, no package manager, no build step. The "code" is markdown (SKILL.md, agent definitions, commands) + bash scripts.
 
-**Usage model:** The user creates their own workspace folder (e.g. `~/kvido/`), installs the core plugin (`claude plugin install kvido`) and optional source plugins (e.g. `claude plugin install kvido-gitlab`). Runtime files (`state/`, `memory/`, `.env`, `.claude/kvido.local.md`) live in the user's workspace. They are created by `/setup`.
+**Usage model:** The user creates their own workspace folder (e.g. `~/kvido/`), installs the core plugin (`claude plugin install kvido`) and optional source plugins (e.g. `claude plugin install kvido-gitlab`). Runtime files (`state/`, `memory/`, `.env`, `.claude/kvido.local.md`) live in the user's workspace. They are created by `/kvido:setup`.
 
 ## Prerequisites (for the user's workspace)
 
 Required: `jq`. Source plugins have their own prerequisites (see each plugin's description).
 
-After plugin installation, run `/setup` — it installs the `kvido` CLI wrapper to `~/.local/bin/` and validates the environment.
+After plugin installation, run `/kvido:setup` — it installs the `kvido` CLI wrapper to `~/.local/bin/` and validates the environment.
 
 ## Architecture
 
@@ -36,7 +36,7 @@ This repo is a Claude Code plugin marketplace. Each plugin is in `plugins/<name>
 
 The `kvido` dispatcher script (`plugins/kvido/kvido`) resolves the plugin install path from the Claude Code registry (`~/.claude/plugins/installed_plugins.json`) and dispatches to target scripts. All SKILL.md instructions use `kvido skills/...` commands.
 
-Installation: `kvido --install` (symlinks to `~/.local/bin/kvido`). Done automatically by `/setup`.
+Installation: `kvido --install` (symlinks to `~/.local/bin/kvido`). Done automatically by `/kvido:setup`.
 
 Usage:
 ```bash
@@ -66,11 +66,11 @@ kvido --root                                 # print plugin install path
 
 | Command | Entry point | Purpose |
 |---------|-------------|---------|
-| `/heartbeat` | `commands/heartbeat.md` | Start heartbeat cron loop |
-| `/morning` | `commands/morning.md` | Daily briefing |
-| `/eod` | `commands/eod.md` | End-of-day journal + worklog |
-| `/triage` | `commands/triage.md` | Process backlog items |
-| `/setup` | `commands/setup.md` | Onboarding, bootstrap, health check |
+| `/kvido:heartbeat` | `commands/heartbeat.md` | Start heartbeat cron loop |
+| `/kvido:morning` | `commands/morning.md` | Daily briefing |
+| `/kvido:eod` | `commands/eod.md` | End-of-day journal + worklog |
+| `/kvido:triage` | `commands/triage.md` | Process backlog items |
+| `/kvido:setup` | `commands/setup.md` | Onboarding, bootstrap, health check |
 
 ### Agents
 
@@ -82,8 +82,8 @@ All agents are dispatched by heartbeat with `run_in_background: true`. They retu
 | worker | Heartbeat when queue non-empty | Async task execution (local task files) |
 | chat-agent | Heartbeat on non-trivial Slack DM | Lookups, task creation, pipeline responses |
 | librarian | EOD / maintenance | Memory consolidation, extraction, cleanup |
-| morning | Dispatched by planner | Daily briefing (also available as `/morning`) |
-| eod | Dispatched by planner | End-of-day journal (also available as `/eod`) |
+| morning | Dispatched by planner | Daily briefing (also available as `/kvido:morning`) |
+| eod | Dispatched by planner | End-of-day journal (also available as `/kvido:eod`) |
 | project-enricher | Maintenance heartbeat (haiku) | Lightweight project knowledge update from git/MR activity |
 | self-improver | Daily (sonnet) | Analyzes conversations and Slack DM for improvement proposals |
 
@@ -103,4 +103,4 @@ All agents are dispatched by heartbeat with `run_in_background: true`. They retu
 - Commands in `commands/` are thin wrappers that delegate to SKILL.md files
 - Templates for Slack messages are JSON files in `skills/slack/templates/`
 - All bash script invocations use `kvido skills/...` (the `kvido` CLI resolves the plugin install path)
-- No build step, no tests — validate by reading the plugin conventions and running `/setup` health check
+- No build step, no tests — validate by reading the plugin conventions and running `/kvido:setup` health check

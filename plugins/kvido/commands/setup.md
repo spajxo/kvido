@@ -114,11 +114,11 @@ Offer the user a shell alias for quick launching:
 2. Ask: "Do you want to create a shell alias `<name>` for quick launching?"
 3. If yes:
    - Detect shell rc file: if `$SHELL` contains `zsh` → `~/.zshrc`, else `~/.bashrc`
-   - Resolve plugin path: the `assistant.sh` script is located in the plugin root (parent of this `commands/` directory). Use the absolute path.
+   - Resolve plugin path: the `kvido` script is located in the plugin root (parent of this `commands/` directory). Use the absolute path.
    - Resolve workspace path: the current working directory (`$PWD`) is the user's workspace.
    - Append to rc file (only if alias not already present):
      ```bash
-     alias <name>='cd <workspace_path> && <absolute_path_to_plugin>/assistant.sh'
+     alias <name>='cd <workspace_path> && <absolute_path_to_plugin>/kvido'
      ```
    - Inform user: "Alias created. Run `source ~/.zshrc` (or `~/.bashrc`) or restart your shell to activate it."
 4. If no: skip silently.

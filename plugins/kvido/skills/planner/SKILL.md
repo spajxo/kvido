@@ -207,7 +207,7 @@ Evaluate need and create worker tasks. All maintenance tasks: `--source planner 
 | Check | Condition | Output |
 |-------|-----------|--------|
 | Stale workers | `find state/tasks/in-progress/ -name "*.md" -mmin +10` | `Event: 📊 Stale worker — <slug> in-progress > 10min. Urgency: normal.` |
-| Triage overflow | `task.sh count triage` >= 10 | `Event: 📋 Triage overflow — <N> items. Run /triage. Urgency: normal.` |
+| Triage overflow | `task.sh count triage` >= 10 | `Event: 📋 Triage overflow — <N> items. Run /kvido:triage. Urgency: normal.` |
 | Backlog stale | `todo/` low priority > 30 days | Suggestion into `state/today.md` |
 
 ### Periodic (check timestamps in planner-state.md)

@@ -1,6 +1,6 @@
 ---
 name: eod
-description: Use when the user ends their day or invokes /eod for journal entry and worklog check.
+description: Use when the user ends their day or invokes /kvido:eod for journal entry and worklog check.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronList, CronDelete, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__addWorklogToJiraIssue
 ---
 

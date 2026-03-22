@@ -60,6 +60,6 @@ Source plugins are never invoked standalone. The planner agent runs in the core 
 - Slack message templates are JSON files in `plugins/kvido/skills/slack/templates/`
 - Plugin manifests: each plugin has `.claude-plugin/plugin.json` with name, version, description
 - Marketplace manifest: `.claude-plugin/marketplace.json` lists all plugins with `./plugins/<name>` local source paths
-- Validate changes by reading plugin conventions and running `/setup` health check in a workspace
+- Validate changes by reading plugin conventions and running `/kvido:setup` health check in a workspace
 - Core plugin CLAUDE.md (`plugins/kvido/CLAUDE.md`) is separate — it provides runtime instructions when the plugin is installed in a user's workspace
 - User-facing templates: `plugins/kvido/kvido.local.md.example` (config reference) and `plugins/kvido/CLAUDE.md.template` (workspace CLAUDE.md)

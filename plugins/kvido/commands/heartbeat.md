@@ -16,7 +16,7 @@ kvido --root 2>/dev/null || $(jq -r '.plugins | to_entries[] | select(.key | sta
 Call `CronList`. If no job contains the word `heartbeat`, call `CronCreate`:
 - `cron`: `*/10 * * * *` (default 10m — adaptive interval will switch based on context)
 - `recurring`: `true`
-- `prompt`: `/heartbeat`
+- `prompt`: `/kvido:heartbeat`
 
 After creating the cron, save the job ID to `state/heartbeat-state.json` via `kvido skills/heartbeat/heartbeat-state.sh set cron_job_id "<job_id>"` and `kvido skills/heartbeat/heartbeat-state.sh set active_preset "10m"`.
 

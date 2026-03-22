@@ -7,7 +7,7 @@
 #
 # Usage:
 #   kvido                                     # launch Claude with heartbeat loop
-#   kvido /morning                            # launch Claude with custom prompt
+#   kvido /kvido:morning                      # launch Claude with custom prompt
 #   kvido skills/heartbeat/heartbeat.sh       # dispatch to plugin script
 #   kvido skills/worker/task.sh list todo     # dispatch with args
 #   kvido --root                              # print plugin root path
@@ -16,7 +16,7 @@
 # Routing:
 #   --root / --install    → built-in commands
 #   skills/* / agents/*   → script dispatch (resolved to plugin install path)
-#   everything else       → Claude launcher (like assistant.sh)
+#   everything else       → Claude launcher
 # =============================================================================
 
 set -euo pipefail
@@ -80,7 +80,7 @@ case "${1:-}" in
       set -a; source .env; set +a
     fi
 
-    PROMPT="${*:-/loop 5m /heartbeat}"
+    PROMPT="${*:-/loop 5m /kvido:heartbeat}"
 
     ARGS=(
       --name "${KVIDO_NAME:-kvido}"

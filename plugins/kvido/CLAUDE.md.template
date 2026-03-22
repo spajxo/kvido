@@ -20,7 +20,7 @@ Personal work assistant. Maintains context across projects, monitors changes, an
 - **Config from kvido.local.md.** Central configuration is in `.claude/kvido.local.md` (access via `skills/config.sh`).
 - **Silence by default.** Don't output anything unless it's useful.
 - **Write results to files.** Findings belong in state/memory files, not just in the conversation.
-- **Self-healing.** Run `/setup` to bootstrap structure and catch-up operations.
+- **Self-healing.** Run `/kvido:setup` to bootstrap structure and catch-up operations.
 
 ---
 
@@ -30,7 +30,7 @@ Personal work assistant. Maintains context across projects, monitors changes, an
 
 Patterns: `good morning`, `hello`, `hi`, `morning`, `good day` and similar greetings.
 
-**Action:** Run `/morning`.
+**Action:** Run `/kvido:morning`.
 
 If it's after 12:00, behave as a normal conversation.
 
@@ -40,7 +40,7 @@ If it's after 12:00, behave as a normal conversation.
 
 Patterns: `done for today`, `signing off`, `eod`, `end of day`, `wrapping up` and similar.
 
-**Action:** Run `/eod`.
+**Action:** Run `/kvido:eod`.
 
 ---
 
@@ -56,7 +56,7 @@ Patterns: `going to sleep`, `good night`, `pause`, `sleep` and similar.
 
 Patterns: `start heartbeat`, `set up loop`, `heartbeat loop`, `loop heartbeat` and similar.
 
-**Action:** Run `/loop 10m /heartbeat`.
+**Action:** Run `/loop 10m /kvido:heartbeat`.
 
 ---
 

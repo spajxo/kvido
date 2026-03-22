@@ -1,6 +1,6 @@
 {
   "name": "kvido",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Personal AI workflow assistant — heartbeat, planner, worker, triage",
   "license": "MIT",
   "keywords": ["assistant", "workflow", "heartbeat", "planner", "monitoring"],
