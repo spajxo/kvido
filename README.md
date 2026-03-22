@@ -36,6 +36,7 @@ Run `/kvido:setup` inside the session — it bootstraps `state/`, `memory/`, `.c
 After setup, use the shell alias (offered during `/kvido:setup`) or:
 
 ```bash
+kvido                             # launch Claude Code with /kvido:heartbeat
 kvido setup                       # launch Claude Code with /kvido:setup
 kvido morning                     # launch Claude Code with /kvido:morning
 kvido heartbeat                   # launch Claude Code with /kvido:heartbeat

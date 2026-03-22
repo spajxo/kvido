@@ -6,6 +6,7 @@
 # the Claude Code plugin registry. Designed to be symlinked to ~/.local/bin/kvido.
 #
 # Usage:
+#   kvido                                     # launch Claude with /kvido:heartbeat
 #   kvido setup                               # launch Claude with /kvido:setup
 #   kvido morning                             # launch Claude with /kvido:morning
 #   kvido heartbeat                           # run heartbeat data gather
@@ -17,6 +18,7 @@
 #
 # Routing:
 #   --root / --install    → built-in commands
+#   <empty>                → default Claude command (/kvido:heartbeat)
 #   setup/morning/...     → explicit Claude commands
 #   skills/* / agents/*   → direct dispatch (backward compat)
 #   <name> [args]         → auto-resolve script by name from skills/
@@ -80,6 +82,9 @@ _exec_claude_prompt() {
 }
 
 case "${1:-}" in
+  "")
+    _exec_claude_prompt "/kvido:heartbeat"
+    ;;
   --root)
     echo "$KVIDO_ROOT"
     ;;
@@ -156,8 +161,6 @@ WRAPPER
       echo "Use an explicit subcommand such as 'kvido setup' or 'kvido morning'." >&2
       exit 1
     fi
-    echo "ERROR: Missing kvido command" >&2
-    echo "Use an explicit subcommand such as 'kvido setup' or 'kvido morning'." >&2
-    exit 1
+    _exec_claude_prompt "/kvido:heartbeat"
     ;;
 esac
