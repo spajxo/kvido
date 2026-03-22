@@ -40,7 +40,7 @@ If the message contains an action verb with scope > 1 lookup ("go through", "wri
 2. Estimate `priority`: "urgently"/"now"/"asap" → `urgent`, "today" → `high`, default → `medium`
 3. Call:
    ```bash
-   TASK_SLUG=$(skills/worker/task.sh create \
+   TASK_SLUG=$(kvido task create \
      --instruction "<instruction>" \
      --size <s|m|l|xl> \
      --priority <urgent|high|medium|low> \
@@ -60,7 +60,7 @@ If the message is a reply to a worker task thread or contains "pipeline"/"brains
    for f in state/tasks/todo/*.md state/tasks/in-progress/*.md; do
      [[ -f "$f" ]] || continue
      SLUG=$(basename "$f" .md)
-     TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+     TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
      PIPELINE=$(echo "$TASK_DATA" | grep '^PIPELINE=' | cut -d= -f2-)
      if [[ "$PIPELINE" == "true" ]]; then
        PHASE=$(echo "$TASK_DATA" | grep '^PHASE=' | cut -d= -f2-)
@@ -78,8 +78,8 @@ If the message is a reply to a worker task thread or contains "pipeline"/"brains
 If the message contains ✅/❌/👍/👎 or "approved"/"rejected" and `state/planner-state.md` section `## Triage Pending` exists:
 
 1. Parse the reply — assign to items by order
-2. Approve: `skills/worker/task.sh move <slug> todo`
-3. Reject: `skills/worker/task.sh note <slug> "Rejected via chat" && skills/worker/task.sh move <slug> cancelled`
+2. Approve: `kvido task move <slug> todo`
+3. Reject: `kvido task note <slug> "Rejected via chat" && kvido task move <slug> cancelled`
 4. Modify: add feedback as comment
 5. Delete processed items from `## Triage Pending`
 

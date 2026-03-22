@@ -29,7 +29,7 @@ Go through `memory/planner.md`. Look for time triggers:
 - Format: `- HH:MM: <instruction>` or `- <day>: <instruction>`
 - If it's time to act and it hasn't been done today (check planner-state.md) → execute or create a worker task via:
   ```bash
-  skills/worker/task.sh create --instruction "<instruction>" --size s --priority high --source planner
+  kvido task create --instruction "<instruction>" --size s --priority high --source planner
   ```
 - Write to planner-state.md that the action was performed
 
@@ -44,7 +44,7 @@ If `memory/planner.md` does not exist → skip silently.
 Run the discovery script to find installed source plugins:
 
 ```bash
-kvido skills/discover-sources.sh
+kvido discover-sources
 ```
 
 Output: one line per installed source — `name<TAB>install_path`. If empty, no source plugins are installed — skip data gathering.
@@ -134,13 +134,13 @@ Dispatch: eod
 
 Load tasks in triage state:
 ```bash
-kvido skills/worker/task.sh list triage
+kvido task list triage
 ```
 
 **Triage items are NOT auto-approved.** They stay in `triage` until the user explicitly approves.
 
 For each task (max 3 per run):
-1. Read task detail: `kvido skills/worker/task.sh read <slug>` — understand what is requested
+1. Read task detail: `kvido task read <slug>` — understand what is requested
 2. Evaluate relevance and urgency
 3. **Clear request** → add to approval batch:
    - Suggest: title (max 8 words), priority, size, assignee=agent, brief description
@@ -176,7 +176,7 @@ Triage: <slug> '<title>' — <description>. Priority: <priority>. Size: <size>. 
 
 Also write a note on the task indicating the triage item was sent — but WITHOUT a Slack ts (heartbeat will fill that in after delivery):
 ```bash
-kvido skills/worker/task.sh note <slug> "Triage: sent for approval. Awaiting user decision."
+kvido task note <slug> "Triage: sent for approval. Awaiting user decision."
 ```
 
 **Note:** Planner runs as a subagent and does NOT have access to TodoWrite. Heartbeat (main session) will create `triage:<slug>` todo tasks for polling after delivery via `slack.sh`. Planner only writes notes on tasks and returns NL output.

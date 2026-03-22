@@ -45,7 +45,7 @@ List files in `memory/journal/`. If any exist, read the most recent (highest dat
 
 Determine yesterday's date (YYYY-MM-DD).
 
-Run `kvido skills/discover-sources.sh` to find installed source plugins. For each discovered source, read its `skills/source-*/SKILL.md` from the install path and call the morning fetch command. Pass the date as a literal string (not command substitution).
+Run `kvido discover-sources` to find installed source plugins. For each discovered source, read its `skills/source-*/SKILL.md` from the install path and call the morning fetch command. Pass the date as a literal string (not command substitution).
 
 If no source plugins are installed, skip to Step 3.
 
@@ -113,7 +113,7 @@ Be concise. Bullet points. No filler.
 
 Count triage tasks:
 ```bash
-kvido skills/worker/task.sh count triage
+kvido task count triage
 ```
 If > 0:
 > "X items in agent triage — run `/kvido:triage` to process."

@@ -41,7 +41,7 @@ If a required tool is missing, inform the user and offer installation. Do not pr
 
 ### Source plugins
 
-Run `kvido skills/discover-sources.sh` to list installed source plugins. Show the user what is installed and what is available:
+Run `kvido discover-sources` to list installed source plugins. Show the user what is installed and what is available:
 
 | Source plugin | Prerequisite | Status |
 |---------------|-------------|--------|
@@ -126,15 +126,15 @@ Offer the user a shell alias for quick launching:
 
 ### g) Source plugin config validation
 
-For each installed source plugin (via `kvido skills/discover-sources.sh`), verify that `.claude/kvido.local.md` contains the required config keys. Use `kvido skills/config.sh` to check.
+For each installed source plugin (via `kvido discover-sources`), verify that `.claude/kvido.local.md` contains the required config keys. Use `kvido config` to check.
 
 | Plugin | Required keys | Check |
 |--------|--------------|-------|
-| kvido-gitlab | At least one repo: `sources.gitlab.repos` must have children | `kvido skills/config.sh --keys 'sources.gitlab.repos'` returns non-empty |
-| kvido-jira | At least one project: `sources.jira.projects` must have children with `filter` | `kvido skills/config.sh --keys 'sources.jira.projects'` returns non-empty |
-| kvido-slack | At least one channel or DM config | `kvido skills/config.sh --keys 'sources.slack.channels'` or `kvido skills/config.sh --keys 'sources.slack.dm_channels'` returns non-empty |
+| kvido-gitlab | At least one repo: `sources.gitlab.repos` must have children | `kvido config --keys 'sources.gitlab.repos'` returns non-empty |
+| kvido-jira | At least one project: `sources.jira.projects` must have children with `filter` | `kvido config --keys 'sources.jira.projects'` returns non-empty |
+| kvido-slack | At least one channel or DM config | `kvido config --keys 'sources.slack.channels'` or `kvido config --keys 'sources.slack.dm_channels'` returns non-empty |
 | kvido-calendar | Categories (optional, works without) | No required keys — skip |
-| kvido-gmail | Watch query | `kvido skills/config.sh 'sources.gmail.watch_query'` exists |
+| kvido-gmail | Watch query | `kvido config 'sources.gmail.watch_query'` exists |
 | kvido-sessions | Idle threshold (optional, has default) | No required keys — skip |
 
 For each missing config:
@@ -209,10 +209,10 @@ command -v jq &>/dev/null || echo "WARNING: jq not found"
 ```
 
 ### Config validation
-Run `kvido skills/config.sh --validate` to check config format. For each installed source plugin, verify required keys exist (same checks as Step 1g). Log warnings for missing keys.
+Run `kvido config --validate` to check config format. For each installed source plugin, verify required keys exist (same checks as Step 1g). Log warnings for missing keys.
 
 ### Source health
-Run `kvido skills/discover-sources.sh` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
+Run `kvido discover-sources` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
 
 Skip sources that are not installed or do not define a health capability.
 

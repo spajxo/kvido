@@ -38,7 +38,7 @@ From the filtered records extract:
 
 Include summary in the journal entry (Step 2) as section `## Token Usage`.
 
-Run `kvido skills/discover-sources.sh` to find installed source plugins. For each discovered source relevant to EOD (sessions, gitlab), read its `skills/source-*/SKILL.md` from the install path and call the EOD fetch command.
+Run `kvido discover-sources` to find installed source plugins. For each discovered source relevant to EOD (sessions, gitlab), read its `skills/source-*/SKILL.md` from the install path and call the EOD fetch command.
 
 **Uncommitted work detection** — read `.claude/kvido.local.md`, for each repo:
 
@@ -73,7 +73,7 @@ Format:
 
 ## Goals Progress
 <!-- Completed tasks today: check state/tasks/done/*.md, filter by updated_at today -->
-<!-- skills/worker/task.sh list done → for each task.sh read <slug> → filter updated_at == today -->
+<!-- kvido task list done → for each task.sh read <slug> → filter updated_at == today -->
 <!-- Group by goal field in frontmatter. Tasks without goal shown under "Other". -->
 <!-- Format: ### Goal Name\n- <slug>: title -->
 
