@@ -12,7 +12,7 @@
 #   kvido heartbeat-state set key value       # shortcut for skills/heartbeat/heartbeat-state.sh
 #   kvido config 'sources.gitlab.repos'       # shortcut for skills/config.sh
 #   kvido --root                              # print plugin root path
-#   kvido --install                           # symlink to ~/.local/bin/kvido
+#   kvido --install                           # install wrapper to ~/.local/bin/kvido
 #
 # Routing:
 #   --root / --install    → built-in commands

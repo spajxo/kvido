@@ -8,7 +8,8 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList,
 Ensure `kvido` CLI is available. Run:
 
 ```bash
-kvido --root 2>/dev/null || $(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json)/kvido --install
+KVIDO_ROOT=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json)
+"$KVIDO_ROOT/kvido" --install
 ```
 
 ## Step 1: Set up cron (once per session only)
