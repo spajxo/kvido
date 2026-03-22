@@ -73,20 +73,25 @@ case "${1:-}" in
     exec bash "$TARGET" "$@"
     ;;
   *)
-    # Claude launcher — replaces assistant.sh
+    # Claude launcher — official env vars (ANTHROPIC_*, CLAUDE_CODE_*) are
+    # read automatically by Claude Code. Only KVIDO_* vars map to CLI flags
+    # that have no env var equivalent.
     if [[ -f .env ]]; then
       set -a; source .env; set +a
     fi
 
-    MODEL="${CLAUDE_MODEL:-claude-sonnet-4-6}"
     PROMPT="${*:-/loop 5m /heartbeat}"
 
-    # shellcheck disable=SC2086
-    exec claude \
-      --permission-mode="${CLAUDE_PERMISSION_MODE:-default}" \
-      --model="$MODEL" \
-      --name="${ASSISTANT_NAME:-kvido}" \
-      ${CLAUDE_ADDITIONAL_OPTIONS:-} \
-      "$PROMPT"
+    ARGS=(
+      --name "${KVIDO_NAME:-kvido}"
+      --permission-mode "${KVIDO_PERMISSION_MODE:-default}"
+    )
+
+    if [[ -n "${KVIDO_EXTRA_ARGS:-}" ]]; then
+      # shellcheck disable=SC2086
+      ARGS+=($KVIDO_EXTRA_ARGS)
+    fi
+
+    exec claude "${ARGS[@]}" "$PROMPT"
     ;;
 esac
