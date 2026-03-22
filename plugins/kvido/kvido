@@ -61,8 +61,18 @@ case "${1:-}" in
     ;;
   --install)
     mkdir -p "$HOME/.local/bin"
-    ln -sf "$KVIDO_ROOT/kvido" "$HOME/.local/bin/kvido"
-    echo "Installed: ~/.local/bin/kvido -> $KVIDO_ROOT/kvido"
+    # Write a wrapper that resolves plugin path from registry at runtime.
+    # A symlink would go stale when the plugin version changes in cache.
+    cat > "$HOME/.local/bin/kvido" <<'WRAPPER'
+#!/usr/bin/env bash
+_P=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null | head -1)
+if [[ -z "$_P" || "$_P" == "null" || ! -d "$_P" ]]; then
+  echo "ERROR: kvido plugin not found in registry" >&2; exit 1
+fi
+exec "$_P/kvido" "$@"
+WRAPPER
+    chmod +x "$HOME/.local/bin/kvido"
+    echo "Installed: ~/.local/bin/kvido (registry-based wrapper)"
     ;;
   skills/*|agents/*)
     # Script dispatch — resolve to plugin install path
