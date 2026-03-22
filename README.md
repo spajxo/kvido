@@ -40,14 +40,15 @@ After setup, use the shell alias (offered during `/setup`) or:
 ./assistant.sh /morning           # morning briefing
 ```
 
-Environment variables for `assistant.sh`:
+Kvido-specific environment variables (set in `.env` or shell):
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `CLAUDE_MODEL` | `claude-sonnet-4-6` | Model to use |
-| `CLAUDE_PERMISSION_MODE` | `default` | Permission mode (`default`, `acceptEdits`, etc.) |
-| `ASSISTANT_NAME` | `kvido` | Session name |
-| `CLAUDE_ADDITIONAL_OPTIONS` | | Extra CLI flags |
+| `KVIDO_NAME` | `kvido` | Session name (`--name`) |
+| `KVIDO_PERMISSION_MODE` | `default` | Permission mode (`--permission-mode`) |
+| `KVIDO_EXTRA_ARGS` | | Extra CLI flags |
+
+All official `ANTHROPIC_*` and `CLAUDE_CODE_*` env vars (model, effort, API key, proxy, ...) work automatically — just set them in `.env` or your environment. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code/settings#environment-variables).
 
 ## Daily Usage
 
