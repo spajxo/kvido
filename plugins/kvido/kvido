@@ -7,8 +7,6 @@
 #
 # Usage:
 #   kvido                                     # launch Claude with /kvido:heartbeat
-#   kvido setup                               # launch Claude with /kvido:setup
-#   kvido morning                             # launch Claude with /kvido:morning
 #   kvido heartbeat                           # run heartbeat data gather
 #   kvido task list todo                      # shortcut for skills/worker/task.sh
 #   kvido heartbeat-state set key value       # shortcut for skills/heartbeat/heartbeat-state.sh
@@ -19,7 +17,6 @@
 # Routing:
 #   --root / --install    → built-in commands
 #   <empty>                → default Claude command (/kvido:heartbeat)
-#   setup/morning/...     → explicit Claude commands
 #   skills/* / agents/*   → direct dispatch (backward compat)
 #   <name> [args]         → auto-resolve script by name from skills/
 #   everything else       → error
@@ -103,31 +100,6 @@ WRAPPER
     chmod +x "$HOME/.local/bin/kvido"
     echo "Installed: ~/.local/bin/kvido (registry-based wrapper)"
     ;;
-  setup)
-    shift
-    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido setup' takes no arguments" >&2; exit 1; }
-    _exec_claude_prompt "/kvido:setup"
-    ;;
-  morning)
-    shift
-    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido morning' takes no arguments" >&2; exit 1; }
-    _exec_claude_prompt "/kvido:morning"
-    ;;
-  eod)
-    shift
-    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido eod' takes no arguments" >&2; exit 1; }
-    _exec_claude_prompt "/kvido:eod"
-    ;;
-  triage)
-    shift
-    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido triage' takes no arguments" >&2; exit 1; }
-    _exec_claude_prompt "/kvido:triage"
-    ;;
-  heartbeat)
-    shift
-    [[ $# -eq 0 ]] || { echo "ERROR: 'kvido heartbeat' takes no arguments" >&2; exit 1; }
-    _exec_claude_prompt "/kvido:heartbeat"
-    ;;
   skills/*|agents/*)
     # Script dispatch — resolve to plugin install path
     TARGET="$KVIDO_ROOT/$1"
@@ -158,7 +130,7 @@ WRAPPER
       fi
 
       echo "ERROR: Unknown kvido command: $1" >&2
-      echo "Use an explicit subcommand such as 'kvido setup' or 'kvido morning'." >&2
+      echo "Run 'kvido' without arguments to launch Claude Code." >&2
       exit 1
     fi
     _exec_claude_prompt "/kvido:heartbeat"

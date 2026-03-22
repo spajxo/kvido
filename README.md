@@ -37,11 +37,11 @@ After setup, use the shell alias (offered during `/kvido:setup`) or:
 
 ```bash
 kvido                             # launch Claude Code with /kvido:heartbeat
-kvido setup                       # launch Claude Code with /kvido:setup
-kvido morning                     # launch Claude Code with /kvido:morning
-kvido heartbeat                   # launch Claude Code with /kvido:heartbeat
+kvido heartbeat                   # run skills/heartbeat/heartbeat.sh
 kvido task list todo              # worker queue helper
 ```
+
+Shell rule: `kvido` without arguments launches Claude Code. Any argument switches to bash script dispatch (`kvido heartbeat`, `kvido task`, `kvido slack`, ...). Slash commands like `/kvido:setup` and `/kvido:morning` are used inside Claude Code, not as shell subcommands.
 
 Kvido-specific environment variables (set in `.env` or shell):
 

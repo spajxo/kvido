@@ -34,21 +34,21 @@ This repo is a Claude Code plugin marketplace. Each plugin is in `plugins/<name>
 
 ### kvido CLI
 
-The `kvido` dispatcher script (`plugins/kvido/kvido`) resolves the plugin install path from the Claude Code registry (`~/.claude/plugins/installed_plugins.json`) and dispatches to target scripts. Commands use short names (e.g. `kvido task`, `kvido slack`) — auto-resolved from `skills/`. Empty invocation defaults to launching Claude Code with `/kvido:heartbeat`; other Claude launchers are available through explicit subcommands such as `kvido setup` or `kvido morning`.
+The `kvido` dispatcher script (`plugins/kvido/kvido`) resolves the plugin install path from the Claude Code registry (`~/.claude/plugins/installed_plugins.json`) and dispatches to target scripts. Commands use short names (e.g. `kvido task`, `kvido slack`) — auto-resolved from `skills/`. Empty invocation launches Claude Code with `/kvido:heartbeat`; any shell argument switches to bash script dispatch.
 
 Installation: `kvido --install` (writes a registry-based wrapper to `~/.local/bin/kvido`). Done automatically by `/kvido:setup`.
 
 Usage:
 ```bash
 kvido                    # launch Claude Code with /kvido:heartbeat
-kvido setup              # launch Claude Code with /kvido:setup
-kvido morning            # launch Claude Code with /kvido:morning
-kvido heartbeat          # launch Claude Code with /kvido:heartbeat
+kvido heartbeat          # run skills/heartbeat/heartbeat.sh
 kvido task list todo        # list worker queue
 kvido slack send chat ...    # send Slack message
 kvido config 'sources.gitlab.repos' # read config
 kvido --root                                 # print plugin install path
 ```
+
+Slash commands such as `/kvido:setup`, `/kvido:morning`, `/kvido:eod`, and `/kvido:triage` are invoked inside Claude Code sessions, not via shell subcommands.
 
 ### Core loop
 
