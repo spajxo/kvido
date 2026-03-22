@@ -13,9 +13,10 @@
 #   kvido config 'sources.gitlab.repos'       # shortcut for skills/config.sh
 #   kvido --root                              # print plugin root path
 #   kvido --install                           # install wrapper to ~/.local/bin/kvido
+#   kvido --help|-h                           # show this help
 #
 # Routing:
-#   --root / --install    → built-in commands
+#   --root / --install / --help|-h  → built-in commands
 #   <empty>                → default Claude command (/kvido:heartbeat)
 #   skills/* / agents/*   → direct dispatch (backward compat)
 #   <name> [args]         → auto-resolve script by name from skills/
@@ -81,6 +82,25 @@ _exec_claude_prompt() {
 case "${1:-}" in
   "")
     _exec_claude_prompt "/kvido:heartbeat"
+    ;;
+  --help|-h)
+    cat <<'HELP'
+Usage: kvido [command] [args...]
+
+Commands:
+  (none)                            Launch Claude with /kvido:heartbeat
+  heartbeat                         Run heartbeat data gather
+  task <subcommand> [args]          Manage tasks (list, find, move, note, update...)
+  heartbeat-state <subcommand>      Read/write heartbeat state
+  config <key>                      Read kvido config values
+  skills/<script>.sh [args]         Direct script dispatch
+  agents/<script>.sh [args]         Direct agent dispatch
+
+Flags:
+  --root                            Print plugin root path
+  --install                         Install wrapper to ~/.local/bin/kvido
+  --help, -h                        Show this help message
+HELP
     ;;
   --root)
     echo "$KVIDO_ROOT"
