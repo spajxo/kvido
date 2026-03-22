@@ -8,7 +8,7 @@ description: Use when heartbeat dispatches the worker agent to execute a queued 
 # Worker Skill
 
 Worker executes assigned tasks asynchronously in the background of the heartbeat.
-All queue management goes through `skills/worker/task.sh`.
+All queue management goes through `kvido task`.
 Tasks are local markdown files in `state/tasks/` — status is the folder name, metadata is YAML frontmatter.
 
 ## Pipeline
@@ -84,7 +84,7 @@ source_ref: "1773933088.437"
 ### Cancel handling
 At the start of work, verify the task has not been cancelled/completed:
 ```bash
-STATUS=$(kvido skills/worker/task.sh find "$TASK_SLUG")
+STATUS=$(kvido task find "$TASK_SLUG")
 [[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0  # silent — cancel or race condition
 ```
 

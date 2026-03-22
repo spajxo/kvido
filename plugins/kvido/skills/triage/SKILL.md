@@ -19,7 +19,7 @@ Tone and style per `memory/persona.md` (Triage section). If persona does not exi
 Load the list of tasks in triage:
 
 ```bash
-kvido skills/worker/task.sh list triage
+kvido task list triage
 ```
 
 If no tasks: "Triage inbox is empty ✓" and stop.
@@ -28,7 +28,7 @@ For each task display:
 
 ```bash
 # For each slug from the listing:
-kvido skills/worker/task.sh read <slug>
+kvido task read <slug>
 ```
 
 ```
@@ -38,9 +38,9 @@ kvido skills/worker/task.sh read <slug>
 ```
 
 Wait for a response. Then:
-- `yes` → approve and move to todo: `kvido skills/worker/task.sh move <slug> todo`
-- `later` → add a note: `kvido skills/worker/task.sh note <slug> "deferred: YYYY-MM-DD"`, leave in triage
-- `no` → cancel: `kvido skills/worker/task.sh note <slug> "Rejected by user" && skills/worker/task.sh move <slug> cancelled`
+- `yes` → approve and move to todo: `kvido task move <slug> todo`
+- `later` → add a note: `kvido task note <slug> "deferred: YYYY-MM-DD"`, leave in triage
+- `no` → cancel: `kvido task note <slug> "Rejected by user" && kvido task move <slug> cancelled`
 
 After processing all: "Triage done: X accepted, Y deferred, Z discarded."
 
@@ -50,8 +50,8 @@ Worker automatically enforces the WIP limit for in-progress tasks.
 
 Get current WIP:
 ```bash
-kvido skills/worker/task.sh count in-progress
+kvido task count in-progress
 ```
 If >= 3: "WIP limit of 3 reached. What should be paused or completed?"
 
-Tasks with "waiting_on" in frontmatter do not count toward the limit — check via `kvido skills/worker/task.sh read <slug>` and filter those with a non-empty WAITING_ON.
+Tasks with "waiting_on" in frontmatter do not count toward the limit — check via `kvido task read <slug>` and filter those with a non-empty WAITING_ON.

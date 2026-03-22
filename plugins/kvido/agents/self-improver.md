@@ -26,7 +26,7 @@ Before generating new proposals, evaluate the results of previous ones.
    for f in state/tasks/done/*.md state/tasks/cancelled/*.md; do
      [[ -f "$f" ]] || continue
      SLUG=$(basename "$f" .md)
-     TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+     TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
      src=$(echo "$TASK_DATA" | grep '^SOURCE=' | cut -d= -f2-)
      [[ "$src" == "self-improver" ]] || continue
      updated=$(echo "$TASK_DATA" | grep '^UPDATED_AT=' | cut -d= -f2-)
@@ -71,7 +71,7 @@ Use this limit instead of the fixed "max 5" in subsequent steps.
     for f in "$d"*.md; do
       [[ -f "$f" ]] || continue
       SLUG=$(basename "$f" .md)
-      TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
       src=$(echo "$TASK_DATA" | grep '^SOURCE=' | cut -d= -f2-)
       [[ "$src" == "self-improver" ]] || continue
       title=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-)
@@ -110,7 +110,7 @@ Analyze repeated task patterns to identify automatable patterns.
    for f in state/tasks/done/*.md; do
      [[ -f "$f" ]] || continue
      SLUG=$(basename "$f" .md)
-     TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+     TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
      title=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-)
      echo "$SLUG | $title"
    done
@@ -147,7 +147,7 @@ For patterns identified in Step 2b with 3+ repetitions generate skill drafts.
 
 1. For a qualifying pattern create a task of type `[SELF-IMPROVE/SKILL]`:
    ```bash
-   skills/worker/task.sh create \
+   kvido task create \
      --title "[SELF-IMPROVE/SKILL] <skill name or modification>" \
      --instruction "<see format below>" \
      --source self-improver \
@@ -194,7 +194,7 @@ IF proposal targets plugin code (shipped skill/agent/command from plugin cache):
 #### Local proposals (workspace changes)
 
 ```bash
-skills/worker/task.sh create \
+kvido task create \
   --title "[SELF-IMPROVE/<TYPE>] description" \
   --instruction "<description of problem and proposed solution>" \
   --source self-improver \

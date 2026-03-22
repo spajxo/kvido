@@ -8,14 +8,16 @@
 # Usage:
 #   kvido                                     # launch Claude with heartbeat loop
 #   kvido /kvido:morning                      # launch Claude with custom prompt
-#   kvido skills/heartbeat/heartbeat.sh       # dispatch to plugin script
-#   kvido skills/worker/task.sh list todo     # dispatch with args
+#   kvido task list todo                      # shortcut for skills/worker/task.sh
+#   kvido heartbeat-state set key value       # shortcut for skills/heartbeat/heartbeat-state.sh
+#   kvido config 'sources.gitlab.repos'       # shortcut for skills/config.sh
 #   kvido --root                              # print plugin root path
 #   kvido --install                           # symlink to ~/.local/bin/kvido
 #
 # Routing:
 #   --root / --install    → built-in commands
-#   skills/* / agents/*   → script dispatch (resolved to plugin install path)
+#   skills/* / agents/*   → direct dispatch (backward compat)
+#   <name> [args]         → auto-resolve script by name from skills/
 #   everything else       → Claude launcher
 # =============================================================================
 
@@ -73,6 +75,25 @@ case "${1:-}" in
     exec bash "$TARGET" "$@"
     ;;
   *)
+    # Try auto-resolve as short command name → skills/*.sh
+    _RESOLVED=""
+    if [[ -n "${1:-}" ]]; then
+      _NAME="${1%.sh}"
+      if [[ -f "$KVIDO_ROOT/skills/$_NAME.sh" ]]; then
+        _RESOLVED="$KVIDO_ROOT/skills/$_NAME.sh"
+      elif [[ -f "$KVIDO_ROOT/skills/$_NAME/$_NAME.sh" ]]; then
+        _RESOLVED="$KVIDO_ROOT/skills/$_NAME/$_NAME.sh"
+      else
+        _MATCH=$(find "$KVIDO_ROOT/skills" -name "$_NAME.sh" -type f 2>/dev/null | head -1)
+        [[ -n "$_MATCH" ]] && _RESOLVED="$_MATCH"
+      fi
+    fi
+
+    if [[ -n "$_RESOLVED" ]]; then
+      shift
+      exec bash "$_RESOLVED" "$@"
+    fi
+
     # Claude launcher — official env vars (ANTHROPIC_*, CLAUDE_CODE_*) are
     # read automatically by Claude Code. Only KVIDO_* vars map to CLI flags
     # that have no env var equivalent.

@@ -34,30 +34,30 @@ This repo is a Claude Code plugin marketplace. Each plugin is in `plugins/<name>
 
 ### kvido CLI
 
-The `kvido` dispatcher script (`plugins/kvido/kvido`) resolves the plugin install path from the Claude Code registry (`~/.claude/plugins/installed_plugins.json`) and dispatches to target scripts. All SKILL.md instructions use `kvido skills/...` commands.
+The `kvido` dispatcher script (`plugins/kvido/kvido`) resolves the plugin install path from the Claude Code registry (`~/.claude/plugins/installed_plugins.json`) and dispatches to target scripts. Commands use short names (e.g. `kvido task`, `kvido slack`) — auto-resolved from `skills/`.
 
 Installation: `kvido --install` (symlinks to `~/.local/bin/kvido`). Done automatically by `/kvido:setup`.
 
 Usage:
 ```bash
-kvido skills/heartbeat/heartbeat.sh          # run heartbeat data gather
-kvido skills/worker/task.sh list todo        # list worker queue
-kvido skills/slack/slack.sh send chat ...    # send Slack message
-kvido skills/config.sh 'sources.gitlab.repos' # read config
+kvido heartbeat          # run heartbeat data gather
+kvido task list todo        # list worker queue
+kvido slack send chat ...    # send Slack message
+kvido config 'sources.gitlab.repos' # read config
 kvido --root                                 # print plugin install path
 ```
 
 ### Core loop
 
-1. **Heartbeat** (`skills/heartbeat/`) — cron-based orchestrator (default 10min). Manages chat, worker, planner dispatch via TodoWrite/TodoRead. Owns all Slack delivery through `kvido skills/slack/slack.sh`.
+1. **Heartbeat** (`skills/heartbeat/`) — cron-based orchestrator (default 10min). Manages chat, worker, planner dispatch via TodoWrite/TodoRead. Owns all Slack delivery through `kvido slack`.
 2. **Planner** (`agents/planner.md` + `skills/planner/`) — runs every Nth heartbeat. Fetches data from sources, detects changes, generates notifications/triage items, dispatches agents (morning/eod).
-3. **Worker** (`agents/worker.md` + `skills/worker/`) — async task queue backed by local markdown files in `state/tasks/`. Max 1 concurrent. Model selected by task size (s/m → sonnet, l/xl → opus). All task operations via `kvido skills/worker/task.sh`.
+3. **Worker** (`agents/worker.md` + `skills/worker/`) — async task queue backed by local markdown files in `state/tasks/`. Max 1 concurrent. Model selected by task size (s/m → sonnet, l/xl → opus). All task operations via `kvido task`.
 4. **Chat-agent** (`agents/chat-agent.md`) — dispatched by heartbeat for non-trivial Slack DM messages (lookups, task creation, pipeline responses). Trivial messages (greetings, sleep, turbo, cancel) heartbeat handles inline.
 
 ### Data flow
 
-- **Sources** — separate plugins (`kvido-gitlab`, `kvido-jira`, etc.). Discovered at runtime via `kvido skills/discover-sources.sh` which reads `~/.claude/plugins/installed_plugins.json`.
-- **Config** — `kvido skills/config.sh 'flat.key'` reads flat dot-notation YAML frontmatter from `.claude/kvido.local.md`
+- **Sources** — separate plugins (`kvido-gitlab`, `kvido-jira`, etc.). Discovered at runtime via `kvido discover-sources` which reads `~/.claude/plugins/installed_plugins.json`.
+- **Config** — `kvido config 'flat.key'` reads flat dot-notation YAML frontmatter from `.claude/kvido.local.md`
 - **State** (`state/`) — ephemeral runtime: `current.md`, `today.md`, `heartbeat-state.json`, `tasks/{triage,todo,in-progress,done,failed,cancelled}/`
 - **Memory** (`memory/`) — persistent: `memory.md`, journals, projects, people, decisions, learnings
 - **Librarian** (`agents/librarian.md`) — memory consolidation, extraction from journals, cleanup, auto-memory sync
@@ -74,7 +74,7 @@ kvido --root                                 # print plugin install path
 
 ### Agents
 
-All agents are dispatched by heartbeat with `run_in_background: true`. They return NL output — **never send Slack messages directly**. Heartbeat parses output and delivers via `kvido skills/slack/slack.sh`. Trivial chat messages (greetings, sleep, turbo, cancel) are handled by heartbeat inline without dispatching an agent.
+All agents are dispatched by heartbeat with `run_in_background: true`. They return NL output — **never send Slack messages directly**. Heartbeat parses output and delivers via `kvido slack`. Trivial chat messages (greetings, sleep, turbo, cancel) are handled by heartbeat inline without dispatching an agent.
 
 | Agent | Trigger | Purpose |
 |-------|---------|---------|
@@ -90,8 +90,8 @@ All agents are dispatched by heartbeat with `run_in_background: true`. They retu
 ### Key conventions
 
 - All bash scripts use `set -euo pipefail`
-- Config access: `kvido skills/config.sh '.path.to.key'` (never parse kvido.local.md directly)
-- Worker queue: local markdown files in `state/tasks/` organized by status folders (triage, todo, in-progress, done, failed, cancelled). All operations via `kvido skills/worker/task.sh`
+- Config access: `kvido config '.path.to.key'` (never parse kvido.local.md directly)
+- Worker queue: local markdown files in `state/tasks/` organized by status folders (triage, todo, in-progress, done, failed, cancelled). All operations via `kvido task`
 - Dispatch tracking: TodoWrite/TodoRead (not file-based locks)
 - Language: All prompts default to English. Runtime language is configured in the user's `memory/persona.md`.
 - Hook: `hooks/pre-compact.sh` injects state summary before context compaction
@@ -102,5 +102,5 @@ All agents are dispatched by heartbeat with `run_in_background: true`. They retu
 - Agents are markdown templates in `agents/` with YAML frontmatter (name, description, tools, model)
 - Commands in `commands/` are thin wrappers that delegate to SKILL.md files
 - Templates for Slack messages are JSON files in `skills/slack/templates/`
-- All bash script invocations use `kvido skills/...` (the `kvido` CLI resolves the plugin install path)
+- All bash script invocations use `kvido <name>` short commands (e.g. `kvido task`, `kvido slack`)
 - No build step, no tests — validate by reading the plugin conventions and running `/kvido:setup` health check

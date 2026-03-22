@@ -21,7 +21,7 @@ Tone and style per `memory/persona.md` (section Heartbeat). If persona missing, 
 Run:
 
 ```bash
-kvido skills/heartbeat/heartbeat.sh
+kvido heartbeat
 ```
 
 Output: `TIMESTAMP`, `ITERATION`, `NIGHT`, `ZONE`, `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `INTERACTION_AGO_MIN`, `PLANNER_DUE`, `NEXT_TASK`, `SLEEP_ACTIVE`, `SLEEP_UNTIL`, `CHAT_MESSAGES_START...CHAT_MESSAGES_END`.
@@ -36,7 +36,7 @@ Read `state/today.md` and `state/current.md` for context.
 
 `CRON_JOB_ID` from heartbeat-state.json may be stale (from a previous session — cron jobs are session-only). Call `CronList` and compare:
 - If `CRON_JOB_ID` is not in the current cron list, find the actual heartbeat cron job (prompt contains "heartbeat")
-- If found: update state with the actual job ID via `kvido skills/heartbeat/heartbeat-state.sh set cron_job_id "<actual_id>"`
+- If found: update state with the actual job ID via `kvido heartbeat-state set cron_job_id "<actual_id>"`
 - If no heartbeat cron exists: this is an orphaned run — log and skip adaptive interval logic
 
 ### Recovery check
@@ -68,21 +68,21 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
    - Sleep mode ("going to sleep", "good night", "pause", "sleep"):
      ```bash
      SLEEP_UNTIL=$(date -d "tomorrow 06:00" -Iseconds)  # or parsed time
-     kvido skills/heartbeat/heartbeat-state.sh set sleep_until "$SLEEP_UNTIL"
+     kvido heartbeat-state set sleep_until "$SLEEP_UNTIL"
      ```
    - Turbo mode ("turbo"):
      ```bash
      TURBO_UNTIL=$(date -d "+30 min" -Iseconds)  # or parsed duration
-     kvido skills/heartbeat/heartbeat-state.sh set turbo_until "$TURBO_UNTIL"
+     kvido heartbeat-state set turbo_until "$TURBO_UNTIL"
      ```
    - Cancel ("cancel <slug>"):
      ```bash
-     kvido skills/worker/task.sh note <slug> "Cancelled via chat"
-     kvido skills/worker/task.sh move <slug> cancelled
+     kvido task note <slug> "Cancelled via chat"
+     kvido task move <slug> cancelled
      ```
    - Simple status questions answerable from loaded state/current.md and state/today.md
 
-   For trivial: compose response, create `notify:chat:<ts>` TODO (in_progress), deliver via `kvido skills/slack/slack.sh send|reply chat --var message="<response>"`, mark notify TODO completed. Log: `- **HH:MM** [chat] <summary>`
+   For trivial: compose response, create `notify:chat:<ts>` TODO (in_progress), deliver via `kvido slack send|reply chat --var message="<response>"`, mark notify TODO completed. Log: `- **HH:MM** [chat] <summary>`
 
    **Non-trivial** — requires MCP lookup, research, task creation, or pipeline response:
    - If no active `chat:*` task:
@@ -90,10 +90,10 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
      - Load last 10 messages; if thread reply, load whole thread
      - Dispatch `chat-agent` (`run_in_background: true`) with template vars: CHAT_HISTORY, NEW_MESSAGE, THREAD_TS, CURRENT_STATE, MEMORY
    - If active `chat:*` task exists:
-     - Send ack: `kvido skills/slack/slack.sh send chat --var message="One moment..."`
+     - Send ack: `kvido slack send chat --var message="One moment..."`
      - `TodoWrite` task `chat:<ts>` with status `pending`
 
-   Update: `kvido skills/heartbeat/heartbeat-state.sh set last_chat_ts "<ts>"` + `kvido skills/heartbeat/heartbeat-state.sh set last_interaction_ts "$(date -Iseconds)"`
+   Update: `kvido heartbeat-state set last_chat_ts "<ts>"` + `kvido heartbeat-state set last_interaction_ts "$(date -Iseconds)"`
 
 4. **Agent completion:** When a dispatched chat-agent completes (background task finishes), in the next heartbeat iteration:
    - `TodoRead` -- find `chat:*` tasks with status `in_progress`
@@ -107,7 +107,7 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
 
 ### Creating triage tasks
 
-Triage TODOs are created in Step 2c when heartbeat delivers a `triage-item` notification through `kvido skills/slack/slack.sh`. The returned `ts` is written into `triage:<issue_id>` TODO description. No CHAT_MESSAGES scanning needed for triage creation.
+Triage TODOs are created in Step 2c when heartbeat delivers a `triage-item` notification through `kvido slack`. The returned `ts` is written into `triage:<issue_id>` TODO description. No CHAT_MESSAGES scanning needed for triage creation.
 
 ### Polling reactions
 
@@ -115,7 +115,7 @@ Use `TodoRead` to find all `triage:*` tasks (not completed). Build JSON input an
 
 ```bash
 # Build input: [{"slug":"fix-auth-bug","ts":"1773..."},...]
-echo "$TRIAGE_JSON" | kvido skills/heartbeat/triage-poll.sh
+echo "$TRIAGE_JSON" | kvido triage-poll
 ```
 
 Output: `[{"slug":"fix-auth-bug","result":"approved|rejected|pending"},...]`
@@ -129,11 +129,11 @@ For each result:
 
 ## Step 2c: Agent Output Processing & Delivery
 
-When a background agent completes (detected via TodoRead — task status is `in_progress` but agent has returned result), process its output and deliver directly from heartbeat via `kvido skills/slack/slack.sh`.
+When a background agent completes (detected via TodoRead — task status is `in_progress` but agent has returned result), process its output and deliver directly from heartbeat via `kvido slack`.
 
 ### Delivery rules
 
-Heartbeat is responsible for parsing agent output into structured fields, deciding `immediate|batch|silent`, choosing template, and calling `kvido skills/slack/slack.sh`.
+Heartbeat is responsible for parsing agent output into structured fields, deciding `immediate|batch|silent`, choosing template, and calling `kvido slack`.
 
 Rules:
 - `chat-reply` is always `immediate`
@@ -149,9 +149,9 @@ Rules:
 ### Common pattern (all agent completions)
 
 1. Read agent's NL output (returned by Agent tool)
-2. Parse `total_tokens` + `duration_ms` from `<usage>` tag → `kvido skills/heartbeat/heartbeat-state.sh log-activity <type> execute --tokens ... --duration_ms ...`
+2. Parse `total_tokens` + `duration_ms` from `<usage>` tag → `kvido heartbeat-state log-activity <type> execute --tokens ... --duration_ms ...`
 3. Create `notify:<type>:<id>` TODO (in_progress)
-4. Apply delivery rules → deliver via `kvido skills/slack/slack.sh` → mark TODO completed
+4. Apply delivery rules → deliver via `kvido slack` → mark TODO completed
 5. Mark agent task as completed
 
 ### Per-agent specifics
@@ -165,7 +165,7 @@ Rules:
 
 ### Batch flush
 
-Flush `notify:*` TODOs with `pending` status when: planner/full iteration runs, or focus mode switches off. Re-deliver stored template+vars via `kvido skills/slack/slack.sh`. On failure, leave `pending` for next flush.
+Flush `notify:*` TODOs with `pending` status when: planner/full iteration runs, or focus mode switches off. Re-deliver stored template+vars via `kvido slack`. On failure, leave `pending` for next flush.
 
 ---
 
@@ -176,7 +176,7 @@ Flush `notify:*` TODOs with `pending` status when: planner/full iteration runs, 
    - `TodoWrite` task `planner` with status `in_progress` and description `"Planner dispatch at <timestamp>"`
    - Dispatch `planner` agent (`run_in_background: true`)
    - Pass context: `CURRENT_STATE` (state/current.md), `MEMORY` (memory/memory.md)
-   - Log activity: `kvido skills/heartbeat/heartbeat-state.sh log-activity planner dispatch --detail "iteration <N>"`
+   - Log activity: `kvido heartbeat-state log-activity planner dispatch --detail "iteration <N>"`
    - Log: `- **HH:MM** [planner] Dispatched`
 3. If planner agent completed since last check -- update `planner` task to `completed`.
 
@@ -185,14 +185,14 @@ Flush `notify:*` TODOs with `pending` status when: planner/full iteration runs, 
 ## Step 4: Worker Dispatch
 
 1. `TodoRead` — if any `worker:*` in_progress → skip (max 1 concurrent).
-2. `NEXT_TASK=$(kvido skills/worker/task.sh list todo --sort priority | head -1)` — empty → skip.
-3. `kvido skills/worker/task.sh move "$NEXT_TASK" in-progress` + `kvido skills/worker/task.sh read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION, PHASE, WORKTREE.
-   - Pipeline task without phase → set default: `kvido skills/worker/task.sh update "$NEXT_TASK" phase brainstorm|implement`
+2. `NEXT_TASK=$(kvido task list todo --sort priority | head -1)` — empty → skip.
+3. `kvido task move "$NEXT_TASK" in-progress` + `kvido task read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION, PHASE, WORKTREE.
+   - Pipeline task without phase → set default: `kvido task update "$NEXT_TASK" phase brainstorm|implement`
 4. `TodoWrite` task `worker:<NEXT_TASK>` (in_progress).
 5. Model from config: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent).
 6. Dispatch `worker` agent (`run_in_background: true`, model per size). If `WORKTREE=true` → add `isolation: "worktree"`.
-7. Log activity via `kvido skills/heartbeat/heartbeat-state.sh log-activity worker dispatch`.
-8. If SOURCE_REF not empty → send ack via `kvido skills/slack/slack.sh reply "<SOURCE_REF>" chat --var message="Task accepted..."`.
+7. Log activity via `kvido heartbeat-state log-activity worker dispatch`.
+8. If SOURCE_REF not empty → send ack via `kvido slack reply "<SOURCE_REF>" chat --var message="Task accepted..."`.
 
 Max 1 worker per iteration.
 
@@ -210,7 +210,7 @@ Max 1 worker per iteration.
 
 If `TARGET_PRESET != ACTIVE_PRESET`:
 1. `CronDelete` old job → `CronCreate` new with matching expression
-2. `kvido skills/heartbeat/heartbeat-state.sh set cron_job_id` + `active_preset`
+2. `kvido heartbeat-state set cron_job_id` + `active_preset`
 3. Log: `- **HH:MM** [heartbeat] Adaptive: {ACTIVE} -> {TARGET}`
 
 ---
@@ -221,11 +221,11 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 |---------|-----|
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
 | Dispatching chat-agent for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
-| Sending Slack directly from agents | Only heartbeat calls `kvido skills/slack/slack.sh`. Agents return NL output. |
+| Sending Slack directly from agents | Only heartbeat calls `kvido slack`. Agents return NL output. |
 | Dispatching worker when one is already `in_progress` | Check TodoRead for `worker:*` in_progress first |
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 1 |
 | Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |
-| Not updating `last_chat_ts` after processing | Always `kvido skills/heartbeat/heartbeat-state.sh set last_chat_ts` after chat handling |
+| Not updating `last_chat_ts` after processing | Always `kvido heartbeat-state set last_chat_ts` after chat handling |
 
 ## Critical Rules
 
@@ -236,5 +236,5 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **Max 1 worker per iteration.** Planner + 1 worker + 1 chat-agent is maximum.
 - **TodoWrite is the single source of truth** for dispatch tracking. No file-based locks.
 - **Dependency rule:** Do not dispatch chat-agent if one is already `in_progress`. Do not dispatch worker if one is already `in_progress`. Planner can run alongside chat-agent but not alongside another planner.
-- **No business agent calls `kvido skills/slack/slack.sh` directly.** Heartbeat owns Slack delivery.
+- **No business agent calls `kvido slack` directly.** Heartbeat owns Slack delivery.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.

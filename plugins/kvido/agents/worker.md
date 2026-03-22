@@ -26,7 +26,7 @@ PHASE: {{PHASE}}
 
 2. Verify the task has not been cancelled/completed:
    ```bash
-   STATUS=$(skills/worker/task.sh find {{TASK_SLUG}})
+   STATUS=$(kvido task find {{TASK_SLUG}})
    [[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0
    ```
 
@@ -46,17 +46,17 @@ PHASE: {{PHASE}}
 7. `state/today.md` log: `- **HH:MM** [worker] {{TASK_SLUG}}: <summary>`
 
 8. If worktree:
-     `skills/worker/task.sh note {{TASK_SLUG}} "## Result\nBranch: <branch>, pushed. <description>"`
-     `skills/worker/task.sh move {{TASK_SLUG}} done`
+     `kvido task note {{TASK_SLUG}} "## Result\nBranch: <branch>, pushed. <description>"`
+     `kvido task move {{TASK_SLUG}} done`
    If pipeline phase transition:
-     `skills/worker/task.sh update {{TASK_SLUG}} phase review`
-     `skills/worker/task.sh move {{TASK_SLUG}} todo`
+     `kvido task update {{TASK_SLUG}} phase review`
+     `kvido task move {{TASK_SLUG}} todo`
    If standard completion:
-     `skills/worker/task.sh note {{TASK_SLUG}} "## Result\n<summary>"`
-     `skills/worker/task.sh move {{TASK_SLUG}} done`
+     `kvido task note {{TASK_SLUG}} "## Result\n<summary>"`
+     `kvido task move {{TASK_SLUG}} done`
    On error:
-     `skills/worker/task.sh note {{TASK_SLUG}} "## Failed\n<reason>"`
-     `skills/worker/task.sh move {{TASK_SLUG}} failed`
+     `kvido task note {{TASK_SLUG}} "## Failed\n<reason>"`
+     `kvido task move {{TASK_SLUG}} failed`
 
 ## Output format
 
@@ -85,7 +85,7 @@ Type: worker-error
 ```
 
 ## Error handling
-1. `skills/worker/task.sh note {{TASK_SLUG}} "## Failed\n<reason>"`
-2. `skills/worker/task.sh move {{TASK_SLUG}} failed`
+1. `kvido task note {{TASK_SLUG}} "## Failed\n<reason>"`
+2. `kvido task move {{TASK_SLUG}} failed`
 3. Include error in NL output: `Error: Worker failed {{TASK_SLUG}} — <reason>`
 4. Write to `memory/errors.md`

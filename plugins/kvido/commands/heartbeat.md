@@ -18,7 +18,7 @@ Call `CronList`. If no job contains the word `heartbeat`, call `CronCreate`:
 - `recurring`: `true`
 - `prompt`: `/kvido:heartbeat`
 
-After creating the cron, save the job ID to `state/heartbeat-state.json` via `kvido skills/heartbeat/heartbeat-state.sh set cron_job_id "<job_id>"` and `kvido skills/heartbeat/heartbeat-state.sh set active_preset "10m"`.
+After creating the cron, save the job ID to `state/heartbeat-state.json` via `kvido heartbeat-state set cron_job_id "<job_id>"` and `kvido heartbeat-state set active_preset "10m"`.
 
 Create the cron silently — print nothing unless an error occurs.
 
