@@ -188,17 +188,21 @@ _read_body_section() {
 
 if [[ -d "$TASKS_DIR" ]]; then
   TASK_ENTRIES=()
-  DONE_COUNT=0
   for status_dir in in-progress todo triage done failed cancelled; do
     dir="$TASKS_DIR/$status_dir"
     [[ -d "$dir" ]] || continue
-    for f in "$dir"/*.md; do
-      [[ -f "$f" ]] || continue
-      # Limit done/failed/cancelled to 50 most recent
-      if [[ "$status_dir" == "done" || "$status_dir" == "failed" || "$status_dir" == "cancelled" ]]; then
-        DONE_COUNT=$((DONE_COUNT + 1))
-        if (( DONE_COUNT > 50 )); then continue; fi
-      fi
+    # For archived statuses, limit to 50 most recent by mtime
+    local_files=()
+    if [[ "$status_dir" == "done" || "$status_dir" == "failed" || "$status_dir" == "cancelled" ]]; then
+      while IFS= read -r f; do
+        [[ -f "$f" ]] && local_files+=("$f")
+      done < <(ls -t "$dir"/*.md 2>/dev/null | head -50)
+    else
+      for f in "$dir"/*.md; do
+        [[ -f "$f" ]] && local_files+=("$f")
+      done
+    fi
+    for f in "${local_files[@]}"; do
       SLUG=$(basename "$f" .md)
       TITLE=$(_read_fm "$f" "title")
       PRIORITY=$(_read_fm "$f" "priority")
@@ -245,7 +249,8 @@ if [[ -d "$TASKS_DIR" ]]; then
     done
   done
   if [[ ${#TASK_ENTRIES[@]} -gt 0 ]]; then
-    TASKS_JSON=$(printf '%s\n' "${TASK_ENTRIES[@]}" | jq -s '.')
+    # Escape </script> sequences to prevent breaking the <script> tag
+    TASKS_JSON=$(printf '%s\n' "${TASK_ENTRIES[@]}" | jq -s '.' | sed 's/<\/script>/<\\\/script>/g')
   fi
 fi
 
@@ -650,7 +655,7 @@ function renderKanban() {
   var KANBAN_COLS = ['triage','todo','in-progress','done'];
   KANBAN_COLS.forEach(function(status) {
     var tasks = TASKS.filter(function(t) { return t.status === status; });
-    tasks.sort(function(a, b) { return (PRIORITY_ORDER[a.priority] || 4) - (PRIORITY_ORDER[b.priority] || 4); });
+    tasks.sort(function(a, b) { return (PRIORITY_ORDER[a.priority] != null ? PRIORITY_ORDER[a.priority] : 4) - (PRIORITY_ORDER[b.priority] != null ? PRIORITY_ORDER[b.priority] : 4); });
 
     html += '<div class="kanban-col" data-status="' + status + '">';
     html += '<div class="kanban-col-header"><span class="col-title">' + (STATUS_LABELS[status] || status) + '</span><span class="col-count">' + tasks.length + '</span></div>';
