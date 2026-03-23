@@ -25,7 +25,7 @@ plugins/
 └── kvido-sessions/                ← source plugin (no external deps)
 ```
 
-Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. They are discovered at runtime by `plugins/kvido/skills/discover-sources.sh` which reads `~/.claude/plugins/installed_plugins.json`.
+Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. They are discovered at runtime by `plugins/kvido/skills/discover-sources.sh` which reads `~/.claude/plugins/installed_plugins.json` (source plugin discovery always uses the registry — `CLAUDE_PLUGIN_ROOT` is only relevant for the core `kvido` plugin path).
 
 ## Key design decisions
 
@@ -66,7 +66,7 @@ heartbeat (cron, every 10 min) — plugins/kvido/skills/heartbeat/
 ├── reads Slack DM (via core slack.sh)
 ├── checks worker queue (state/tasks/)
 ├── dispatches planner every Nth tick → plugins/kvido/agents/planner.md
-│   └── discover-sources.sh → finds kvido-* plugins in installed_plugins.json
+│   └── discover-sources.sh → finds kvido-* source plugins via installed_plugins.json
 │       ├── reads each source's SKILL.md from its installPath
 │       ├── runs fetch.sh (exit 0 = success, exit 10 = use MCP fallback)
 │       └── detects changes vs planner-state.md → Slack notifications
