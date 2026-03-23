@@ -99,17 +99,7 @@ Read `$KVIDO_HOME/.env`. If it contains empty values (keys with `=""` or `=`):
 2. Offer help filling them in (how to find Slack IDs, where to get tokens, etc.)
 3. If the user provides values, write them to `.env`
 
-### e) CLAUDE.md
-
-If the project does not have a `CLAUDE.md`, copy `CLAUDE.md.template` from the plugin as a starting point.
-
-If `CLAUDE.md` exists, check for stale patterns that indicate an outdated version:
-- `.claude/skills/` paths (should be `kvido <command>`)
-- Unprefixed slash commands like `/heartbeat` (should be `/kvido:heartbeat`)
-
-If stale patterns are found, inform the user and offer to replace `CLAUDE.md` with the current `CLAUDE.md.template` from the plugin. Always ask before overwriting — the user may have custom additions.
-
-### f) Shell alias
+### d) Shell alias
 
 Offer the user a shell alias for quick launching:
 
@@ -125,7 +115,7 @@ Offer the user a shell alias for quick launching:
 4. If no: skip silently.
 
 
-### g) Source plugin config validation
+### e) Source plugin config validation
 
 For each installed source plugin (via `kvido discover-sources`), verify that `kvido.local.md` contains the required config keys. Use `kvido config` to check.
 
