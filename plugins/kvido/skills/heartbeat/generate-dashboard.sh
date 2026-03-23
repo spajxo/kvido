@@ -540,7 +540,7 @@ ${TIMELINE_HTML}
 </table>
 TABLEEOF
 else
-  echo '<div class="empty">No activity data — waiting for activity-log.jsonl (issue #7)</div>'
+  echo '<div class="empty">No activity data yet</div>'
 fi)
 </div>
 

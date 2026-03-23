@@ -61,7 +61,7 @@ Slash commands such as `/kvido:setup`, `/kvido:morning`, `/kvido:eod`, and `/kvi
 
 - **Sources** — separate plugins (`kvido-gitlab`, `kvido-jira`, etc.). Discovered at runtime via `kvido discover-sources` which reads `~/.claude/plugins/installed_plugins.json`.
 - **Config** — `kvido config 'flat.key'` reads flat dot-notation YAML frontmatter from `.claude/kvido.local.md`
-- **State** (`state/`) — ephemeral runtime: `current.md`, `today.md` (morning briefing), `activity-log.jsonl` (unified log via `kvido log`), `heartbeat-state.json`, `tasks/{triage,todo,in-progress,done,failed,cancelled}/`
+- **State** (`state/`) — ephemeral runtime: `current.md`, `today.md` (morning briefing), `log.jsonl` (unified log via `kvido log`), `heartbeat-state.json`, `tasks/{triage,todo,in-progress,done,failed,cancelled}/`
 - **Memory** (`memory/`) — persistent: `memory.md`, journals, projects, people, decisions, learnings
 - **Librarian** (`agents/librarian.md`) — memory consolidation, extraction from journals, cleanup, auto-memory sync
 

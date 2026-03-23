@@ -85,7 +85,7 @@ Format:
 <!-- Unresolved, carry forward -->
 
 ## Token Usage
-<!-- Total tokens, top agent, run count — from activity-log.jsonl. Skip if JSONL does not exist. -->
+<!-- Total tokens, top agent, run count — from kvido log list. -->
 
 ## Unfinished Work
 <!-- Repos with uncommitted changes -->

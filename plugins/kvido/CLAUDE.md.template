@@ -76,7 +76,7 @@ Patterns: `show dashboard`, `open dashboard`, `dashboard`, `status`, `overview` 
 |------|-------------|
 | `state/current.md` | Current focus, WIP, blockers |
 | `state/today.md` | Morning briefing (written by morning skill) |
-| `state/activity-log.jsonl` | Unified activity log (managed by `kvido log`) |
+| `state/log.jsonl` | Unified activity log (managed by `kvido log`) |
 | `state/heartbeat-state.json` | Heartbeat state |
 | `state/dashboard.html` | HTML dashboard |
 
