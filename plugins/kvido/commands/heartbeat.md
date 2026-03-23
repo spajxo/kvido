@@ -3,14 +3,9 @@ description: Heartbeat — orchestrator, chat check, worker dispatch, log, adapt
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, mcp__claude_ai_Slack__slack_read_channel
 ---
 
-## Step 0: Bootstrap kvido CLI (once per session)
+## Step 0: Verify kvido CLI
 
-Ensure `kvido` CLI is available. Run:
-
-```bash
-KVIDO_ROOT=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json)
-"$KVIDO_ROOT/kvido" --install
-```
+If `command -v kvido` fails, tell the user to run `/kvido:setup` first and stop.
 
 ## Step 1: Set up cron (once per session only)
 
