@@ -12,7 +12,7 @@ set -euo pipefail
 
 PHASE="${1:?Usage: kvido context <phase>}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Core base rules
 CORE_HOOK="$PLUGIN_ROOT/hooks/context-${PHASE}.md"
