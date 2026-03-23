@@ -30,8 +30,13 @@ set -euo pipefail
 _resolve_root() {
   # 1. Prefer CLAUDE_PLUGIN_ROOT — set by Claude Code when running inside a plugin context
   if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -d "$CLAUDE_PLUGIN_ROOT" ]]; then
-    echo "$CLAUDE_PLUGIN_ROOT"
-    return
+    # Verify this is actually the kvido plugin root
+    if [[ -f "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" ]] && \
+       grep -q '"name".*"kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null; then
+      echo "$CLAUDE_PLUGIN_ROOT"
+      return
+    fi
+    # CLAUDE_PLUGIN_ROOT is set but points to a different plugin — fall through to script dir / registry
   fi
 
   # 2. If running directly from plugin dir, use SCRIPT_DIR
@@ -57,7 +62,7 @@ _resolve_root() {
   ' "$registry" 2>/dev/null | head -1)
 
   if [[ -z "$root" || "$root" == "null" || ! -d "$root" ]]; then
-    echo "ERROR: kvido plugin not found in registry" >&2
+    echo "ERROR: kvido plugin not found in registry and CLAUDE_PLUGIN_ROOT is not set" >&2
     exit 1
   fi
   echo "$root"
@@ -127,7 +132,10 @@ HELP
 #!/usr/bin/env bash
 export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -d "$CLAUDE_PLUGIN_ROOT" ]]; then
-  exec "$CLAUDE_PLUGIN_ROOT/kvido" "$@"
+  if [[ -f "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" ]] && \
+     grep -q '"name".*"kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null; then
+    exec "$CLAUDE_PLUGIN_ROOT/kvido" "$@"
+  fi
 fi
 _P=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null | head -1)
 if [[ -z "$_P" || "$_P" == "null" || ! -d "$_P" ]]; then
