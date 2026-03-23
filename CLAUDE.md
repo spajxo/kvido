@@ -45,7 +45,7 @@ All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
 - `kvido.local.md` — configuration
 - `.env` — secrets (Slack tokens, channel IDs)
 
-The `kvido` CLI `cd`s into `$KVIDO_HOME` before launching Claude. Config is at `$KVIDO_HOME/kvido.local.md`.
+The `kvido` CLI exports `$KVIDO_HOME` and all scripts resolve state/memory paths from there. PWD stays as the project directory. Config is at `$KVIDO_HOME/kvido.local.md`.
 
 ## Plugin Hook System
 
