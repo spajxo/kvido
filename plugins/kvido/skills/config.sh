@@ -19,8 +19,9 @@
 
 set -euo pipefail
 
-# CONFIG_FILE — kvido.local.md in project's .claude/ directory
-CONFIG_FILE="${PWD}/.claude/kvido.local.md"
+# CONFIG_FILE — kvido.local.md in KVIDO_HOME directory
+KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+CONFIG_FILE="${KVIDO_HOME}/kvido.local.md"
 
 # ── Extract frontmatter ──────────────────────────────────────────────────────
 
