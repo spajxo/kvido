@@ -82,7 +82,7 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
      ```
    - Simple status questions answerable from loaded state/current.md and state/today.md
 
-   For trivial: compose response, create `notify:chat:<ts>` TODO (in_progress), deliver via `kvido slack send|reply chat --var message="<response>"`, mark notify TODO completed. Log: `- **HH:MM** [chat] <summary>`
+   For trivial: compose response, create `notify:chat:<ts>` TODO (in_progress), deliver via `kvido slack send|reply chat --var message="<response>"`, mark notify TODO completed. Log: `kvido log add chat inline --message "<summary>"`
 
    **Non-trivial** — requires MCP lookup, research, task creation, or pipeline response:
    - If no active `chat:*` task:
@@ -144,12 +144,12 @@ Rules:
 - `batch` -- keep notify TODO as `pending` and store serialized delivery metadata in description
 - `silent` -- log summary and mark notify TODO completed
 - `immediate` -- use returned `ts` for follow-up flows (triage polling, thread replies)
-- shell failure -- log warning to `state/today.md`, mark notify TODO completed
+- shell failure -- `kvido log add heartbeat error --message "delivery failed: <reason>"`, mark notify TODO completed
 
 ### Common pattern (all agent completions)
 
 1. Read agent's NL output (returned by Agent tool)
-2. Parse `total_tokens` + `duration_ms` from `<usage>` tag → `kvido heartbeat-state log-activity <type> execute --tokens ... --duration_ms ...`
+2. Parse `total_tokens` + `duration_ms` from `<usage>` tag → `kvido log add <type> execute --tokens ... --duration_ms ... --message "<summary>"`
 3. Create `notify:<type>:<id>` TODO (in_progress)
 4. Apply delivery rules → deliver via `kvido slack` → mark TODO completed
 5. Mark agent task as completed
@@ -176,8 +176,7 @@ Flush `notify:*` TODOs with `pending` status when: planner/full iteration runs, 
    - `TodoWrite` task `planner` with status `in_progress` and description `"Planner dispatch at <timestamp>"`
    - Dispatch `planner` agent (`run_in_background: true`)
    - Pass context: `CURRENT_STATE` (state/current.md), `MEMORY` (memory/memory.md)
-   - Log activity: `kvido heartbeat-state log-activity planner dispatch --detail "iteration <N>"`
-   - Log: `- **HH:MM** [planner] Dispatched`
+   - Log: `kvido log add planner dispatch --message "iteration <N>"`
 3. If planner agent completed since last check -- update `planner` task to `completed`.
 
 ---
@@ -191,7 +190,7 @@ Flush `notify:*` TODOs with `pending` status when: planner/full iteration runs, 
 4. `TodoWrite` task `worker:<NEXT_TASK>` (in_progress).
 5. Model from config: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent).
 6. Dispatch `worker` agent (`run_in_background: true`, model per size). If `WORKTREE=true` → add `isolation: "worktree"`.
-7. Log activity via `kvido heartbeat-state log-activity worker dispatch`.
+7. Log: `kvido log add worker dispatch --message "<NEXT_TASK>" --task_id "<NEXT_TASK>"`.
 8. If SOURCE_REF not empty → send ack via `kvido slack reply "<SOURCE_REF>" chat --var message="Task accepted..."`.
 
 Max 1 worker per iteration.
