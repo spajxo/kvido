@@ -56,14 +56,15 @@ _resolve_root() {
 }
 
 KVIDO_ROOT="$(_resolve_root)"
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 
 _exec_claude_prompt() {
   local prompt="$1"
 
   # Claude Code reads official env vars automatically. Only KVIDO_* vars map
   # to CLI flags that have no env var equivalent.
-  if [[ -f .env ]]; then
-    set -a; source .env; set +a
+  if [[ -f "$KVIDO_HOME/.env" ]]; then
+    set -a; source "$KVIDO_HOME/.env"; set +a
   fi
 
   local args=(
@@ -76,6 +77,11 @@ _exec_claude_prompt() {
     args+=($KVIDO_EXTRA_ARGS)
   fi
 
+  # Assembly hook — generate session context (non-fatal)
+  local orig_pwd="$PWD"
+  KVIDO_PROJECT="$orig_pwd" bash "$KVIDO_ROOT/hooks/pre-session.sh" 2>/dev/null || true
+
+  cd "$KVIDO_HOME"
   exec claude "${args[@]}" "$prompt"
 }
 
@@ -111,6 +117,7 @@ HELP
     # A symlink would go stale when the plugin version changes in cache.
     cat > "$HOME/.local/bin/kvido" <<'WRAPPER'
 #!/usr/bin/env bash
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 _P=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null | head -1)
 if [[ -z "$_P" || "$_P" == "null" || ! -d "$_P" ]]; then
   echo "ERROR: kvido plugin not found in registry" >&2; exit 1
