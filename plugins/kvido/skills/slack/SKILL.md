@@ -9,7 +9,7 @@ user-invocable: false
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
-> **Configuration:** Read `kvido.local.md` for focus mode and batching settings.
+> **Configuration:** Use `kvido config 'key'` for focus mode and batching settings.
 
 # Slack
 
@@ -91,11 +91,11 @@ Flat messages as default. Thread only on escalation:
 
 ## Focus Mode
 
-Read `kvido.local.md` → `focus_mode`. Unchanged — suppress, batching, after_focus_summary work identically.
+Read `kvido config 'focus_mode'`. Unchanged — suppress, batching, after_focus_summary work identically.
 
 ## Batching
 
-Read `kvido.local.md` → `batching`. Batch notifications are managed by heartbeat via notify TODOs with pending status — flushed at full heartbeat or on focus mode change.
+Read `kvido config 'skills.slack.batching'`. Batch notifications are managed by heartbeat via notify TODOs with pending status — flushed at full heartbeat or on focus mode change.
 
 ## Auth
 

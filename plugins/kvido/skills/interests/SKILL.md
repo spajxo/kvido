@@ -7,7 +7,7 @@ user-invocable: true
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
-> **Configuration:** Read `kvido.local.md` for topics and intervals.
+> **Configuration:** Use `kvido config 'key'` for topics and intervals.
 
 # Interests
 
@@ -15,7 +15,7 @@ user-invocable: true
 User says "research X" or "check status of X" → search the web and write up results.
 
 ## Automatic usage (maintenance heartbeat)
-Read `kvido.local.md`. For each topic where it is time to check (based on `check_interval` and `last_checked` in `state/interests.md`):
+Read topics via `kvido config --keys 'skills.interests.topics'`. For each topic where it is time to check (based on `check_interval` and `last_checked` in `state/interests.md`):
 
 1. Search the web (WebSearch tool) with query from config
 2. Compare with previous state in `state/interests.md`
