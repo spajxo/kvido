@@ -6,6 +6,8 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList,
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
+> **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config: `$KVIDO_HOME/kvido.local.md`.
+
 # Heartbeat
 
 Runs automatically via `/loop`. Be extremely brief -- no output if nothing to report.

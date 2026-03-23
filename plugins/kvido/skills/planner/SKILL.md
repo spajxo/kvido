@@ -7,7 +7,7 @@ user-invocable: false
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
-> **Configuration:** Read `kvido.local.md`.
+> **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config: `$KVIDO_HOME/kvido.local.md`.
 
 # Planner
 

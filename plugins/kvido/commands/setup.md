@@ -203,7 +203,7 @@ Add your personal instructions for the planner here.
   1. Read all journals from this week
   2. Create weekly summary in memory/weekly/YYYY-Www.md
   3. Archive journals older than 14 days
-- Deliver: slack (template: weekly)
+- Deliver: slack (template: event)
 ```
 
 ## Step 4: EOD Catch-up
