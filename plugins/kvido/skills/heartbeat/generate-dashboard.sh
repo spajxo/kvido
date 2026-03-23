@@ -8,6 +8,7 @@
 #   3. state/current.md
 #   4. state/today.md
 #   5. state/tasks/ (local task files)
+#   6. state/tasks/*/*.md (full task data for task list/detail view)
 
 set -euo pipefail
 
@@ -144,7 +145,7 @@ if [[ -f "$TODAY_FILE" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Source 5: Local task files (work queue)
+# Source 5: Local task files (work queue counts)
 # ---------------------------------------------------------------------------
 TASK_SH="$PLUGIN_ROOT/skills/worker/task.sh"
 WQ_PROGRESS=0
@@ -160,6 +161,97 @@ if [[ -x "$TASK_SH" ]]; then
   [[ -f "${PWD}/state/tasks/.today-marker" ]] || touch -d "${TODAY} 00:00:00" "${PWD}/state/tasks/.today-marker" 2>/dev/null || true
   # Done today: count files in done/ modified today
   WQ_DONE=$(find "${PWD}/state/tasks/done/" -name "*.md" -newer "${PWD}/state/tasks/.today-marker" 2>/dev/null | wc -l || echo 0)
+fi
+
+# ---------------------------------------------------------------------------
+# Source 6: Full task data for task list/detail views
+# ---------------------------------------------------------------------------
+TASKS_DIR="$STATE_DIR/tasks"
+TASKS_JSON="[]"
+
+_read_fm() {
+  local file="$1" key="$2"
+  awk '/^---$/{c++; next} c==1' "$file" \
+    | awk -v k="$key" '{
+        if (index($0, k ": ") == 1) { print substr($0, length(k) + 3); found=1; exit }
+      } END { if (!found) print "" }'
+}
+
+_read_body_section() {
+  local file="$1" section="$2"
+  awk -v s="## $section" '
+    found && /^## / { exit }
+    found { print }
+    $0 == s { found=1 }
+  ' "$file"
+}
+
+if [[ -d "$TASKS_DIR" ]]; then
+  TASK_ENTRIES=()
+  for status_dir in in-progress todo triage done failed cancelled; do
+    dir="$TASKS_DIR/$status_dir"
+    [[ -d "$dir" ]] || continue
+    # For archived statuses, limit to 50 most recent by mtime
+    local_files=()
+    if [[ "$status_dir" == "done" || "$status_dir" == "failed" || "$status_dir" == "cancelled" ]]; then
+      while IFS= read -r f; do
+        [[ -f "$f" ]] && local_files+=("$f")
+      done < <(ls -t "$dir"/*.md 2>/dev/null | head -50)
+    else
+      for f in "$dir"/*.md; do
+        [[ -f "$f" ]] && local_files+=("$f")
+      done
+    fi
+    for f in "${local_files[@]}"; do
+      SLUG=$(basename "$f" .md)
+      TITLE=$(_read_fm "$f" "title")
+      PRIORITY=$(_read_fm "$f" "priority")
+      SIZE=$(_read_fm "$f" "size")
+      SOURCE=$(_read_fm "$f" "source")
+      SOURCE_REF=$(_read_fm "$f" "source_ref")
+      PIPELINE=$(_read_fm "$f" "pipeline")
+      PHASE=$(_read_fm "$f" "phase")
+      WORKTREE=$(_read_fm "$f" "worktree")
+      GOAL=$(_read_fm "$f" "goal")
+      RECURRING=$(_read_fm "$f" "recurring")
+      WAITING_ON=$(_read_fm "$f" "waiting_on")
+      CREATED_AT=$(_read_fm "$f" "created_at")
+      UPDATED_AT=$(_read_fm "$f" "updated_at")
+      TRIAGE_SLACK_TS=$(_read_fm "$f" "triage_slack_ts")
+      INSTRUCTION=$(_read_body_section "$f" "Instruction")
+      WORKER_NOTES=$(_read_body_section "$f" "Worker Notes")
+
+      TASK_JSON=$(jq -n \
+        --arg slug "$SLUG" \
+        --arg status "$status_dir" \
+        --arg title "$TITLE" \
+        --arg priority "$PRIORITY" \
+        --arg size "$SIZE" \
+        --arg source "$SOURCE" \
+        --arg source_ref "$SOURCE_REF" \
+        --arg pipeline "$PIPELINE" \
+        --arg phase "$PHASE" \
+        --arg worktree "$WORKTREE" \
+        --arg goal "$GOAL" \
+        --arg recurring "$RECURRING" \
+        --arg waiting_on "$WAITING_ON" \
+        --arg created_at "$CREATED_AT" \
+        --arg updated_at "$UPDATED_AT" \
+        --arg triage_slack_ts "$TRIAGE_SLACK_TS" \
+        --arg instruction "$INSTRUCTION" \
+        --arg worker_notes "$WORKER_NOTES" \
+        '{slug:$slug, status:$status, title:$title, priority:$priority, size:$size,
+          source:$source, source_ref:$source_ref, pipeline:$pipeline, phase:$phase,
+          worktree:$worktree, goal:$goal, recurring:$recurring, waiting_on:$waiting_on,
+          created_at:$created_at, updated_at:$updated_at, triage_slack_ts:$triage_slack_ts,
+          instruction:$instruction, worker_notes:$worker_notes}')
+      TASK_ENTRIES+=("$TASK_JSON")
+    done
+  done
+  if [[ ${#TASK_ENTRIES[@]} -gt 0 ]]; then
+    # Escape </script> sequences to prevent breaking the <script> tag
+    TASKS_JSON=$(printf '%s\n' "${TASK_ENTRIES[@]}" | jq -s '.' | sed 's/<\/script>/<\\\/script>/g')
+  fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -201,14 +293,19 @@ fi
 TMP_FILE=$(mktemp "${OUTPUT}.tmp.XXXXXX")
 trap 'rm -f "$TMP_FILE"' EXIT
 
-cat > "$TMP_FILE" << HTMLEOF
+cat > "$TMP_FILE" << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="cs">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="${AUTO_REFRESH}">
+HTMLEOF
+
+cat >> "$TMP_FILE" << HTMLEOF
 <title>Kvido Dashboard</title>
+HTMLEOF
+
+cat >> "$TMP_FILE" << 'HTMLEOF'
 <style>
 :root {
   --bg: #1a1b26; --bg-raised: #1f2031; --card: #24283b; --card-hover: #292e42;
@@ -228,7 +325,7 @@ body {
   font-size: 13px; line-height: 1.6; padding: 24px 20px; max-width: 1200px; margin: 0 auto;
   -webkit-font-smoothing: antialiased;
 }
-header { margin-bottom: 24px; }
+header { margin-bottom: 16px; }
 header h1 {
   color: var(--text-bright); font-size: 1.1em; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
   display: flex; align-items: center; gap: 8px;
@@ -246,25 +343,9 @@ header h1::before { content: ""; display: inline-block; width: 6px; height: 6px;
 .zone-turbo { background: rgba(187,154,247,0.08); color: var(--purple); border-color: rgba(187,154,247,0.2); }
 .zone-sleep { background: rgba(86,95,137,0.15); color: var(--muted); border-color: rgba(86,95,137,0.3); }
 
-.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-.stat {
-  background: var(--card); border: 1px solid var(--border-subtle); border-radius: 6px;
-  padding: 14px 12px; text-align: center; transition: border-color 0.2s, background 0.2s;
-  position: relative; overflow: hidden;
-}
-.stat::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; opacity: 0; transition: opacity 0.2s; }
-.stat:hover { background: var(--card-hover); border-color: var(--border); }
-.stat:hover::before { opacity: 1; }
-.stat .value { font-size: 1.7em; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
-.stat .label { font-size: 0.7em; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
-.stat.progress .value { color: var(--accent); }
-.stat.progress::before { background: var(--accent); }
-.stat.todo .value { color: var(--text-bright); }
-.stat.todo::before { background: var(--text); }
-.stat.triage .value { color: var(--warning); }
-.stat.triage::before { background: var(--warning); }
-.stat.done .value { color: var(--success); }
-.stat.done::before { background: var(--success); }
+/* Views */
+.view { display: none; }
+.view.active { display: block; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-bottom: 14px; }
 .card {
@@ -278,7 +359,7 @@ header h1::before { content: ""; display: inline-block; width: 6px; height: 6px;
 }
 
 table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
-thead th { color: var(--muted); font-weight: 500; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px; border-bottom: 1px solid var(--border); }
+thead th { color: var(--muted); font-weight: 500; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px; border-bottom: 1px solid var(--border); text-align: left; }
 tbody td { padding: 7px 8px; border-bottom: 1px solid var(--border-subtle); transition: background 0.15s; }
 tbody tr:hover td { background: rgba(122,162,247,0.04); }
 tbody tr:last-child td { border-bottom: none; }
@@ -319,24 +400,128 @@ tbody tr:last-child td { border-bottom: none; }
 
 footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20px 0 8px; opacity: 0.5; }
 
+/* Task list/detail — kanban board */
+.badge {
+  display: inline-block; font-size: 0.68em; font-weight: 600; padding: 1px 6px; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+}
+.badge-urgent { background: var(--error-glow); color: var(--error); border: 1px solid rgba(247,118,142,0.25); }
+.badge-high { background: var(--warning-glow); color: var(--warning); border: 1px solid rgba(224,175,104,0.25); }
+.badge-medium { background: rgba(169,177,214,0.08); color: var(--text); border: 1px solid var(--border-subtle); }
+.badge-low { background: rgba(86,95,137,0.15); color: var(--muted); border: 1px solid rgba(86,95,137,0.3); }
+.badge-in-progress { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(122,162,247,0.25); }
+.badge-todo { background: rgba(192,202,245,0.08); color: var(--text-bright); border: 1px solid var(--border-subtle); }
+.badge-triage { background: var(--warning-glow); color: var(--warning); border: 1px solid rgba(224,175,104,0.25); }
+.badge-done { background: var(--success-glow); color: var(--success); border: 1px solid rgba(158,206,106,0.25); }
+.badge-failed { background: var(--error-glow); color: var(--error); border: 1px solid rgba(247,118,142,0.25); }
+.badge-cancelled { background: rgba(86,95,137,0.15); color: var(--muted); border: 1px solid rgba(86,95,137,0.3); }
+.badge-size { background: rgba(187,154,247,0.08); color: var(--purple); border: 1px solid rgba(187,154,247,0.2); }
+
+/* Kanban board */
+.kanban { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; min-height: 300px; }
+.kanban::-webkit-scrollbar { height: 6px; }
+.kanban::-webkit-scrollbar-track { background: var(--bg-raised); border-radius: 3px; }
+.kanban::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.kanban-col {
+  min-width: 240px; flex: 1; display: flex; flex-direction: column;
+  background: var(--bg-raised); border: 1px solid var(--border-subtle); border-radius: 8px;
+}
+.kanban-col-header {
+  padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border-bottom: 1px solid var(--border-subtle); position: sticky; top: 0;
+}
+.kanban-col-header .col-title {
+  font-size: 0.72em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+}
+.kanban-col-header .col-count {
+  font-size: 0.72em; font-weight: 700; color: var(--text); background: var(--card);
+  padding: 1px 7px; border-radius: 10px; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border-subtle);
+}
+/* Column accent top border by status */
+.kanban-col[data-status="triage"] { border-top: 2px solid var(--warning); }
+.kanban-col[data-status="todo"] { border-top: 2px solid var(--text-bright); }
+.kanban-col[data-status="in-progress"] { border-top: 2px solid var(--accent); }
+.kanban-col[data-status="done"] { border-top: 2px solid var(--success); }
+.kanban-col[data-status="failed"] { border-top: 2px solid var(--error); }
+.kanban-col[data-status="cancelled"] { border-top: 2px solid var(--muted); }
+
+.kanban-cards { padding: 8px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.kanban-cards::-webkit-scrollbar { width: 4px; }
+.kanban-cards::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 2px; }
+
+.kanban-card {
+  background: var(--card); border: 1px solid var(--border-subtle); border-radius: 6px;
+  padding: 10px 12px; cursor: pointer; transition: all 0.15s;
+  position: relative;
+}
+.kanban-card:hover { background: var(--card-hover); border-color: var(--border); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.kanban-card-title { color: var(--text-bright); font-size: 0.82em; font-weight: 500; line-height: 1.4; margin-bottom: 8px; }
+.kanban-card-meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.kanban-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.kanban-card-slug { color: var(--muted); font-size: 0.68em; letter-spacing: 0.02em; }
+.kanban-card-time { color: var(--muted); font-size: 0.68em; font-variant-numeric: tabular-nums; }
+/* Priority left-edge indicator */
+.kanban-card[data-priority="urgent"] { border-left: 3px solid var(--error); }
+.kanban-card[data-priority="high"] { border-left: 3px solid var(--warning); }
+.kanban-empty { color: var(--muted); font-size: 0.78em; font-style: italic; padding: 16px 8px; text-align: center; }
+
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 0.82em;
+  cursor: pointer; padding: 4px 0; margin-bottom: 16px; text-decoration: none;
+}
+.back-btn:hover { color: var(--text-bright); }
+
+.detail-header { margin-bottom: 20px; }
+.detail-header h2 { color: var(--text-bright); font-size: 1.2em; font-weight: 600; margin-bottom: 8px; border: none; padding: 0; text-transform: none; letter-spacing: normal; }
+.detail-meta {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; margin-bottom: 20px;
+  background: var(--card); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 14px;
+}
+.detail-meta-item { display: flex; gap: 8px; font-size: 0.82em; }
+.detail-meta-label { color: var(--muted); min-width: 100px; text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.04em; }
+.detail-meta-value { color: var(--text); word-break: break-word; }
+.detail-meta-value.empty-val { color: var(--muted); font-style: italic; }
+
+.detail-section { margin-bottom: 16px; }
+.detail-section h3 {
+  color: var(--muted); font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border-subtle);
+}
+.detail-body {
+  background: var(--card); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 14px;
+  font-size: 0.9em; line-height: 1.7; color: var(--text);
+}
+.detail-body h1, .detail-body h2, .detail-body h3 { color: var(--text-bright); margin: 12px 0 6px; font-size: 1em; }
+.detail-body pre { background: var(--bg); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 10px; overflow-x: auto; margin: 8px 0; }
+.detail-body code { background: var(--bg-raised); padding: 1px 4px; border-radius: 2px; font-size: 0.92em; }
+.detail-body pre code { background: none; padding: 0; }
+.detail-body ul { padding-left: 20px; margin: 6px 0; }
+.detail-body li { margin: 3px 0; }
+.detail-body strong { color: var(--text-bright); }
+.detail-body em { color: var(--purple); }
+
 @media (max-width: 768px) {
   body { padding: 16px 12px; font-size: 12px; }
-  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .stat .value { font-size: 1.4em; }
+  .kanban { flex-direction: column; min-height: auto; }
+  .kanban-col { min-width: unset; }
   .grid { grid-template-columns: 1fr; }
   .meta { gap: 4px; }
   .token-row { gap: 6px; }
   .token-row .agent { min-width: 60px; font-size: 0.75em; }
   .token-value { min-width: 70px; }
+  .detail-meta { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
-  .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .meta-tag { font-size: 0.72em; padding: 1px 5px; }
   thead th { font-size: 0.75em; }
 }
 </style>
 </head>
 <body>
+HTMLEOF
+
+cat >> "$TMP_FILE" << HTMLEOF
 <header>
 <h1>Kvido Dashboard</h1>
 <div class="meta">
@@ -351,12 +536,9 @@ footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20p
 
 ${WARNINGS_HTML}
 
-<div class="stat-grid">
-  <div class="stat progress"><div class="value">${WQ_PROGRESS}</div><div class="label">In Progress</div></div>
-  <div class="stat todo"><div class="value">${WQ_TODO}</div><div class="label">Todo</div></div>
-  <div class="stat triage"><div class="value">${WQ_TRIAGE}</div><div class="label">Triage</div></div>
-  <div class="stat done"><div class="value">${WQ_DONE}</div><div class="label">Done Today</div></div>
-</div>
+<div id="view-main" class="view active">
+
+<div id="kanban" class="kanban"></div>
 
 <div class="grid">
 <div class="card">
@@ -390,6 +572,196 @@ else
 fi)
 </div>
 
+</div><!-- /view-main -->
+
+<div id="view-detail" class="view"></div>
+
+HTMLEOF
+
+# Embed tasks JSON (needs variable expansion)
+cat >> "$TMP_FILE" << JSEOF
+<script>
+var TASKS = ${TASKS_JSON};
+JSEOF
+
+# Embed JS routing (quoted — no variable expansion needed)
+cat >> "$TMP_FILE" << 'JSEOF'
+
+var STATUS_ORDER = ['in-progress','todo','triage','done','failed','cancelled'];
+var STATUS_LABELS = {'in-progress':'In Progress','todo':'Todo','triage':'Triage','done':'Done','failed':'Failed','cancelled':'Cancelled'};
+var PRIORITY_ORDER = {'urgent':0,'high':1,'medium':2,'low':3,'':4};
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  var el = document.getElementById('view-' + name);
+  if (el) el.classList.add('active');
+  var tab = name === 'main' ? 'main' : 'tasks';
+  document.querySelectorAll('.nav-tab').forEach(function(t) {
+    if (t.getAttribute('data-view') === tab) t.classList.add('active');
+  });
+}
+
+function badgeClass(type, val) {
+  if (!val) return 'badge';
+  return 'badge badge-' + val.replace(/\s+/g, '-').toLowerCase();
+}
+
+function relTime(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  var now = new Date();
+  var diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+function esc(s) {
+  if (!s) return '';
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function md(text) {
+  if (!text) return '<span class="empty">—</span>';
+  var s = esc(text);
+  // code blocks
+  s = s.replace(/\`\`\`([\s\S]*?)\`\`\`/g, '<pre><code>$1</code></pre>');
+  // inline code
+  s = s.replace(/\`([^\`]+)\`/g, '<code>$1</code>');
+  // headers
+  s = s.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  s = s.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  s = s.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  // bold/italic
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // list items
+  s = s.replace(/^- (.+)$/gm, '<li>$1</li>');
+  // wrap consecutive <li> in <ul>
+  s = s.replace(/((?:<li>.*?<\/li>\n?)+)/g, '<ul>$1</ul>');
+  // line breaks (but not inside pre)
+  s = s.replace(/(?<!\>)\n(?!\<)/g, '<br>');
+  return s;
+}
+
+function renderKanban() {
+  var el = document.getElementById('kanban');
+  var html = '';
+  // Only show active columns: triage, todo, in-progress, done
+  var KANBAN_COLS = ['triage','todo','in-progress','done'];
+  KANBAN_COLS.forEach(function(status) {
+    var tasks = TASKS.filter(function(t) { return t.status === status; });
+    tasks.sort(function(a, b) { return (PRIORITY_ORDER[a.priority] != null ? PRIORITY_ORDER[a.priority] : 4) - (PRIORITY_ORDER[b.priority] != null ? PRIORITY_ORDER[b.priority] : 4); });
+
+    html += '<div class="kanban-col" data-status="' + status + '">';
+    html += '<div class="kanban-col-header"><span class="col-title">' + (STATUS_LABELS[status] || status) + '</span><span class="col-count">' + tasks.length + '</span></div>';
+    html += '<div class="kanban-cards">';
+    if (tasks.length === 0) {
+      html += '<div class="kanban-empty">No tasks</div>';
+    }
+    tasks.forEach(function(t) {
+      html += '<div class="kanban-card" data-priority="' + (t.priority || '') + '" onclick="location.hash=\'task/' + t.slug + '\'">';
+      html += '<div class="kanban-card-title">' + esc(t.title) + '</div>';
+      html += '<div class="kanban-card-meta">';
+      if (t.priority) html += '<span class="' + badgeClass('priority', t.priority) + '">' + esc(t.priority) + '</span>';
+      if (t.size) html += '<span class="badge badge-size">' + esc(t.size) + '</span>';
+      if (t.source) html += '<span class="badge">' + esc(t.source) + '</span>';
+      html += '</div>';
+      html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + esc(t.slug) + '</span><span class="kanban-card-time">' + relTime(t.updated_at) + '</span></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  // Collapsed section for failed/cancelled if any exist
+  var archived = TASKS.filter(function(t) { return t.status === 'failed' || t.status === 'cancelled'; });
+  if (archived.length > 0) {
+    html += '<div class="kanban-col" data-status="cancelled">';
+    html += '<div class="kanban-col-header"><span class="col-title">Archived</span><span class="col-count">' + archived.length + '</span></div>';
+    html += '<div class="kanban-cards">';
+    archived.forEach(function(t) {
+      html += '<div class="kanban-card" onclick="location.hash=\'task/' + t.slug + '\'">';
+      html += '<div class="kanban-card-title">' + esc(t.title) + '</div>';
+      html += '<div class="kanban-card-meta"><span class="badge badge-' + t.status + '">' + esc(t.status) + '</span></div>';
+      html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + esc(t.slug) + '</span></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderDetail(slug) {
+  showView('detail');
+  var el = document.getElementById('view-detail');
+  var t = TASKS.find(function(x) { return x.slug === slug; });
+  if (!t) { el.innerHTML = '<div class="empty">Task not found: ' + esc(slug) + '</div>'; return; }
+
+  var metaFields = [
+    ['Status', '<span class="badge badge-' + t.status + '">' + (STATUS_LABELS[t.status] || t.status) + '</span>'],
+    ['Priority', t.priority ? '<span class="' + badgeClass('priority', t.priority) + '">' + esc(t.priority) + '</span>' : null],
+    ['Size', t.size ? '<span class="badge badge-size">' + esc(t.size) + '</span>' : null],
+    ['Source', t.source],
+    ['Source Ref', t.source_ref],
+    ['Pipeline', t.pipeline],
+    ['Phase', t.phase],
+    ['Worktree', t.worktree],
+    ['Goal', t.goal],
+    ['Recurring', t.recurring],
+    ['Waiting On', t.waiting_on],
+    ['Created', t.created_at],
+    ['Updated', t.updated_at],
+    ['Triage Slack TS', t.triage_slack_ts]
+  ];
+
+  var html = '<a class="back-btn" href="#">&larr; Dashboard</a>';
+  html += '<div class="detail-header"><h2>' + esc(t.title) + '</h2></div>';
+  html += '<div class="detail-meta">';
+  metaFields.forEach(function(f) {
+    var val = f[1] || '';
+    var cls = val ? 'detail-meta-value' : 'detail-meta-value empty-val';
+    html += '<div class="detail-meta-item"><span class="detail-meta-label">' + f[0] + '</span><span class="' + cls + '">' + (val || '&mdash;') + '</span></div>';
+  });
+  html += '</div>';
+
+  if (t.instruction) {
+    html += '<div class="detail-section"><h3>Instruction</h3><div class="detail-body">' + md(t.instruction) + '</div></div>';
+  }
+  if (t.worker_notes) {
+    html += '<div class="detail-section"><h3>Worker Notes</h3><div class="detail-body">' + md(t.worker_notes) + '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function route() {
+  var hash = location.hash.slice(1);
+  if (hash.indexOf('task/') === 0) {
+    renderDetail(hash.slice(5));
+  } else {
+    showView('main');
+  }
+}
+
+renderKanban();
+window.addEventListener('hashchange', route);
+route();
+</script>
+JSEOF
+
+# Auto-refresh via JS (preserves hash, only refreshes on main view)
+cat >> "$TMP_FILE" << REFRESHEOF
+<script>
+setInterval(function() {
+  if (!location.hash || location.hash === '#') location.reload();
+}, ${AUTO_REFRESH}000);
+</script>
+REFRESHEOF
+
+cat >> "$TMP_FILE" << HTMLEOF
 <footer>auto-refresh ${AUTO_REFRESH}s</footer>
 </body>
 </html>
