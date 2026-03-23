@@ -21,9 +21,9 @@ Called from EOD skill (after journal entry, before confirm).
    - `friday_only` → skip if not Friday
    - `daily` → always
 3. Select 1-2 questions contextually (max per `max_questions`):
-   - Compare Active Focus from morning (`state/today.md`) vs actual git activity → "Did you manage to stay focused on the plan?"
+   - Compare Active Focus from `state/current.md` vs actual git activity → "Did you manage to stay focused on the plan?"
    - Check Jira deadlines for tomorrow → "Is there anything tomorrow that requires preparation?"
-   - If it was a frustrating day (many error/blocker entries in `state/today.md`) → "What slowed you down the most today?"
+   - If it was a frustrating day (many error entries in `kvido log list --today --agent heartbeat`) → "What slowed you down the most today?"
    - Random reflective: "What would you do differently today?"
 4. Ask the user. Write responses to the journal (`memory/journal/YYYY-MM-DD.md`) as section `## Reflection`.
 5. After 20+ responses (count `## Reflection` sections in `memory/journal/`): analyze patterns and write to `memory/learnings.md`.

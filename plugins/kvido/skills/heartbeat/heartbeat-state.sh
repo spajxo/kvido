@@ -89,47 +89,10 @@ case "$CMD" in
     ;;
 
   log-activity)
-    # log-activity <agent> <action> [--detail "..."] [--duration_ms N] [--tokens N] [--task_id N]
-    agent="${2:?Usage: heartbeat-state.sh log-activity <agent> <action> [options...]}"
-    action="${3:?Usage: heartbeat-state.sh log-activity <agent> <action> [options...]}"
-    shift 3
-
-    ACTIVITY_LOG="${PWD}/state/activity-log.jsonl"
-    ts="$(date -Iseconds)"
-    detail="" duration_ms="" tokens="" task_id=""
-
-    while [[ $# -gt 0 ]]; do
-      case "$1" in
-        --detail)   detail="$2"; shift 2 ;;
-        --duration_ms) duration_ms="$2"; shift 2 ;;
-        --tokens)   tokens="$2"; shift 2 ;;
-        --task_id)  task_id="$2"; shift 2 ;;
-        *) echo "Unknown option: $1" >&2; exit 1 ;;
-      esac
-    done
-
-    # Build JSON with jq — only include non-empty optional fields
-    jq_args=(--arg ts "$ts" --arg agent "$agent" --arg action "$action")
-    jq_filter='{ts: $ts, agent: $agent, action: $action}'
-
-    if [[ -n "$detail" ]]; then
-      jq_args+=(--arg detail "$detail")
-      jq_filter="$jq_filter + {detail: \$detail}"
-    fi
-    if [[ -n "$duration_ms" ]]; then
-      jq_args+=(--argjson duration_ms "$duration_ms")
-      jq_filter="$jq_filter + {duration_ms: \$duration_ms}"
-    fi
-    if [[ -n "$tokens" ]]; then
-      jq_args+=(--argjson tokens "$tokens")
-      jq_filter="$jq_filter + {tokens: \$tokens}"
-    fi
-    if [[ -n "$task_id" ]]; then
-      jq_args+=(--argjson task_id "$task_id")
-      jq_filter="$jq_filter + {task_id: \$task_id}"
-    fi
-
-    jq -c -n "${jq_args[@]}" "$jq_filter" >> "$ACTIVITY_LOG"
+    # Backward compat — delegate to kvido log add
+    shift  # remove "log-activity"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    exec bash "$SCRIPT_DIR/../log/log.sh" add "$@"
     ;;
 
   *)

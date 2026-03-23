@@ -93,7 +93,7 @@ For each detected event, decide the notification level based on context — who 
 
 | Level | Behavior |
 |-------|---------|
-| `silent` | Log to `state/today.md` only, do not include in output |
+| `silent` | Log via `kvido log add` only, do not include in output |
 | `batch` | Include in output: `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal.` |
 | `immediate` | Include in output: `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: high.` |
 
@@ -106,7 +106,7 @@ Check calendar data — is a focus event running? → suppress immediate to batc
 ### Proactive alerts
 Watch for stale MR reviews, WIP tickets with no activity, status changes. Decide level based on context.
 
-Log all notifications — planner-state.md "## Reported Events" + `state/today.md`.
+Log all notifications — planner-state.md "## Reported Events" + `kvido log add planner notify --message "<event summary>"`.
 
 ---
 
@@ -148,7 +148,7 @@ For each task (max 3 per run):
 
 ### 6b: User context reminders (memory/state-first)
 
-Read `state/current.md`, `state/today.md` and relevant changes from sources (Jira, GitLab, Gmail, Calendar, Slack). Look for:
+Read `state/current.md` and relevant changes from sources (Jira, GitLab, Gmail, Calendar, Slack). Review recent activity via `kvido log list --today --format human`. Look for:
 - items in `Work in Progress` or `Blockers` that are stale or waiting for a response
 - new external changes that should shift today's priority
 - deadlines or follow-ups that belong in `Pinned Today` or `Notes for Tomorrow`
@@ -208,7 +208,7 @@ Evaluate need and create worker tasks. All maintenance tasks: `--source planner 
 |-------|-----------|--------|
 | Stale workers | `find state/tasks/in-progress/ -name "*.md" -mmin +10` | `Event: 📊 Stale worker — <slug> in-progress > 10min. Urgency: normal.` |
 | Triage overflow | `task.sh count triage` >= 10 | `Event: 📋 Triage overflow — <N> items. Run /kvido:triage. Urgency: normal.` |
-| Backlog stale | `todo/` low priority > 30 days | Suggestion into `state/today.md` |
+| Backlog stale | `todo/` low priority > 30 days | Include in output as `Event:` suggestion |
 
 ### Periodic (check timestamps in planner-state.md)
 

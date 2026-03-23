@@ -14,13 +14,14 @@ Your task depends on the calling context (passed in the prompt):
 ## Extraction mode
 
 1. Read the journal file (path in prompt)
-2. Identify facts: new project states, decisions, people, learned lessons
-3. For each project mentioned in the journal → read `memory/projects/<project>.md`, update "History" and "Current state" sections. Create the file if it doesn't exist.
-4. New names → add to `memory/people/_index.md`
-5. New decisions → add to `memory/decisions/_index.md`
-6. New errors/lessons → add to `memory/learnings.md` (check dedup via Pattern-Key)
-7. Update `memory/this-week.md` — add a line for that day
-8. Update `memory/memory.md` sections "Active projects" and "Key decisions" if relevant
+2. Read today's activity log: `kvido log list --today --format json`
+3. Identify facts from both journal and log: new project states, decisions, people, learned lessons, notable errors or patterns
+4. For each project mentioned in the journal → read `memory/projects/<project>.md`, update "History" and "Current state" sections. Create the file if it doesn't exist.
+5. New names → add to `memory/people/_index.md`
+6. New decisions → add to `memory/decisions/_index.md`
+7. New errors/lessons → add to `memory/learnings.md` (check dedup via Pattern-Key). Recurring errors from the activity log (same agent+action failing multiple days) are strong candidates.
+8. Update `memory/this-week.md` — add a line for that day (include token usage summary from log)
+9. Update `memory/memory.md` sections "Active projects" and "Key decisions" if relevant
 
 ## Consolidation mode
 
@@ -43,5 +44,6 @@ Your task depends on the calling context (passed in the prompt):
 2. `memory/learnings.md` — entries with `Status: promoted` → delete
 3. `memory/projects/*.md` — history older than 60 days → delete (keep milestones)
 4. `memory/decisions/` — entries older than 90 days → `memory/archive/decisions/`
+5. Activity log — `kvido log purge --before $(date -d '7 days ago' +%Y-%m-%d) --archive` (keep 7 days live, archive older)
 
 Always read files before editing. Log what you did (return summary).

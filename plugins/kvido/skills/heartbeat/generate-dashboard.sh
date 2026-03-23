@@ -3,12 +3,11 @@
 # Called from heartbeat.sh. Must never fail fatally (heartbeat calls with || true).
 #
 # Data sources:
-#   1. state/activity-log.jsonl  (issue #7, may not exist)
+#   1. kvido log list (unified activity log)
 #   2. state/heartbeat-state.json
 #   3. state/current.md
-#   4. state/today.md
-#   5. state/tasks/ (local task files)
-#   6. state/tasks/*/*.md (full task data for task list/detail view)
+#   4. state/tasks/ (local task files)
+#   5. state/tasks/*/*.md (full task data for task list/detail view)
 
 set -euo pipefail
 
@@ -30,38 +29,19 @@ TODAY=$(date -I)
 WARNINGS=()
 
 # ---------------------------------------------------------------------------
-# Source 1: activity-log.jsonl
+# Source 1: kvido log (unified activity log)
 # ---------------------------------------------------------------------------
-JSONL_FILE="$STATE_DIR/activity-log.jsonl"
+LOG_SH="$PLUGIN_ROOT/skills/log/log.sh"
 TIMELINE_JSON="[]"
 TOKEN_STATS_JSON="[]"
 TOTAL_TOKENS=0
 TOTAL_RUNS=0
 
-if [[ -f "$JSONL_FILE" ]]; then
-  # Filter today's entries, last 50 for timeline
-  TIMELINE_JSON=$(jq -s --arg today "${TODAY}T00:00:00" \
-    '[.[] | select(.ts >= $today)] | sort_by(.ts) | .[-50:] | reverse' \
-    "$JSONL_FILE" 2>/dev/null) || { WARNINGS+=("activity-log.jsonl: parse error"); TIMELINE_JSON="[]"; }
+TIMELINE_JSON=$(bash "$LOG_SH" list --today --format json --limit 50 2>/dev/null) || { WARNINGS+=("kvido log list: parse error"); TIMELINE_JSON="[]"; }
+TOKEN_STATS_JSON=$(bash "$LOG_SH" list --today --summary --format json 2>/dev/null) || { WARNINGS+=("kvido log list: stats error"); TOKEN_STATS_JSON="[]"; }
 
-  # Aggregate token stats per agent
-  TOKEN_STATS_JSON=$(jq -s --arg today "${TODAY}T00:00:00" \
-    '[.[] | select(.ts >= $today)] | group_by(.agent) | map({
-      agent: .[0].agent,
-      tokens: (map(.tokens // 0) | add),
-      runs: length
-    }) | sort_by(-.tokens)' \
-    "$JSONL_FILE" 2>/dev/null) || { WARNINGS+=("activity-log.jsonl: stats error"); TOKEN_STATS_JSON="[]"; }
-
-  TOTAL_TOKENS=$(echo "$TOKEN_STATS_JSON" | jq '[.[].tokens] | add // 0' 2>/dev/null || echo 0)
-  TOTAL_RUNS=$(echo "$TOKEN_STATS_JSON" | jq '[.[].runs] | add // 0' 2>/dev/null || echo 0)
-else
-  WARNINGS+=("activity-log.jsonl not found (issue #7 not implemented?)")
-  echo "WARNING: activity-log.jsonl not found" >&2
-fi
-
-HAS_JSONL=false
-[[ -f "$JSONL_FILE" ]] && HAS_JSONL=true
+TOTAL_TOKENS=$(echo "$TOKEN_STATS_JSON" | jq '[.[].tokens] | add // 0' 2>/dev/null || echo 0)
+TOTAL_RUNS=$(echo "$TOKEN_STATS_JSON" | jq '[.[].runs] | add // 0' 2>/dev/null || echo 0)
 
 # ---------------------------------------------------------------------------
 # Source 2: heartbeat-state.json
@@ -134,15 +114,10 @@ if [[ -f "$CURRENT_FILE" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Source 4: today.md (fallback timeline)
+# Source 4: Human-readable timeline from kvido log
 # ---------------------------------------------------------------------------
-TODAY_FILE="$STATE_DIR/today.md"
 TODAY_LOG_LINES=""
-
-if [[ -f "$TODAY_FILE" ]]; then
-  # Extract heartbeat log lines, sort chronologically by time
-  TODAY_LOG_LINES=$(grep -E '^\- \*\*[0-9]{2}:[0-9]{2}\*\*' "$TODAY_FILE" | sed 's/^- \*\*\([0-9:]*\)\*\*/\1\t&/' | sort -t$'\t' -k1,1r | cut -f2- | head -50 || true)
-fi
+TODAY_LOG_LINES=$(bash "$LOG_SH" list --today --format human --limit 50 2>/dev/null || true)
 
 # ---------------------------------------------------------------------------
 # Source 5: Local task files (work queue counts)
@@ -270,18 +245,15 @@ fi
 # Build timeline HTML
 # ---------------------------------------------------------------------------
 TIMELINE_HTML=""
-if [[ "$HAS_JSONL" == "true" ]]; then
-  TIMELINE_HTML=$(echo "$TIMELINE_JSON" | jq -r '.[] | "<tr><td class=\"time\">\(.ts | split("T")[1] | split("+")[0] | .[0:5])</td><td class=\"agent agent-\(.agent)\">\(.agent)</td><td>\(.action)</td><td>\(.detail // "")</td><td class=\"tokens\">\(.tokens // "-")</td></tr>"' 2>/dev/null || echo "")
-elif [[ -n "$TODAY_LOG_LINES" ]]; then
-  # Fallback: parse today.md log lines
-  TIMELINE_HTML=$(echo "$TODAY_LOG_LINES" | sed -E 's/^\- \*\*([0-9]{2}:[0-9]{2})\*\* \[([^]]+)\] (.*)/<tr><td class="time">\1<\/td><td class="agent">\2<\/td><td colspan="3">\3<\/td><\/tr>/' || echo "")
+if [[ "$TIMELINE_JSON" != "[]" ]]; then
+  TIMELINE_HTML=$(echo "$TIMELINE_JSON" | jq -r '.[] | "<tr><td class=\"time\">\(.ts | split("T")[1] | split("+")[0] | .[0:5])</td><td class=\"agent agent-\(.agent)\">\(.agent)</td><td>\(.action)</td><td>\(.message // .detail // "")</td><td class=\"tokens\">\(.tokens // "-")</td></tr>"' 2>/dev/null || echo "")
 fi
 
 # ---------------------------------------------------------------------------
 # Build token stats HTML
 # ---------------------------------------------------------------------------
 TOKEN_STATS_HTML=""
-if [[ "$HAS_JSONL" == "true" && "$TOTAL_TOKENS" =~ ^[0-9]+$ && "$TOTAL_TOKENS" -gt 0 ]]; then
+if [[ "$TOTAL_TOKENS" =~ ^[0-9]+$ && "$TOTAL_TOKENS" -gt 0 ]]; then
   TOKEN_STATS_HTML=$(echo "$TOKEN_STATS_JSON" | jq -r --argjson total "$TOTAL_TOKENS" \
     '.[] | {agent, tokens, runs, pct: ((.tokens / $total * 100) | floor)} |
     "<div class=\"token-row\"><span class=\"agent agent-\(.agent)\">\(.agent)</span><div class=\"bar-container\"><div class=\"bar\" style=\"width: \(.pct)%\"></div></div><span class=\"token-value\">\(if .tokens >= 1000 then "\((.tokens / 1000 * 10 | floor) / 10)k" else "\(.tokens)" end) (\(.pct)%)</span><span class=\"runs\">\(.runs) runs</span></div>"' 2>/dev/null || echo "")
@@ -568,7 +540,7 @@ ${TIMELINE_HTML}
 </table>
 TABLEEOF
 else
-  echo '<div class="empty">No activity data — waiting for activity-log.jsonl (issue #7)</div>'
+  echo '<div class="empty">No activity data yet</div>'
 fi)
 </div>
 

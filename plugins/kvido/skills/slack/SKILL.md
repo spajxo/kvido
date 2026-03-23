@@ -79,7 +79,7 @@ In `templates/` — JSON files with `{{placeholder}}` variables. Unified format:
 
 | Level | Behavior |
 |-------|----------|
-| `silent` | Write to `state/today.md` only, no Slack message |
+| `silent` | Log via `kvido log add` only, no Slack message |
 | `batch` | Heartbeat creates a notify TODO with pending status, delivers at next full heartbeat |
 | `immediate` | `slack.sh send` with the appropriate template — sent immediately |
 

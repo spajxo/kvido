@@ -20,15 +20,9 @@ Tone and style per `memory/persona.md` (Morning section). If persona does not ex
 
 ### Activity log rotation
 
-Rotate yesterday's activity log to archive:
+Archive yesterday's log entries and clean up old archives:
 ```bash
-mkdir -p state/archive
-YESTERDAY=$(date -d yesterday +%Y-%m-%d)
-if [[ -f state/activity-log.jsonl ]]; then
-  mv state/activity-log.jsonl "state/archive/activity-log-${YESTERDAY}.jsonl"
-fi
-# Delete archives older than 7 days
-find state/archive -name "activity-log-*.jsonl" -mtime +7 -delete 2>/dev/null || true
+kvido log purge --before today --archive
 ```
 
 ### Load state

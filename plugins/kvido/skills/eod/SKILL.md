@@ -18,23 +18,24 @@ Tone and style per `memory/persona.md` (EOD section). If persona does not exist,
 
 ## Step 1: Gather Today's Data
 
-Read `state/today.md` (heartbeat log) and `state/current.md` (focus, WIP).
+Read `state/current.md` (focus, WIP).
 
 Determine today's date (YYYY-MM-DD).
 
 ### Activity log summarization
 
-If `state/activity-log.jsonl` exists, calculate today's stats:
+Get today's stats via unified log:
 ```bash
-TODAY=$(date +%Y-%m-%d)
-jq -s --arg today "${TODAY}T00:00:00" '[.[] | select(.ts >= $today)]' state/activity-log.jsonl
+kvido log list --today --summary --format json
 ```
 
-From the filtered records extract:
-- **Total tokens for the day:** `map(.tokens // 0) | add`
-- **Top agent by tokens:** `group_by(.agent) | map({agent: .[0].agent, tokens: (map(.tokens // 0) | add)}) | sort_by(-.tokens)`
-- **Task count:** `map(.task_id // empty) | unique | length`
-- **Dispatch/execute cycle count:** `map(select(.action == "execute")) | length`
+Output: `[{agent, tokens, runs, duration_ms}, ...]`
+
+From the summary extract:
+- **Total tokens for the day:** sum of all `tokens`
+- **Top agent by tokens:** first entry (sorted by tokens desc)
+- **Task count:** `kvido log list --today --format json | jq '[.[].task_id // empty] | unique | length'`
+- **Dispatch/execute cycle count:** `kvido log list --today --agent worker --format json | jq '[.[] | select(.action == "execute")] | length'`
 
 Include summary in the journal entry (Step 2) as section `## Token Usage`.
 
@@ -56,7 +57,7 @@ Collect repos with uncommitted changes or stashes.
 Create journal by combining:
 - Session parser (what was worked on, how long)
 - Git activity (commits today)
-- Heartbeat log from `state/today.md`
+- Activity timeline from `kvido log list --today --format human`
 - WIP and blocker status from `state/current.md`
 - Uncommitted work (repo: N modified, M untracked, K stashes)
 
@@ -84,7 +85,7 @@ Format:
 <!-- Unresolved, carry forward -->
 
 ## Token Usage
-<!-- Total tokens, top agent, run count — from activity-log.jsonl. Skip if JSONL does not exist. -->
+<!-- Total tokens, top agent, run count — from kvido log list. -->
 
 ## Unfinished Work
 <!-- Repos with uncommitted changes -->
@@ -102,7 +103,7 @@ Write to `memory/journal/YYYY-MM-DD.md`.
 Build time summary from session-parser + git-activity + calendar:
 - Group by Jira ticket/project
 - Estimate time (round to 15 min; git-only = 15 min/commit, max 2h)
-- Meetings from `state/today.md` as separate lines
+- Meetings from calendar data as separate lines
 - No ticket = `(internal)`
 
 Fetch existing worklogs via Atlassian MCP:
