@@ -108,7 +108,7 @@ The assembled context from `kvido context setup` (loaded in Step 0) lists requir
 For each missing config:
 1. Show which keys are missing and what they configure
 2. Offer to help fill them in (show examples from `settings.json.example`)
-3. If the user provides values, write them into `settings.json` frontmatter
+3. If the user provides values, update the corresponding keys in `settings.json`
 
 Skip this step for plugins that are not installed.
 

@@ -32,7 +32,7 @@ _dot_to_jq() {
     local key="$1"
     # Split on dots and reassemble as .key1.key2... with proper quoting for
     # keys that contain hyphens or start with digits.
-    local jq_path=""
+    local jq_path="."
     IFS='.' read -ra parts <<< "$key"
     for part in "${parts[@]}"; do
         jq_path="${jq_path}[\"${part}\"]"
@@ -51,7 +51,7 @@ _get_value() {
     jq_path="$(_dot_to_jq "$key")"
 
     local result
-    result=$(jq -r "${jq_path} // empty" "$CONFIG_FILE" 2>/dev/null) || {
+    result=$(jq -r "if ${jq_path} == null then empty else (${jq_path} | tostring) end" "$CONFIG_FILE" 2>/dev/null) || {
         echo "ERROR: Failed to parse config file: $CONFIG_FILE" >&2
         return 2
     }
@@ -76,8 +76,13 @@ _list_keys() {
     local jq_path
     jq_path="$(_dot_to_jq "$prefix")"
 
-    jq -r "${jq_path} | if type == \"object\" then keys[] else empty end" \
-        "$CONFIG_FILE" 2>/dev/null | grep -v '^_' || true
+    local raw
+    raw=$(jq -r "${jq_path} | if type == \"object\" then keys_unsorted[] else empty end" \
+        "$CONFIG_FILE" 2>/dev/null) || {
+        echo "ERROR: Failed to list keys from config file: $CONFIG_FILE" >&2
+        return 2
+    }
+    echo "$raw" | grep -v '^_' || true
 }
 
 # ── Validate ──────────────────────────────────────────────────────────────────

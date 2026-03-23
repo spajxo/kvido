@@ -2,4 +2,4 @@ state/
 memory/
 docs/
 .env
-.claude/kvido.local.md
+.claude/settings.json

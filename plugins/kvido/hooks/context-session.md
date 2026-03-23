@@ -23,7 +23,7 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
   - `state/session-context.md`
   - `state/heartbeat-state.json`
 - Review recent activity with `kvido log list --today --format human`.
-- Use `kvido config 'flat.key'` for configuration lookups instead of parsing files directly.
+- Use `kvido config 'key.subkey'` for configuration lookups instead of parsing files directly.
 
 ## Runtime Layout
 
