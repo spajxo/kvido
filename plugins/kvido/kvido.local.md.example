@@ -160,6 +160,12 @@ skills.daily_questions.enabled: true
 skills.daily_questions.max_questions: 2
 skills.daily_questions.frequency: weekdays
 
+# Session ---
+# autocompact_pct: context-window fill percentage at which Claude auto-compacts.
+# Maps to CLAUDE_AUTOCOMPACT_PCT_OVERRIDE. Set to 0 to disable (let Claude use default).
+# Default: 50 (compact when context is 50% full).
+skills.session.autocompact_pct: 50
+
 # Self-improver ---
 # github_issues.enabled: whether self-improver may create GitHub issues on
 #   the kvido plugin repo for detected plugin-level improvement proposals.

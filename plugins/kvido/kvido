@@ -80,6 +80,14 @@ _exec_claude_prompt() {
   # Assembly hook — generate session context (non-fatal)
   KVIDO_PROJECT="$PWD" bash "$KVIDO_ROOT/hooks/pre-session.sh" 2>/dev/null || true
 
+  # CLAUDE_AUTOCOMPACT_PCT_OVERRIDE — set from config if not already in environment
+  if [[ -z "${CLAUDE_AUTOCOMPACT_PCT_OVERRIDE:-}" ]]; then
+    _autocompact_pct=$(bash "$KVIDO_ROOT/skills/config.sh" 'skills.session.autocompact_pct' '50' 2>/dev/null || echo '50')
+    if [[ "$_autocompact_pct" != "0" && -n "$_autocompact_pct" ]]; then
+      export CLAUDE_AUTOCOMPACT_PCT_OVERRIDE="$_autocompact_pct"
+    fi
+  fi
+
   exec claude "${args[@]}" "$prompt"
 }
 
