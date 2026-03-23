@@ -2,8 +2,10 @@
 # =============================================================================
 # kvido — CLI for kvido assistant plugin
 # =============================================================================
-# Combined command dispatcher. Resolves plugin install path from
-# the Claude Code plugin registry. Designed to be symlinked to ~/.local/bin/kvido.
+# Combined command dispatcher. Resolves plugin install path preferring
+# CLAUDE_PLUGIN_ROOT (set by Claude Code in plugin context), with fallback
+# to script directory detection and the Claude plugin registry.
+# Designed to be symlinked to ~/.local/bin/kvido.
 #
 # Usage:
 #   kvido                                     # launch Claude with /kvido:heartbeat
@@ -26,7 +28,18 @@
 set -euo pipefail
 
 _resolve_root() {
-  # 1. If running from plugin dir, use SCRIPT_DIR
+  # 1. Prefer CLAUDE_PLUGIN_ROOT — set by Claude Code when running inside a plugin context
+  if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -d "$CLAUDE_PLUGIN_ROOT" ]]; then
+    # Verify this is actually the kvido plugin root
+    if [[ -f "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" ]] && \
+       grep -q '"name".*"kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null; then
+      echo "$CLAUDE_PLUGIN_ROOT"
+      return
+    fi
+    # CLAUDE_PLUGIN_ROOT is set but points to a different plugin — fall through to script dir / registry
+  fi
+
+  # 2. If running directly from plugin dir, use SCRIPT_DIR
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   if [[ -f "$script_dir/.claude-plugin/plugin.json" ]]; then
@@ -34,10 +47,10 @@ _resolve_root() {
     return
   fi
 
-  # 2. Resolve from registry
+  # 3. Fallback: resolve from registry (shell wrapper / external entrypoint)
   local registry="$HOME/.claude/plugins/installed_plugins.json"
   if [[ ! -f "$registry" ]]; then
-    echo "ERROR: Plugin registry not found: $registry" >&2
+    echo "ERROR: Plugin registry not found and CLAUDE_PLUGIN_ROOT is not set" >&2
     exit 1
   fi
 
@@ -49,7 +62,7 @@ _resolve_root() {
   ' "$registry" 2>/dev/null | head -1)
 
   if [[ -z "$root" || "$root" == "null" || ! -d "$root" ]]; then
-    echo "ERROR: kvido plugin not found in registry" >&2
+    echo "ERROR: kvido plugin not found in registry and CLAUDE_PLUGIN_ROOT is not set" >&2
     exit 1
   fi
   echo "$root"
@@ -111,19 +124,27 @@ HELP
     ;;
   --install)
     mkdir -p "$HOME/.local/bin"
-    # Write a wrapper that resolves plugin path from registry at runtime.
+    # Write a wrapper that resolves the plugin path at runtime.
+    # Prefers CLAUDE_PLUGIN_ROOT (set by Claude Code in plugin context).
+    # Falls back to installed_plugins.json for standalone shell invocations.
     # A symlink would go stale when the plugin version changes in cache.
     cat > "$HOME/.local/bin/kvido" <<'WRAPPER'
 #!/usr/bin/env bash
 export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -d "$CLAUDE_PLUGIN_ROOT" ]]; then
+  if [[ -f "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" ]] && \
+     grep -q '"name".*"kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null; then
+    exec "$CLAUDE_PLUGIN_ROOT/kvido" "$@"
+  fi
+fi
 _P=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null | head -1)
 if [[ -z "$_P" || "$_P" == "null" || ! -d "$_P" ]]; then
-  echo "ERROR: kvido plugin not found in registry" >&2; exit 1
+  echo "ERROR: kvido plugin not found in registry and CLAUDE_PLUGIN_ROOT is not set" >&2; exit 1
 fi
 exec "$_P/kvido" "$@"
 WRAPPER
     chmod +x "$HOME/.local/bin/kvido"
-    echo "Installed: ~/.local/bin/kvido (registry-based wrapper)"
+    echo "Installed: ~/.local/bin/kvido (CLAUDE_PLUGIN_ROOT-first wrapper)"
     ;;
   skills/*|agents/*)
     # Script dispatch — resolve to plugin install path

@@ -26,11 +26,16 @@ All state, memory, config, and .env files live in `$KVIDO_HOME` (default: `~/.co
 Install or refresh the `kvido` CLI wrapper in `~/.local/bin/`:
 
 ```bash
-KVIDO_ROOT=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json)
+# Prefer CLAUDE_PLUGIN_ROOT (set by Claude Code in plugin context)
+if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
+  KVIDO_ROOT="$CLAUDE_PLUGIN_ROOT"
+else
+  KVIDO_ROOT=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json 2>/dev/null | head -1)
+fi
 bash "$KVIDO_ROOT/kvido" --install
 ```
 
-This always refreshes `~/.local/bin/kvido` to a registry-based wrapper, which avoids stale symlinks after plugin upgrades.
+This always refreshes `~/.local/bin/kvido` to a wrapper that prefers `CLAUDE_PLUGIN_ROOT` at runtime and falls back to the registry for standalone shell invocations.
 
 Verify `~/.local/bin` is in PATH. If not, inform the user.
 
