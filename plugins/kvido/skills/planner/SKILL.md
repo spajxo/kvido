@@ -94,21 +94,18 @@ Watch for stale MR reviews, WIP tickets with no activity, status changes. Decide
 
 ---
 
-## Step 5: Morning / EOD Detection
+## Step 5: Scheduled Rules
 
-### Morning
-Read `state/heartbeat-state.json` → `last_morning_date`.
-If != today's date, include in output:
-```
-Dispatch: morning
-```
-Update `last_morning_date` in heartbeat-state.json.
+Read `memory/planner.md` section "## Scheduled Rules". For each rule:
 
-### EOD
-If personal instructions in `memory/planner.md` define an EOD time and it has arrived, include in output:
-```
-Dispatch: eod
-```
+1. Evaluate trigger condition (time, day, "not yet today" via planner-state.md tracking)
+2. If triggered:
+   - Execute actions inline (gather data, create journal, dispatch librarian, etc.)
+   - Compose output following the rule's delivery template
+   - Track execution in planner-state.md (e.g. last_morning_date, last_eod_date)
+3. If not triggered: skip
+
+Rules are user-defined natural language with structured triggers and actions. Interpret them flexibly. Default scheduled rules are provided by setup.
 
 ---
 
