@@ -37,10 +37,11 @@ shift || true
 # Otherwise fall back to $SLACK_DM_CHANNEL_ID from .env.
 # Sets global CHANNEL_SHIFTED=true if caller should shift, false otherwise.
 CHANNEL_SHIFTED=false
+RESOLVED_CHANNEL=""
 resolve_channel() {
   CHANNEL_SHIFTED=false
   if [[ "${1:-}" =~ ^[CDG][A-Z0-9]+ ]]; then
-    echo "$1"
+    RESOLVED_CHANNEL="$1"
     CHANNEL_SHIFTED=true
     return 0
   fi
@@ -48,7 +49,7 @@ resolve_channel() {
     echo "Error: channel not provided and SLACK_DM_CHANNEL_ID not set" >&2
     exit 1
   fi
-  echo "$SLACK_DM_CHANNEL_ID"
+  RESOLVED_CHANNEL="$SLACK_DM_CHANNEL_ID"
   return 0
 }
 
@@ -144,7 +145,8 @@ build_blocks() {
 case "$ACTION" in
   send)
     [[ $# -lt 1 ]] && { echo "Usage: slack.sh send [channel] <template> [--var ...]" >&2; exit 1; }
-    CHANNEL=$(resolve_channel "$1"); [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
+    resolve_channel "$1"
+    CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     TEMPLATE="$1"; shift
     BLOCKS=$(build_blocks "$TEMPLATE" "$@")
     PAYLOAD=$(jq -n --arg channel "$CHANNEL" --argjson blocks "$BLOCKS" \
@@ -153,7 +155,8 @@ case "$ACTION" in
     ;;
   reply)
     [[ $# -lt 2 ]] && { echo "Usage: slack.sh reply [channel] <thread_ts> <template> [--var ...]" >&2; exit 1; }
-    CHANNEL=$(resolve_channel "$1"); [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
+    resolve_channel "$1"
+    CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     THREAD_TS="$1"; shift
     TEMPLATE="$1"; shift
     BLOCKS=$(build_blocks "$TEMPLATE" "$@")
@@ -163,7 +166,8 @@ case "$ACTION" in
     ;;
   edit)
     [[ $# -lt 2 ]] && { echo "Usage: slack.sh edit [channel] <message_ts> <template> [--var ...]" >&2; exit 1; }
-    CHANNEL=$(resolve_channel "$1"); [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
+    resolve_channel "$1"
+    CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     MESSAGE_TS="$1"; shift
     TEMPLATE="$1"; shift
     BLOCKS=$(build_blocks "$TEMPLATE" "$@")
@@ -172,7 +176,8 @@ case "$ACTION" in
     slack_message "chat.update" "$PAYLOAD" "false"
     ;;
   read)
-    CHANNEL=$(resolve_channel "${1:-}"); [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
+    resolve_channel "${1:-}"
+    CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     LIMIT=5
     OLDEST=""
     LAST_CHAT_TS_ARG=""
@@ -279,7 +284,8 @@ case "$ACTION" in
     REACT_EMOJI="$1"; shift
     # Strip surrounding colons if provided (e.g. :eyes: → eyes)
     REACT_EMOJI="${REACT_EMOJI#:}"; REACT_EMOJI="${REACT_EMOJI%:}"
-    CHANNEL=$(resolve_channel "${1:-}"); [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
+    resolve_channel "${1:-}"
+    CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     PAYLOAD=$(jq -n --arg channel "$CHANNEL" --arg timestamp "$REACT_TS" --arg name "$REACT_EMOJI" \
       '{channel: $channel, timestamp: $timestamp, name: $name}')
     RESULT=$(slack_post "reactions.add" -d "$PAYLOAD")
@@ -301,7 +307,8 @@ case "$ACTION" in
     # Returns JSON: {"white_check_mark": true/false, "x": true/false}
     [[ $# -lt 1 ]] && { echo "Usage: slack.sh reactions <message_ts> [channel]" >&2; exit 1; }
     REACTIONS_TS="$1"; shift
-    CHANNEL=$(resolve_channel "${1:-}"); [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
+    resolve_channel "${1:-}"
+    CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     RAW=$(slack_get "reactions.get" \
       --data-urlencode "channel=$CHANNEL" \
       --data-urlencode "timestamp=$REACTIONS_TS" \
@@ -319,7 +326,8 @@ case "$ACTION" in
     ;;
   delete)
     [[ $# -lt 1 ]] && { echo "Usage: slack.sh delete [channel] <message_ts>" >&2; exit 1; }
-    CHANNEL=$(resolve_channel "$1"); [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
+    resolve_channel "$1"
+    CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     MESSAGE_TS="$1"; shift
     PAYLOAD=$(jq -n --arg channel "$CHANNEL" --arg ts "$MESSAGE_TS" \
       '{channel: $channel, ts: $ts}')
