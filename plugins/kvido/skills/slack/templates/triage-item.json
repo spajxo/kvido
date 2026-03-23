@@ -1,5 +1,5 @@
 [
-  {"type":"section","text":{"type":"mrkdwn","text":"📋 *Triage #{{issue}}* — {{title}}\n{{description}}\n<{{issue_url}}|GitLab #{{issue}}>"}},
+  {"type":"section","text":{"type":"mrkdwn","text":"📋 *Triage #{{slug}}* — {{title}}\n{{description}}"}},
   {"type":"context","elements":[
     {"type":"mrkdwn","text":"{{priority}} · {{size}} · {{assignee}} · reply ✅ approve / ❌ reject"}
   ]}

@@ -107,7 +107,7 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
 
 ### Creating triage tasks
 
-Triage TODOs are created in Step 2c when heartbeat delivers a `triage-item` notification through `kvido slack`. The returned `ts` is written into `triage:<issue_id>` TODO description. No CHAT_MESSAGES scanning needed for triage creation.
+Triage TODOs are created in Step 2c when heartbeat delivers a `triage-item` notification through `kvido slack`. The returned `ts` is written into `triage:<slug>` TODO description. No CHAT_MESSAGES scanning needed for triage creation.
 
 ### Polling reactions
 
