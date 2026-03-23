@@ -7,7 +7,7 @@ user-invocable: false
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
-> **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config: `$KVIDO_HOME/kvido.local.md`.
+> **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config via `kvido config 'key'`.
 
 # Planner
 
@@ -86,7 +86,7 @@ Compare collected data against previous state in `planner-state.md` (section "##
 Log all notifications — planner-state.md "## Reported Events" + `kvido log add planner notify --message "<event summary>"`.
 
 ### Focus mode
-Read `kvido.local.md` focus_mode.
+Read focus_mode via `kvido config 'focus_mode'`.
 Check calendar data — is a focus event running? → suppress immediate to batch.
 
 ### Proactive alerts
