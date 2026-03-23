@@ -168,9 +168,14 @@ For patterns identified in Step 2b with 3+ repetitions generate skill drafts.
 
 ### 4. Dedup and write
 
+Read config early — all routing decisions below depend on this value:
+```bash
+GITHUB_ISSUES_ENABLED=$(kvido config 'skills.self_improver.github_issues.enabled' 'false')
+```
+
 - Check existing local tasks (see dedup in Step 1) — don't propose anything already there (compare title)
 - Separately check done/cancelled tasks with `source: self-improver` — don't re-add these
-- Check existing GitHub issues for plugin proposals:
+- If `GITHUB_ISSUES_ENABLED` is `true`, check existing GitHub issues for plugin proposals:
   ```bash
   gh issue list --repo spajxo/kvido --label "self-improver" --state open --json title --jq '.[].title' 2>/dev/null
   ```
@@ -185,7 +190,10 @@ IF proposal targets a workspace file (new skill, local skill edit, config, memor
   → create local worker task
 
 IF proposal targets plugin code (shipped skill/agent/command from plugin cache):
-  → create GitHub issue
+  AND GITHUB_ISSUES_ENABLED == true:
+    → create GitHub issue
+  ELSE:
+    → save to state/plugin-proposals/<YYYY-MM-DD>-<slug>.md
 ```
 
 **Workspace files** = files in `$PWD` (user's workspace): `memory/`, `.claude/kvido.local.md`, locally created skills.
@@ -203,7 +211,11 @@ kvido task create \
 
 #### Plugin proposals (GitHub issues)
 
-Check if `gh` is available and authenticated:
+The `GITHUB_ISSUES_ENABLED` variable was already read at the top of Step 4.
+
+If `GITHUB_ISSUES_ENABLED` is not `true`: skip GitHub issue creation and fall back to the local file fallback below.
+
+If `GITHUB_ISSUES_ENABLED` is `true`, check if `gh` is available and authenticated:
 ```bash
 gh auth status 2>/dev/null
 ```
@@ -235,7 +247,7 @@ gh issue create \
   --label "self-improver"
 ```
 
-If `gh` not available: write proposal to `state/plugin-proposals/<YYYY-MM-DD>-<slug>.md` using the same body format as the GitHub issue template above. Include in output so heartbeat delivers via Slack.
+If `gh` not available or `GITHUB_ISSUES_ENABLED` is not `true`: write proposal to `state/plugin-proposals/<YYYY-MM-DD>-<slug>.md` using the same body format as the GitHub issue template above. Include in output so heartbeat delivers via Slack.
 
 - **Confidence scoring** — each proposal (local or issue) must include:
   ```

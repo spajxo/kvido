@@ -160,6 +160,14 @@ skills.daily_questions.enabled: true
 skills.daily_questions.max_questions: 2
 skills.daily_questions.frequency: weekdays
 
+# Self-improver ---
+# github_issues.enabled: whether self-improver may create GitHub issues on
+#   the kvido plugin repo for detected plugin-level improvement proposals.
+#   Set to true only if you are a plugin contributor.
+#   When false (default), plugin proposals are saved locally to
+#   state/plugin-proposals/ instead.
+skills.self_improver.github_issues.enabled: false
+
 # Interests ---
 # Topics to monitor for relevant updates (security advisories, releases, etc.).
 # query:          search query used by the interests skill.
