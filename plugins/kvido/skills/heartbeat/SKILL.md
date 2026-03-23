@@ -6,6 +6,8 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList,
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
+> **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config via `kvido config 'key'`.
+
 # Heartbeat
 
 Runs automatically via `/loop`. Be extremely brief -- no output if nothing to report.
@@ -133,18 +135,13 @@ When a background agent completes (detected via TodoRead — task status is `in_
 
 ### Delivery rules
 
-Heartbeat is responsible for parsing agent output into structured fields, deciding `immediate|batch|silent`, choosing template, and calling `kvido slack`.
+Load delivery rules from installed plugins:
 
-Rules:
-- `chat-reply` is always `immediate`
-- `event`, `reminder`, `worker-report`, `triage-item`, `morning`, `eod`, `maintenance` use template mapping defined in slack SKILL.md
-- `normal + focus_mode=on` → `batch`
-- `low` → `silent`
-- everything else → `immediate`
-- `batch` -- keep notify TODO as `pending` and store serialized delivery metadata in description
-- `silent` -- log summary and mark notify TODO completed
-- `immediate` -- use returned `ts` for follow-up flows (triage polling, thread replies)
-- shell failure -- `kvido log add heartbeat error --message "delivery failed: <reason>"`, mark notify TODO completed
+```bash
+kvido context heartbeat
+```
+
+Heartbeat is responsible for parsing agent output into structured fields, deciding notification level, choosing template, and calling `kvido slack`. Apply the rules from the assembled context. Plugin-contributed rules extend or override defaults.
 
 ### Common pattern (all agent completions)
 
@@ -161,7 +158,7 @@ Rules:
 | chat-agent | `Reply`, `Thread`, `Type` | `chat` | always `immediate` | After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
 | planner | Prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:` | per-line mapping from slack templates | per delivery rules | `Triage:` → create `triage:<slug>` TODO with `ts`. `Dispatch:` → dispatch named agent. `No notifications.` → skip. |
 | worker | `Result`, `Task`, `Type`, `Source` | `worker-report` | `high` for error, else `normal` | — |
-| other (morning, eod) | template variables per agent | agent name as template, fallback `event` | per delivery rules | — |
+| other | template variables per agent | agent name as template, fallback `event` | per delivery rules | — |
 
 ### Batch flush
 

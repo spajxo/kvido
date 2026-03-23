@@ -16,7 +16,8 @@
 
 set -euo pipefail
 
-TASKS_DIR="${TASKS_DIR:-${PWD}/state/tasks}"
+KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+TASKS_DIR="${TASKS_DIR:-${KVIDO_HOME}/state/tasks}"
 STATUSES="triage todo in-progress done failed cancelled"
 
 # --- Helpers ---

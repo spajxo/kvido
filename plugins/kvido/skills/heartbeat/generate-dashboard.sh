@@ -14,7 +14,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
-STATE_DIR="${PWD}/state"
+KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+STATE_DIR="${KVIDO_HOME}/state"
 OUTPUT="$STATE_DIR/dashboard.html"
 
 # Check if dashboard is enabled
@@ -133,9 +134,9 @@ if [[ -x "$TASK_SH" ]]; then
   WQ_TODO=$("$TASK_SH" count todo 2>/dev/null || echo 0)
   WQ_TRIAGE=$("$TASK_SH" count triage 2>/dev/null || echo 0)
   # Create today marker if missing (must exist before find -newer)
-  [[ -f "${PWD}/state/tasks/.today-marker" ]] || touch -d "${TODAY} 00:00:00" "${PWD}/state/tasks/.today-marker" 2>/dev/null || true
+  [[ -f "${KVIDO_HOME}/state/tasks/.today-marker" ]] || touch -d "${TODAY} 00:00:00" "${KVIDO_HOME}/state/tasks/.today-marker" 2>/dev/null || true
   # Done today: count files in done/ modified today
-  WQ_DONE=$(find "${PWD}/state/tasks/done/" -name "*.md" -newer "${PWD}/state/tasks/.today-marker" 2>/dev/null | wc -l || echo 0)
+  WQ_DONE=$(find "${KVIDO_HOME}/state/tasks/done/" -name "*.md" -newer "${KVIDO_HOME}/state/tasks/.today-marker" 2>/dev/null | wc -l || echo 0)
 fi
 
 # ---------------------------------------------------------------------------

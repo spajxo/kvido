@@ -12,6 +12,15 @@ Setup and self-healing command. Run on first launch, after plugin installation, 
 
 ## Step 0: Prerequisites
 
+### KVIDO_HOME
+
+```bash
+KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+mkdir -p "$KVIDO_HOME"
+```
+
+All state, memory, config, and .env files live in `$KVIDO_HOME` (default: `~/.config/kvido`).
+
 ### kvido CLI
 
 Install or refresh the `kvido` CLI wrapper in `~/.local/bin/`:
@@ -41,16 +50,14 @@ If a required tool is missing, inform the user and offer installation. Do not pr
 
 ### Source plugins
 
-Run `kvido discover-sources` to list installed source plugins. Show the user what is installed and what is available:
+Run `kvido discover-sources` to list installed source plugins.
 
-| Source plugin | Prerequisite | Status |
-|---------------|-------------|--------|
-| kvido-gitlab | `glab` CLI | installed / not installed |
-| kvido-jira | `acli` CLI or Atlassian MCP | installed / not installed |
-| kvido-slack | `SLACK_BOT_TOKEN` in .env | installed / not installed |
-| kvido-calendar | Google Calendar MCP | installed / not installed |
-| kvido-gmail | `gws` CLI | installed / not installed |
-| kvido-sessions | none | installed / not installed |
+Load setup requirements:
+```bash
+kvido context setup
+```
+
+The assembled context lists prerequisites (binaries, env vars, MCP services) and required config keys for each installed plugin. Validate each.
 
 For each not-installed plugin, check if prerequisites are available and suggest installation:
 ```
@@ -61,14 +68,14 @@ Skip this step if this is a re-run and all desired sources are already installed
 
 ## Step 1: First-time Setup
 
-Detection: `.env` does not exist OR `memory/persona.md` does not exist → run first-time setup.
+Detection: `$KVIDO_HOME/.env` does not exist OR `$KVIDO_HOME/memory/persona.md` does not exist → run first-time setup.
 If both exist, skip to Step 2.
 
 ### a) Config files
 
 If files don't exist, create them:
-- `.claude/kvido.local.md` — copy `kvido.local.md.example` from the plugin
-- `.env` — create with empty values:
+- `$KVIDO_HOME/kvido.local.md` — copy `kvido.local.md.example` from the plugin
+- `$KVIDO_HOME/.env` — create with empty values:
   ```
   SLACK_DM_CHANNEL_ID=
   SLACK_USER_ID=
@@ -78,7 +85,7 @@ If files don't exist, create them:
 
 ### b) Persona setup
 
-If `memory/persona.md` does not exist:
+If `$KVIDO_HOME/memory/persona.md` does not exist:
 1. Ask the user:
    - "What language should Kvido use? (default: en)"
    - "What's your assistant's name? What tone and personality should it have? (e.g. brief and factual, friendly, formal...)"
@@ -87,20 +94,10 @@ If `memory/persona.md` does not exist:
 
 ### c) .env values
 
-Read `.env`. If it contains empty values (keys with `=""` or `=`):
+Read `$KVIDO_HOME/.env`. If it contains empty values (keys with `=""` or `=`):
 1. List the missing values and what they are used for
 2. Offer help filling them in (how to find Slack IDs, where to get tokens, etc.)
 3. If the user provides values, write them to `.env`
-
-### d) .gitignore
-
-Add to `.gitignore` if not already present:
-```
-.claude/kvido.local.md
-.env
-state/
-memory/
-```
 
 ### e) CLAUDE.md
 
@@ -120,11 +117,9 @@ Offer the user a shell alias for quick launching:
 2. Ask: "Do you want to create a shell alias `<name>` for quick launching?"
 3. If yes:
    - Detect shell rc file: if `$SHELL` contains `zsh` → `~/.zshrc`, else `~/.bashrc`
-   - Resolve plugin path: the `kvido` script is located in the plugin root (parent of this `commands/` directory). Use the absolute path.
-   - Resolve workspace path: the current working directory (`$PWD`) is the user's workspace.
    - Append to rc file (only if alias not already present):
      ```bash
-     alias <name>='cd <workspace_path> && <absolute_path_to_plugin>/kvido'
+     alias <name>='kvido'
      ```
    - Inform user: "Alias created. Run `source ~/.zshrc` (or `~/.bashrc`) or restart your shell to activate it."
 4. If no: skip silently.
@@ -132,21 +127,14 @@ Offer the user a shell alias for quick launching:
 
 ### g) Source plugin config validation
 
-For each installed source plugin (via `kvido discover-sources`), verify that `.claude/kvido.local.md` contains the required config keys. Use `kvido config` to check.
+For each installed source plugin (via `kvido discover-sources`), verify that `kvido.local.md` contains the required config keys. Use `kvido config` to check.
 
-| Plugin | Required keys | Check |
-|--------|--------------|-------|
-| kvido-gitlab | At least one repo: `sources.gitlab.repos` must have children | `kvido config --keys 'sources.gitlab.repos'` returns non-empty |
-| kvido-jira | At least one project: `sources.jira.projects` must have children with `filter` | `kvido config --keys 'sources.jira.projects'` returns non-empty |
-| kvido-slack | At least one channel or DM config | `kvido config --keys 'sources.slack.channels'` or `kvido config --keys 'sources.slack.dm_channels'` returns non-empty |
-| kvido-calendar | Categories (optional, works without) | No required keys — skip |
-| kvido-gmail | Watch query | `kvido config 'sources.gmail.watch_query'` exists |
-| kvido-sessions | Idle threshold (optional, has default) | No required keys — skip |
+The assembled context from `kvido context setup` (loaded in Step 0) lists required config keys per plugin. Validate each using `kvido config`.
 
 For each missing config:
 1. Show which keys are missing and what they configure
 2. Offer to help fill them in (show examples from `kvido.local.md.example`)
-3. If the user provides values, write them into `.claude/kvido.local.md` frontmatter
+3. If the user provides values, write them into `kvido.local.md` frontmatter
 
 Skip this step for plugins that are not installed.
 
@@ -156,24 +144,24 @@ Skip this step for plugins that are not installed.
 Create missing directories:
 
 ```bash
-mkdir -p memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
-mkdir -p state/tasks/{triage,todo,in-progress,done,failed,cancelled}
+mkdir -p $KVIDO_HOME/memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
+mkdir -p $KVIDO_HOME/state/tasks/{triage,todo,in-progress,done,failed,cancelled}
 ```
 
 For each missing file, create with minimal content:
-- `memory/memory.md` → `# Memory` + sections (Who I am, Active projects, Key decisions, Lessons learned, People)
-- `memory/this-week.md` → `# Week YYYY-Www`
-- `memory/learnings.md` → `# Learnings`
-- `memory/errors.md` → `# Errors`
-- `memory/people/_index.md` → `# People`
-- `memory/decisions/_index.md` → `# Decisions`
-- `state/heartbeat-state.json` → default schema (iteration_count: 0, all timestamps null, last_chat_ts: "0", cron_job_id: "", active_preset: "10m", last_interaction_ts: null)
-- `state/current.md` → empty template (Active Focus, WIP, Blockers, Parked, Notes for Tomorrow)
-- `state/planner-state.md` → empty planner state template
+- `$KVIDO_HOME/memory/memory.md` → `# Memory` + sections (Who I am, Active projects, Key decisions, Lessons learned, People)
+- `$KVIDO_HOME/memory/this-week.md` → `# Week YYYY-Www`
+- `$KVIDO_HOME/memory/learnings.md` → `# Learnings`
+- `$KVIDO_HOME/memory/errors.md` → `# Errors`
+- `$KVIDO_HOME/memory/people/_index.md` → `# People`
+- `$KVIDO_HOME/memory/decisions/_index.md` → `# Decisions`
+- `$KVIDO_HOME/state/heartbeat-state.json` → default schema (iteration_count: 0, all timestamps null, last_chat_ts: "0", cron_job_id: "", active_preset: "10m", last_interaction_ts: null)
+- `$KVIDO_HOME/state/current.md` → empty template (Active Focus, WIP, Blockers, Parked, Notes for Tomorrow)
+- `$KVIDO_HOME/state/planner-state.md` → empty planner state template
 
 ## Step 3: Planning Bootstrap
 
-If `memory/planner.md` does not exist, create it with example content:
+If `$KVIDO_HOME/memory/planner.md` does not exist, create it with default content:
 
 ```markdown
 # Planner — personal instructions
@@ -183,7 +171,39 @@ Add your personal instructions for the planner here.
 ## Examples
 - 11:00: Remind me to take a stretch break
 - Monday: Review the status of all open MRs from last week
-- Friday 15:00: Prepare for weekly standup
+
+## Scheduled Rules
+
+### Morning briefing
+- Trigger: workday, after wh_start, not yet today
+- Actions:
+  1. Gather data from all sources (full fetch)
+  2. Summarize yesterday's work, overnight changes
+  3. Show today's calendar + recommendations
+  4. Set focus in state/current.md
+  5. Run log purge: kvido log purge --before today --archive
+- Deliver: slack (template: morning)
+- Track: planner-state.md last_morning_date
+
+### EOD journal
+- Trigger: workday, after 16:00 (or user invokes), not yet today
+- Actions:
+  1. Gather data from all sources
+  2. Create journal in memory/journal/YYYY-MM-DD.md
+  3. Worklog check (Jira — compare time vs logged)
+  4. Dispatch librarian for memory extraction
+  5. Update state/current.md (clear focus, set notes for tomorrow)
+  6. Reset heartbeat-state.json iteration_count
+- Deliver: slack (template: eod)
+- Track: planner-state.md last_eod_date
+
+### Friday weekly summary
+- Trigger: friday, after EOD journal
+- Actions:
+  1. Read all journals from this week
+  2. Create weekly summary in memory/weekly/YYYY-Www.md
+  3. Archive journals older than 14 days
+- Deliver: slack (template: event)
 ```
 
 ## Step 4: EOD Catch-up
@@ -206,7 +226,7 @@ If `memory/this-week.md` contains a previous week:
 ## Step 6: Health Check
 
 ### Env check
-Verify that `.env` contains all required keys (`SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`, `SLACK_USER_NAME`, `SLACK_BOT_TOKEN`) and that they are not empty.
+Verify that `$KVIDO_HOME/.env` contains all required keys (`SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`, `SLACK_USER_NAME`, `SLACK_BOT_TOKEN`) and that they are not empty.
 Missing or empty → log warning.
 
 ### Binary check
@@ -215,7 +235,7 @@ command -v jq &>/dev/null || echo "WARNING: jq not found"
 ```
 
 ### Config validation
-Run `kvido config --validate` to check config format. For each installed source plugin, verify required keys exist (same checks as Step 1g). Log warnings for missing keys.
+Run `kvido config --validate` to check config format. Load `kvido context setup` for source-specific required keys. For each installed source plugin, verify required keys exist. Log warnings for missing keys.
 
 ### Source health
 Run `kvido discover-sources` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
@@ -223,7 +243,7 @@ Run `kvido discover-sources` to get installed source plugins. For each installed
 Skip sources that are not installed or do not define a health capability.
 
 ### Git connectivity
-For each repo in `.claude/kvido.local.md` (only if kvido-gitlab is installed):
+For each repo in `kvido.local.md` (only if kvido-gitlab is installed):
 ```bash
 test -d <path>/.git || echo "WARNING: repo <name> missing at <path>"
 ```

@@ -7,7 +7,7 @@ user-invocable: false
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
-> **Configuration:** Read `.claude/kvido.local.md`.
+> **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config via `kvido config 'key'`.
 
 # Planner
 
@@ -20,6 +20,7 @@ user-invocable: false
 3. Read `memory/planner.md` — personal instructions from the user (optional, not required)
 4. Read `memory/memory.md` — long-term context (projects, people, decisions)
 5. Get current time (`date -Iseconds`) and day of week
+6. Read `state/session-context.md` for project context and state summary
 
 ---
 
@@ -72,59 +73,39 @@ Each source SKILL.md defines its own fetch commands and capabilities. Read it an
 
 ## Step 4: Change Detection & Notifications
 
+Load planning rules:
+
+```bash
+kvido context planner
+```
+
+Follow the assembled rules for event dedup keys, notification levels, triage detection, and maintenance scheduling.
+
 Compare collected data against previous state in `planner-state.md` (section "## Reported Events").
 
-### Event keys
-Generate keys for dedup:
-- Git: `git:<repo>:<branch>:<hash>`
-- MR CI: `mr:<repo>!<iid>:ci_<status>`
-- MR review: `mr:<repo>!<iid>:review_<state>`
-- MR comment: `mr:<repo>!<iid>:comment_<count>`
-- Jira status: `jira:<key>:status_<status>`
-- Jira comment: `jira:<key>:comment_<count>`
-- Slack: `slack:<channel>:<thread_ts>`
-
-Already in Reported Events → skip (dedup).
-New → notify and add to Reported Events.
-
-### Notification levels
-
-For each detected event, decide the notification level based on context — who is the source, what happened, how urgent it is, whether it blocks the user or requires their action.
-
-| Level | Behavior |
-|-------|---------|
-| `silent` | Log via `kvido log add` only, do not include in output |
-| `batch` | Include in output: `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal.` |
-| `immediate` | Include in output: `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: high.` |
-
-Decide based on: current focus (state/current.md), time, sender, event type, whether action is required. Store feedback on decisions in `memory/learnings.md`.
+Log all notifications — planner-state.md "## Reported Events" + `kvido log add planner notify --message "<event summary>"`.
 
 ### Focus mode
-Read `.claude/kvido.local.md` focus_mode.
+Read focus_mode via `kvido config 'focus_mode'`.
 Check calendar data — is a focus event running? → suppress immediate to batch.
 
 ### Proactive alerts
 Watch for stale MR reviews, WIP tickets with no activity, status changes. Decide level based on context.
 
-Log all notifications — planner-state.md "## Reported Events" + `kvido log add planner notify --message "<event summary>"`.
-
 ---
 
-## Step 5: Morning / EOD Detection
+## Step 5: Scheduled Rules
 
-### Morning
-Read `state/heartbeat-state.json` → `last_morning_date`.
-If != today's date, include in output:
-```
-Dispatch: morning
-```
-Update `last_morning_date` in heartbeat-state.json.
+Read `memory/planner.md` section "## Scheduled Rules". For each rule:
 
-### EOD
-If personal instructions in `memory/planner.md` define an EOD time and it has arrived, include in output:
-```
-Dispatch: eod
-```
+1. Evaluate trigger condition (time, day, "not yet today" via planner-state.md tracking)
+2. If triggered:
+   - Execute actions inline (gather data, create journal, dispatch librarian, etc.)
+   - Compose output following the rule's delivery template
+   - Track execution in planner-state.md (e.g. last_morning_date, last_eod_date)
+3. If not triggered: skip
+
+Rules are user-defined natural language with structured triggers and actions. Interpret them flexibly. Default scheduled rules are provided by setup.
 
 ---
 
@@ -194,27 +175,7 @@ Max 3 triage items per run.
 
 Evaluate need and create worker tasks. All maintenance tasks: `--source planner --goal maintenance`.
 
-### Recurring tasks (max 1 per day each, check `last_*_date` in planner-state.md)
-
-| Task | Trigger | Instruction | Size/Priority |
-|------|---------|-------------|---------------|
-| Librarian | `memory/memory.md` > 100 lines or learnings Recurrence >= 3 | `Consolidation mode. Read and follow agents/librarian.md` | m/medium |
-| Enricher | Oldest project in `memory/projects/` > 7 days | `Enrichment: <project>. Read and follow agents/project-enricher.md` | s/low |
-| Self-improver | Not yet run today | `Analyze today's sessions. Read and follow agents/self-improver.md` | m/low |
-
-### Checks (output as `Event:`)
-
-| Check | Condition | Output |
-|-------|-----------|--------|
-| Stale workers | `find state/tasks/in-progress/ -name "*.md" -mmin +10` | `Event: 📊 Stale worker — <slug> in-progress > 10min. Urgency: normal.` |
-| Triage overflow | `task.sh count triage` >= 10 | `Event: 📋 Triage overflow — <N> items. Run /kvido:triage. Urgency: normal.` |
-| Backlog stale | `todo/` low priority > 30 days | Include in output as `Event:` suggestion |
-
-### Periodic (check timestamps in planner-state.md)
-
-- **State hygiene:** `state/current.md` WIP sync with Jira — Done → comment, newly assigned → WIP.
-- **Git sync** (> 2h): `/commit` → `git push origin master`.
-- **Archive rotation** (> 7d): journals > 14d, weekly > 8w, decisions > 90d → `memory/archive/`.
+Load maintenance rules from assembled context (already loaded in Step 4 via `kvido context planner`). The context defines recurring tasks, health checks, and periodic maintenance with their triggers, instructions, and size/priority. Follow those rules, checking `last_*_date` timestamps in planner-state.md to avoid duplicates.
 
 ---
 

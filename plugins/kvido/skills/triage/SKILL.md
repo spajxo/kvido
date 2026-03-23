@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
-> **Configuration:** WIP limit and thresholds from `.claude/kvido.local.md` → `skills.triage` (via `config.sh`). Defaults: wip_limit=3, triage_overflow_threshold=10.
+> **Configuration:** WIP limit and thresholds from `kvido.local.md` → `skills.triage` (via `config.sh`). Defaults: wip_limit=3, triage_overflow_threshold=10.
 
 # Triage & Backlog
 

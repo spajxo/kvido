@@ -14,7 +14,8 @@ set -euo pipefail
 # Channel is optional — defaults to $SLACK_DM_CHANNEL_ID from .env
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ENV_FILE="${PWD}/.env"
+KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+ENV_FILE="${KVIDO_HOME}/.env"
 if [[ -f "$ENV_FILE" ]]; then
   set -a
   source "$ENV_FILE"

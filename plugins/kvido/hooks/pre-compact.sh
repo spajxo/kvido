@@ -4,9 +4,8 @@ set -euo pipefail
 # Read JSON input from stdin
 cat > /dev/null
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel)"
-STATE_DIR="$REPO_DIR/state"
+KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+STATE_DIR="$KVIDO_HOME/state"
 
 # Build context summary to inject into conversation after compaction
 SUMMARY=""
