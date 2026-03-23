@@ -1,9 +1,15 @@
 {
   "name": "kvido-sessions",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Kvido source plugin for Claude Code session analysis",
-  "keywords": ["kvido", "source", "sessions"],
+  "keywords": [
+    "kvido",
+    "source",
+    "sessions"
+  ],
   "homepage": "https://github.com/spajxo/kvido",
   "repository": "https://github.com/spajxo/kvido",
-  "author": { "name": "Pavel Stejskal" }
+  "author": {
+    "name": "Pavel Stejskal"
+  }
 }

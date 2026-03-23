@@ -1,9 +1,15 @@
 {
   "name": "kvido-gmail",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Kvido source plugin for Gmail — email monitoring, priority filtering (requires gws)",
-  "keywords": ["kvido", "source", "gmail"],
+  "keywords": [
+    "kvido",
+    "source",
+    "gmail"
+  ],
   "homepage": "https://github.com/spajxo/kvido",
   "repository": "https://github.com/spajxo/kvido",
-  "author": { "name": "Pavel Stejskal" }
+  "author": {
+    "name": "Pavel Stejskal"
+  }
 }
