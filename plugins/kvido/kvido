@@ -78,10 +78,8 @@ _exec_claude_prompt() {
   fi
 
   # Assembly hook — generate session context (non-fatal)
-  local orig_pwd="$PWD"
-  KVIDO_PROJECT="$orig_pwd" bash "$KVIDO_ROOT/hooks/pre-session.sh" 2>/dev/null || true
+  KVIDO_PROJECT="$PWD" bash "$KVIDO_ROOT/hooks/pre-session.sh" 2>/dev/null || true
 
-  cd "$KVIDO_HOME"
   exec claude "${args[@]}" "$prompt"
 }
 
