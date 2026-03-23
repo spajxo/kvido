@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# config.sh — Unified config loader for assistant
+# config.sh — Unified config loader for assistant (jq wrapper)
 # =============================================================================
 # Usage: config.sh 'key'
 #   config.sh 'sources.gitlab.repos.group-project.path'
@@ -9,67 +9,75 @@
 #   config.sh --keys 'sources.gitlab.repos'         # list child keys
 #   config.sh --validate                            # check config format
 #
-# Reads flat dot-notation YAML frontmatter from kvido.local.md.
+# Reads KVIDO_HOME/settings.json (standard JSON via jq).
+# Dot-notation keys map to nested JSON paths: 'a.b.c' → .a.b.c
+#
 # Exit codes:
 #   0 — success
-#   1 — config not found
-#   2 — invalid config format
+#   1 — config file not found
+#   2 — invalid config format (not valid JSON)
 #   3 — key not found (no default provided)
 # =============================================================================
 
 set -euo pipefail
 
-# CONFIG_FILE — kvido.local.md in KVIDO_HOME directory
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-CONFIG_FILE="${KVIDO_HOME}/kvido.local.md"
+CONFIG_FILE="${KVIDO_HOME}/settings.json"
 
-# ── Extract frontmatter ──────────────────────────────────────────────────────
+# ── Dot-notation → jq path ───────────────────────────────────────────────────
+# Converts 'a.b.c' to '.a.b.c' for use with jq.
+# Keys that are numeric stay as object keys (jq handles them as string keys).
 
-_extract_frontmatter() {
-    awk '/^---$/{c++; next} c==1' "$CONFIG_FILE"
+_dot_to_jq() {
+    local key="$1"
+    # Split on dots and reassemble as .key1.key2... with proper quoting for
+    # keys that contain hyphens or start with digits.
+    local jq_path=""
+    IFS='.' read -ra parts <<< "$key"
+    for part in "${parts[@]}"; do
+        jq_path="${jq_path}[\"${part}\"]"
+    done
+    echo "$jq_path"
 }
 
 # ── Scalar lookup ─────────────────────────────────────────────────────────────
 
 _get_value() {
-    local key="$1" default="${2:-}"
+    local key="$1"
+    local default="${2:-}"
     local has_default="${3:-false}"
+
+    local jq_path
+    jq_path="$(_dot_to_jq "$key")"
+
     local result
-    result=$(_extract_frontmatter | awk -v k="$key" '
-        {
-            # Match key at start of line followed by ": "
-            if (index($0, k ": ") == 1) {
-                print substr($0, length(k) + 3)
-                found = 1
-                exit
-            }
-        }
-        END { if (!found) exit 1 }
-    ') || {
+    result=$(jq -r "${jq_path} // empty" "$CONFIG_FILE" 2>/dev/null) || {
+        echo "ERROR: Failed to parse config file: $CONFIG_FILE" >&2
+        return 2
+    }
+
+    if [[ -z "$result" ]]; then
         if [[ "$has_default" == "true" ]]; then
             echo "$default"
             return 0
         fi
+        echo "ERROR: Key not found: $key" >&2
         return 3
-    }
-    # Strip surrounding double quotes
-    if [[ "${result:0:1}" == '"' && "${result: -1}" == '"' ]]; then
-        result="${result:1:${#result}-2}"
     fi
+
     echo "$result"
 }
 
 # ── Prefix key listing ────────────────────────────────────────────────────────
+# Lists immediate child keys under a given dot-notation prefix.
 
 _list_keys() {
     local prefix="$1"
-    _extract_frontmatter | awk -v p="$prefix." '
-        substr($0, 1, length(p)) == p {
-            rest = substr($0, length(p) + 1)
-            sub(/:.*/, "", rest)
-            sub(/\..*/, "", rest)
-            if (rest != "" && !(rest in seen)) { seen[rest] = 1; print rest }
-        }'
+    local jq_path
+    jq_path="$(_dot_to_jq "$prefix")"
+
+    jq -r "${jq_path} | if type == \"object\" then keys[] else empty end" \
+        "$CONFIG_FILE" 2>/dev/null | grep -v '^_' || true
 }
 
 # ── Validate ──────────────────────────────────────────────────────────────────
@@ -80,24 +88,12 @@ _validate() {
         return 1
     fi
 
-    local errors=0
-    local line_num=0
-    while IFS= read -r line; do
-        line_num=$((line_num + 1))
-        # Skip empty lines and comments
-        [[ -z "$line" || "$line" == \#* ]] && continue
-        # Each line must be "key: value"
-        if [[ ! "$line" =~ ^[a-zA-Z0-9._-]+:\ .+ ]]; then
-            echo "ERROR: Invalid line $line_num: $line" >&2
-            errors=$((errors + 1))
-        fi
-    done < <(_extract_frontmatter)
-
-    if [[ $errors -gt 0 ]]; then
-        echo "ERROR: $errors invalid lines in config" >&2
+    if ! jq empty "$CONFIG_FILE" 2>/dev/null; then
+        echo "ERROR: Invalid JSON in config file: $CONFIG_FILE" >&2
         return 2
     fi
-    echo "OK: Config is valid"
+
+    echo "OK: Config is valid ($(jq 'keys | length' "$CONFIG_FILE") top-level keys)"
 }
 
 # ── Check config file ────────────────────────────────────────────────────────
@@ -105,7 +101,7 @@ _validate() {
 if [[ "${1:-}" != "--validate" && ! -f "$CONFIG_FILE" ]]; then
     echo "ERROR: Config file not found: $CONFIG_FILE" >&2
     echo "  Expected at: $CONFIG_FILE" >&2
-    echo "  Copy kvido.local.md.example from the plugin and fill in your data." >&2
+    echo "  Copy settings.json.example from the plugin and fill in your data." >&2
     exit 1
 fi
 

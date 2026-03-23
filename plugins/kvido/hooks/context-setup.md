@@ -9,7 +9,7 @@
 
 ## Config
 
-Config file: $KVIDO_HOME/kvido.local.md
+Config file: $KVIDO_HOME/settings.json
 Env file: $KVIDO_HOME/.env
 
 ### Required .env keys
@@ -23,7 +23,7 @@ Env file: $KVIDO_HOME/.env
 ```
 $KVIDO_HOME/
 ├── .env
-├── kvido.local.md
+├── settings.json
 ├── memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
 └── state/tasks/{triage,todo,in-progress,done,failed,cancelled}
 ```

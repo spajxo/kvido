@@ -16,7 +16,7 @@ Already in Reported Events → skip (dedup). New → notify and add.
 Decide based on: current focus (state/current.md), time, sender, event type, whether action is required.
 
 ### Focus mode
-Read kvido.local.md focus_mode. Check calendar — focus event running → suppress immediate to batch.
+Read settings.json focus_mode. Check calendar — focus event running → suppress immediate to batch.
 
 ### Proactive alerts
 Watch for stale MR reviews, WIP tickets with no activity, status changes. Decide level based on context.

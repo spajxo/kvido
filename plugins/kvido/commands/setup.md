@@ -74,7 +74,7 @@ If both exist, skip to Step 2.
 ### a) Config files
 
 If files don't exist, create them:
-- `$KVIDO_HOME/kvido.local.md` — copy `kvido.local.md.example` from the plugin
+- `$KVIDO_HOME/settings.json` — copy `settings.json.example` from the plugin
 - `$KVIDO_HOME/.env` — create with empty values:
   ```
   SLACK_DM_CHANNEL_ID=
@@ -101,14 +101,14 @@ Read `$KVIDO_HOME/.env`. If it contains empty values (keys with `=""` or `=`):
 
 ### d) Source plugin config validation
 
-For each installed source plugin (via `kvido discover-sources`), verify that `kvido.local.md` contains the required config keys. Use `kvido config` to check.
+For each installed source plugin (via `kvido discover-sources`), verify that `settings.json` contains the required config keys. Use `kvido config` to check.
 
 The assembled context from `kvido context setup` (loaded in Step 0) lists required config keys per plugin. Validate each using `kvido config`.
 
 For each missing config:
 1. Show which keys are missing and what they configure
-2. Offer to help fill them in (show examples from `kvido.local.md.example`)
-3. If the user provides values, write them into `kvido.local.md` frontmatter
+2. Offer to help fill them in (show examples from `settings.json.example`)
+3. If the user provides values, write them into `settings.json` frontmatter
 
 Skip this step for plugins that are not installed.
 
@@ -217,7 +217,7 @@ Run `kvido discover-sources` to get installed source plugins. For each installed
 Skip sources that are not installed or do not define a health capability.
 
 ### Git connectivity
-For each repo in `kvido.local.md` (only if kvido-gitlab is installed):
+For each repo in `settings.json` (only if kvido-gitlab is installed):
 ```bash
 test -d <path>/.git || echo "WARNING: repo <name> missing at <path>"
 ```
