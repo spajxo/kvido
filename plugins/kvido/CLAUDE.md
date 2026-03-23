@@ -8,7 +8,7 @@ Kvido is a **Claude Code plugin marketplace** containing the core assistant and 
 
 It is **not** a traditional application. There is no compilation, no test suite, no package manager, no build step. The "code" is markdown (SKILL.md, agent definitions, commands) + bash scripts.
 
-**Usage model:** The user creates their own workspace folder (e.g. `~/kvido/`), installs the core plugin (`claude plugin install kvido`) and optional source plugins (e.g. `claude plugin install kvido-gitlab`). Runtime files (`state/`, `memory/`, `.env`, `.claude/kvido.local.md`) live in the user's workspace. They are created by `/kvido:setup`.
+**Usage model:** The user creates their own workspace folder (e.g. `~/kvido/`), installs the core plugin (`claude plugin install kvido`) and optional source plugins (e.g. `claude plugin install kvido-gitlab`). Runtime files (`state/`, `memory/`, `.env`, `kvido.local.md`) live in the user's workspace. They are created by `/kvido:setup`.
 
 ## Prerequisites (for the user's workspace)
 
@@ -60,7 +60,7 @@ Slash commands such as `/kvido:setup`, `/kvido:morning`, `/kvido:eod`, and `/kvi
 ### Data flow
 
 - **Sources** — separate plugins (`kvido-gitlab`, `kvido-jira`, etc.). Discovered at runtime via `kvido discover-sources` which reads `~/.claude/plugins/installed_plugins.json`.
-- **Config** — `kvido config 'flat.key'` reads flat dot-notation YAML frontmatter from `.claude/kvido.local.md`
+- **Config** — `kvido config 'flat.key'` reads flat dot-notation YAML frontmatter from `kvido.local.md`
 - **State** (`state/`) — ephemeral runtime: `current.md`, `today.md` (morning briefing), `log.jsonl` (unified log via `kvido log`), `heartbeat-state.json`, `tasks/{triage,todo,in-progress,done,failed,cancelled}/`
 - **Memory** (`memory/`) — persistent: `memory.md`, journals, projects, people, decisions, learnings
 - **Librarian** (`agents/librarian.md`) — memory consolidation, extraction from journals, cleanup, auto-memory sync

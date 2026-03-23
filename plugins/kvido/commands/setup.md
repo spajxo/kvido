@@ -41,16 +41,14 @@ If a required tool is missing, inform the user and offer installation. Do not pr
 
 ### Source plugins
 
-Run `kvido discover-sources` to list installed source plugins. Show the user what is installed and what is available:
+Run `kvido discover-sources` to list installed source plugins.
 
-| Source plugin | Prerequisite | Status |
-|---------------|-------------|--------|
-| kvido-gitlab | `glab` CLI | installed / not installed |
-| kvido-jira | `acli` CLI or Atlassian MCP | installed / not installed |
-| kvido-slack | `SLACK_BOT_TOKEN` in .env | installed / not installed |
-| kvido-calendar | Google Calendar MCP | installed / not installed |
-| kvido-gmail | `gws` CLI | installed / not installed |
-| kvido-sessions | none | installed / not installed |
+Load setup requirements:
+```bash
+kvido context setup
+```
+
+The assembled context lists prerequisites (binaries, env vars, MCP services) and required config keys for each installed plugin. Validate each.
 
 For each not-installed plugin, check if prerequisites are available and suggest installation:
 ```
@@ -67,7 +65,7 @@ If both exist, skip to Step 2.
 ### a) Config files
 
 If files don't exist, create them:
-- `.claude/kvido.local.md` — copy `kvido.local.md.example` from the plugin
+- `kvido.local.md` — copy `kvido.local.md.example` from the plugin
 - `.env` — create with empty values:
   ```
   SLACK_DM_CHANNEL_ID=
@@ -96,7 +94,7 @@ Read `.env`. If it contains empty values (keys with `=""` or `=`):
 
 Add to `.gitignore` if not already present:
 ```
-.claude/kvido.local.md
+kvido.local.md
 .env
 state/
 memory/
@@ -121,7 +119,7 @@ Offer the user a shell alias for quick launching:
 3. If yes:
    - Detect shell rc file: if `$SHELL` contains `zsh` → `~/.zshrc`, else `~/.bashrc`
    - Resolve plugin path: the `kvido` script is located in the plugin root (parent of this `commands/` directory). Use the absolute path.
-   - Resolve workspace path: the current working directory (`$PWD`) is the user's workspace.
+   - Resolve workspace path: the current working directory (`$KVIDO_HOME`) is the user's workspace.
    - Append to rc file (only if alias not already present):
      ```bash
      alias <name>='cd <workspace_path> && <absolute_path_to_plugin>/kvido'
@@ -132,21 +130,14 @@ Offer the user a shell alias for quick launching:
 
 ### g) Source plugin config validation
 
-For each installed source plugin (via `kvido discover-sources`), verify that `.claude/kvido.local.md` contains the required config keys. Use `kvido config` to check.
+For each installed source plugin (via `kvido discover-sources`), verify that `kvido.local.md` contains the required config keys. Use `kvido config` to check.
 
-| Plugin | Required keys | Check |
-|--------|--------------|-------|
-| kvido-gitlab | At least one repo: `sources.gitlab.repos` must have children | `kvido config --keys 'sources.gitlab.repos'` returns non-empty |
-| kvido-jira | At least one project: `sources.jira.projects` must have children with `filter` | `kvido config --keys 'sources.jira.projects'` returns non-empty |
-| kvido-slack | At least one channel or DM config | `kvido config --keys 'sources.slack.channels'` or `kvido config --keys 'sources.slack.dm_channels'` returns non-empty |
-| kvido-calendar | Categories (optional, works without) | No required keys — skip |
-| kvido-gmail | Watch query | `kvido config 'sources.gmail.watch_query'` exists |
-| kvido-sessions | Idle threshold (optional, has default) | No required keys — skip |
+The assembled context from `kvido context setup` (loaded in Step 0) lists required config keys per plugin. Validate each using `kvido config`.
 
 For each missing config:
 1. Show which keys are missing and what they configure
 2. Offer to help fill them in (show examples from `kvido.local.md.example`)
-3. If the user provides values, write them into `.claude/kvido.local.md` frontmatter
+3. If the user provides values, write them into `kvido.local.md` frontmatter
 
 Skip this step for plugins that are not installed.
 
@@ -215,7 +206,7 @@ command -v jq &>/dev/null || echo "WARNING: jq not found"
 ```
 
 ### Config validation
-Run `kvido config --validate` to check config format. For each installed source plugin, verify required keys exist (same checks as Step 1g). Log warnings for missing keys.
+Run `kvido config --validate` to check config format. Load `kvido context setup` for source-specific required keys. For each installed source plugin, verify required keys exist. Log warnings for missing keys.
 
 ### Source health
 Run `kvido discover-sources` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
@@ -223,7 +214,7 @@ Run `kvido discover-sources` to get installed source plugins. For each installed
 Skip sources that are not installed or do not define a health capability.
 
 ### Git connectivity
-For each repo in `.claude/kvido.local.md` (only if kvido-gitlab is installed):
+For each repo in `kvido.local.md` (only if kvido-gitlab is installed):
 ```bash
 test -d <path>/.git || echo "WARNING: repo <name> missing at <path>"
 ```

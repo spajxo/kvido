@@ -89,7 +89,7 @@ STATUS=$(kvido task find "$TASK_SLUG")
 ```
 
 ### Timeout
-If a task takes > `task_timeout_minutes` (from `.claude/kvido.local.md`):
+If a task takes > `task_timeout_minutes` (from `kvido.local.md`):
 1. Send partial result with what you have
 2. `task.sh note "$TASK_SLUG" "## Failed\nTimeout after Xm"` + `task.sh move "$TASK_SLUG" failed`
 3. If progress > 50% → add follow-up: `task.sh create "<title>" --priority medium --size s`

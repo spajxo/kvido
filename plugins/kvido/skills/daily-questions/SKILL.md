@@ -7,7 +7,7 @@ user-invocable: false
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
-> **Configuration:** Read `.claude/kvido.local.md`. If `enabled: false`, skip.
+> **Configuration:** Read `kvido.local.md`. If `enabled: false`, skip.
 
 # Daily Questions
 
@@ -15,7 +15,7 @@ Called from EOD skill (after journal entry, before confirm).
 
 ## Procedure
 
-1. Read `.claude/kvido.local.md` — if `enabled: false`, skip.
+1. Read `kvido.local.md` — if `enabled: false`, skip.
 2. Check `frequency`:
    - `weekdays` → skip Saturday and Sunday
    - `friday_only` → skip if not Friday

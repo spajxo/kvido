@@ -66,7 +66,7 @@ List watched channels via `skills/config.sh --keys 'sources.slack.channels'`. Fo
   mcp__claude_ai_Slack__slack_read_channel(channel_id="<channel_id>", limit=5)
   ```
 
-For channels without `channel_id` → skip (or add ID to `.claude/kvido.local.md`).
+For channels without `channel_id` → skip (or add ID to `kvido.local.md`).
 
 For channels with `watch_for: marvin_qa`: analyze messages from the perspective of Marvin AI bot quality.
 Signals to report (desktop level):

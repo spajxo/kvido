@@ -64,7 +64,7 @@ Extract: event overview by category, total meeting time, remaining free deep-wor
 ### Slack
 
 Slack data are part of the morning gather mode (source-slack watch-channels).
-Read `.claude/kvido.local.md` → `sources.slack` for channel priorities.
+Read `kvido.local.md` → `sources.slack` for channel priorities.
 
 Filter for: direct mentions, thread replies, DMs.
 

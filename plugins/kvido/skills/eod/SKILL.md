@@ -41,7 +41,7 @@ Include summary in the journal entry (Step 2) as section `## Token Usage`.
 
 Run `kvido discover-sources` to find installed source plugins. For each discovered source relevant to EOD (sessions, gitlab), read its `skills/source-*/SKILL.md` from the install path and call the EOD fetch command.
 
-**Uncommitted work detection** — read `.claude/kvido.local.md`, for each repo:
+**Uncommitted work detection** — read `kvido.local.md`, for each repo:
 
 ```bash
 git -C <repo_path> status --porcelain
