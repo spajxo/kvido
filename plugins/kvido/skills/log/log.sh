@@ -6,6 +6,16 @@ set -euo pipefail
 
 ACTIVITY_LOG="${PWD}/state/log.jsonl"
 
+# One-time migration: rename old activity-log.jsonl → log.jsonl
+OLD_LOG="${PWD}/state/activity-log.jsonl"
+if [[ -f "$OLD_LOG" && ! -f "$ACTIVITY_LOG" ]]; then
+  mv "$OLD_LOG" "$ACTIVITY_LOG"
+elif [[ -f "$OLD_LOG" && -f "$ACTIVITY_LOG" ]]; then
+  # Both exist (edge case) — append old into new, remove old
+  cat "$OLD_LOG" >> "$ACTIVITY_LOG"
+  rm "$OLD_LOG"
+fi
+
 ACTION="${1:?Usage: kvido log <add|list|purge> [args...]}"
 shift
 
