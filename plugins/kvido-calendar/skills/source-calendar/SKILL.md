@@ -15,7 +15,7 @@ user-invocable: false
 
 ### fetch
 Run `fetch.sh [YYYY-MM-DD]` for the given day.
-Returns pre-categorized data per kvido.local.md `categories` + total meeting time and free deep-work time.
+Returns pre-categorized data per settings.json `categories` + total meeting time and free deep-work time.
 
 **MCP fallback:** If fetch.sh exits with code 10 (`gws` not available), use Google Calendar MCP directly:
 

@@ -71,7 +71,7 @@ if [[ -n "$SLEEP_UNTIL" && "$SLEEP_UNTIL" != "null" ]]; then
   fi
 fi
 
-# Load adaptive rules from central kvido.local.md via config.sh
+# Load adaptive rules from central settings.json via config.sh
 CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
 
 WH_START=$($CONFIG 'skills.heartbeat.wh_start')

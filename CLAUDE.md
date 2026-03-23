@@ -30,22 +30,22 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 ## Key design decisions
 
 - **Source plugins reference core scripts** (`skills/slack/slack.sh`, `skills/worker/task.sh`) via relative paths. This works because they are always invoked by agents running in the core plugin's context — never standalone.
-- **Config** is always read via `skills/config.sh 'flat.key'` — never parse `$KVIDO_HOME/kvido.local.md` directly.
+- **Config** is always read via `skills/config.sh 'dot.key'` — never parse `$KVIDO_HOME/settings.json` directly with jq in scripts.
 - **All bash scripts** use `set -euo pipefail`.
 - **Agents never send Slack messages directly** — they return NL output. Heartbeat delivers via `slack.sh`.
 - **Prompts default to English**. Runtime language is configured in the user's `memory/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The SKILL.md for each source plugin documents the MCP fallback procedure.
-- **config.sh is duplicated** across all source plugins (each has its own copy). When modifying config.sh, update all copies.
+- **config.sh is duplicated** across all source plugins (each has its own copy). When modifying config.sh, update all copies. It is a thin jq wrapper — `skills/config.sh 'a.b.c'` maps dot-notation to JSON path `.a.b.c` in `settings.json`.
 
 ## KVIDO_HOME
 
 All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
 - `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, heartbeat-state.json, tasks/, dashboard.html)
 - `memory/` — persistent (memory.md, journals, projects, weekly, learnings)
-- `kvido.local.md` — configuration
+- `settings.json` — configuration (JSON, parsed via `skills/config.sh`)
 - `.env` — secrets (Slack tokens, channel IDs)
 
-The `kvido` CLI exports `$KVIDO_HOME` and all scripts resolve state/memory paths from there. PWD stays as the project directory. Config is at `$KVIDO_HOME/kvido.local.md`.
+The `kvido` CLI exports `$KVIDO_HOME` and all scripts resolve state/memory paths from there. PWD stays as the project directory. Config is at `$KVIDO_HOME/settings.json`.
 
 ## Plugin Hook System
 
@@ -84,4 +84,4 @@ Source plugins are never invoked standalone. The planner agent runs in the core 
 - Marketplace manifest: `.claude-plugin/marketplace.json` lists all plugins with `./plugins/<name>` local source paths
 - Validate changes by reading plugin conventions and running `/kvido:setup` health check in a workspace
 - Runtime instructions for installed Kvido sessions now live in `plugins/kvido/hooks/context-session.md` and are injected via the plugin `SessionStart` hook.
-- User-facing template: `plugins/kvido/kvido.local.md.example` (config reference)
+- User-facing template: `plugins/kvido/settings.json.example` (config reference — copy to `$KVIDO_HOME/settings.json`)

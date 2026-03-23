@@ -29,7 +29,7 @@ claude plugin install kvido-slack
 claude    # launch Claude Code
 ```
 
-Run `/kvido:setup` inside the session — it bootstraps `state/`, `memory/`, `kvido.local.md`, and `.env`. Runtime instructions are loaded through plugin hooks, so Kvido does not need to copy its own `CLAUDE.md` into your project. Setup also detects installed source plugins and offers to install missing ones.
+Run `/kvido:setup` inside the session — it bootstraps `state/`, `memory/`, `settings.json`, and `.env`. Runtime instructions are loaded through plugin hooks, so Kvido does not need to copy its own `CLAUDE.md` into your project. Setup also detects installed source plugins and offers to install missing ones.
 
 ## Quick Commands
 
@@ -71,7 +71,7 @@ All gitignored, created by `/kvido:setup`:
 
 | File | Purpose |
 |------|---------|
-| `kvido.local.md` | Sources config — Slack channels, GitLab repos, Jira projects, Gmail filters. See `kvido.local.md.example`. |
+| `settings.json` | Sources config — Slack channels, GitLab repos, Jira projects, Gmail filters. See `settings.json.example` in the plugin. |
 | `.env` | Credentials — `SLACK_BOT_TOKEN`, `SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`. Optional: `ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`. |
 | `memory/persona.md` | Assistant name, personality, language, tone. |
 

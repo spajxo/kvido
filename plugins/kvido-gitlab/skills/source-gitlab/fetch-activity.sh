@@ -2,7 +2,7 @@
 # fetch-activity.sh — aggregate git activity across monitored repos for a given day
 #
 # Usage: fetch-activity.sh [YYYY-MM-DD] [--priority high|normal|low]
-# Reads repos from central kvido.local.md via config.sh
+# Reads repos from central settings.json via config.sh
 # Output: plain text summary of git activity per repo
 
 set -euo pipefail
@@ -117,7 +117,7 @@ process_repo() {
   echo ""
 }
 
-# Parse repos from central kvido.local.md via config.sh
+# Parse repos from central settings.json via config.sh
 for repo_key in $($CONFIG --keys 'sources.gitlab.repos'); do
   repo_path=$($CONFIG "sources.gitlab.repos.${repo_key}.path")
   repo_priority=$($CONFIG "sources.gitlab.repos.${repo_key}.priority" "normal")

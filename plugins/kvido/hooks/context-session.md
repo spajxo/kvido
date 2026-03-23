@@ -23,13 +23,13 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
   - `state/session-context.md`
   - `state/heartbeat-state.json`
 - Review recent activity with `kvido log list --today --format human`.
-- Use `kvido config 'flat.key'` for configuration lookups instead of parsing files directly.
+- Use `kvido config 'key.subkey'` for configuration lookups instead of parsing files directly.
 
 ## Runtime Layout
 
 - `state/` — ephemeral runtime state (`current.md`, `session-context.md`, `log.jsonl`, `heartbeat-state.json`, `tasks/`, `dashboard.html`)
 - `memory/` — persistent context (`memory.md`, journals, weekly notes, projects, people, decisions, learnings)
-- `kvido.local.md` — runtime configuration
+- `settings.json` — runtime configuration
 - `.env` — secrets and integration tokens
 
 All `state/` and `memory/` paths in Kvido skills and agents resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/`.

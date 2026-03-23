@@ -93,7 +93,7 @@ Use this limit instead of the fixed "max 5" in subsequent steps.
 
 **Missing config:**
 - Mention of repo, Slack channel, Jira project outside monitoring
-- Compare with `kvido.local.md` (sections `sources.gitlab`, `sources.jira`, `sources.slack`)
+- Compare with `settings.json` (sections `sources.gitlab`, `sources.jira`, `sources.slack`)
 
 **Manual work:**
 - User doing something that could be automated (repeated command, manual lookup)
@@ -196,7 +196,7 @@ IF proposal targets plugin code (shipped skill/agent/command from plugin cache):
     → save to state/plugin-proposals/<YYYY-MM-DD>-<slug>.md
 ```
 
-**Workspace files** = files in `$KVIDO_HOME` (user's workspace): `memory/`, `kvido.local.md`, locally created skills.
+**Workspace files** = files in `$KVIDO_HOME` (user's workspace): `memory/`, `settings.json`, locally created skills.
 **Plugin files** = files shipped with marketplace plugins (read from `installPath`): core kvido skills, agents, commands, source plugin skills.
 
 #### Local proposals (workspace changes)
@@ -268,7 +268,7 @@ If `gh` not available or `GITHUB_ISSUES_ENABLED` is not `true`: write proposal t
 - Don't read source code files — only conversational patterns and Slack DMs
 - Adaptive proposal limit (2-7 based on acceptance_rate) + max 2 skill drafts
 - Don't propose large refactors — one file or config entry
-- Be specific: "add channel #dev-ops to kvido.local.md → sources.slack.channels" > "improve monitoring"
+- Be specific: "add channel #dev-ops to settings.json → sources.slack.channels" > "improve monitoring"
 - Done/cancelled tasks with `source: self-improver` = don't add again
 - Rejected patterns from Step 0 = don't add similar proposals
 

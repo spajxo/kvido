@@ -1,0 +1,174 @@
+{
+  "_comment": "kvido settings.json — copy to ~/.config/kvido/settings.json and fill in your data.",
+  "_doc": "Usage: kvido config 'key.subkey' [default] | kvido config --keys 'prefix'",
+
+  "sources": {
+    "jira": {
+      "tool": {
+        "primary": "acli",
+        "fallback": "atlassian-mcp"
+      },
+      "projects": {
+        "_comment": "Add one block per Jira project to monitor.",
+        "_example": {
+          "PROJ": {
+            "filter": "assignee = currentUser() AND status != Done ORDER BY updated DESC",
+            "label": "My Project"
+          }
+        }
+      }
+    },
+
+    "gitlab": {
+      "repos": {
+        "_comment": "Add one block per repository to monitor.",
+        "_example": {
+          "group-project": {
+            "path": "~/Projects/path/to/repo",
+            "branches": "main",
+            "priority": "high"
+          },
+          "group-kb": {
+            "path": "~/Projects/path/to/kb",
+            "priority": "low",
+            "type": "knowledge-base"
+          }
+        }
+      }
+    },
+
+    "slack": {
+      "self_dm_channel": {
+        "name": "assistant",
+        "channel_id": ""
+      },
+      "dm_channels": {
+        "_comment": "Add one block per DM channel to monitor.",
+        "_example": {
+          "person-name": {
+            "user_id": "UXXXXXXXXXX",
+            "channel_id": "DXXXXXXXXXX",
+            "priority": "normal"
+          }
+        }
+      },
+      "channels": {
+        "_comment": "Add one block per public/private channel to watch.",
+        "_example": {
+          "channel-name": {
+            "channel_id": "CXXXXXXXXXX",
+            "priority": "high"
+          }
+        }
+      }
+    },
+
+    "calendar": {
+      "categories": {
+        "standup": "standup,daily",
+        "planning": "planning,refinement,grooming",
+        "one_on_one": "1:1,1on1",
+        "focus": "focus,deep work"
+      },
+      "default_category": "meeting"
+    },
+
+    "gmail": {
+      "watch_query": "is:unread -category:promotions -category:social",
+      "max_results": 20,
+      "priority_senders": "",
+      "labels_ignore": ""
+    },
+
+    "sessions": {
+      "idle_threshold_min": 10,
+      "default_date": "yesterday"
+    }
+  },
+
+  "skills": {
+    "heartbeat": {
+      "presets": {
+        "5m":  "*/5 * * * *",
+        "10m": "*/10 * * * *",
+        "30m": "*/30 * * * *",
+        "60m": "3 * * * *"
+      },
+      "wh_start": 7,
+      "wh_end": 16,
+      "wh_min_interval": "10m",
+      "wh_after_interaction": "5m",
+      "wh_interaction_window_minutes": 30,
+      "decay": {
+        "30":   { "preset": "5m" },
+        "120":  { "preset": "10m" },
+        "240":  { "preset": "30m" },
+        "null": { "preset": "60m" }
+      }
+    },
+
+    "planner": {
+      "planning_interval": 10
+    },
+
+    "worker": {
+      "work_dir": "state/work",
+      "max_concurrent": 2,
+      "task_timeout_minutes": 8,
+      "stale_lock_minutes": 10,
+      "overflow_threshold": 20,
+      "models": {
+        "s":  "claude-sonnet-4-6",
+        "m":  "claude-sonnet-4-6",
+        "l":  "claude-opus-4-6",
+        "xl": "claude-opus-4-6"
+      },
+      "urgent_model": "claude-opus-4-6"
+    },
+
+    "slack": {
+      "batching": {
+        "enabled": true,
+        "window": "full_heartbeat"
+      }
+    },
+
+    "triage": {
+      "wip_limit": 3,
+      "triage_overflow_threshold": 10,
+      "done_rotation": "friday"
+    },
+
+    "dashboard": {
+      "enabled": true,
+      "auto_refresh": 20
+    },
+
+    "daily_questions": {
+      "enabled": true,
+      "max_questions": 2,
+      "frequency": "weekdays"
+    },
+
+    "self_improver": {
+      "github_issues": {
+        "enabled": false
+      }
+    },
+
+    "interests": {
+      "topics": {
+        "_comment": "Add one block per topic to monitor.",
+        "_example": {
+          "example-topic": {
+            "name": "Example topic",
+            "query": "example search query",
+            "urgency": "medium",
+            "check_interval": "weekly",
+            "reason": "Why this matters"
+          }
+        }
+      }
+    }
+  }
+}

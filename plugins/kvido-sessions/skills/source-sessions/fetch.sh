@@ -5,7 +5,7 @@
 # Default: yesterday
 #
 # Dependencies: jq, date, grep
-# Reads idle_threshold_min from kvido.local.md via config.sh
+# Reads idle_threshold_min from settings.json via config.sh
 #
 # Optimizations vs original:
 #   1. Pre-filter files by first/last timestamp date (no jq cost for non-matching files)
