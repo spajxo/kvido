@@ -101,7 +101,17 @@ Read `$KVIDO_HOME/.env`. If it contains empty values (keys with `=""` or `=`):
 
 ### d) Shell alias
 
-Offer the user a shell alias for quick launching:
+Check whether `kvido` CLI is already accessible:
+
+```bash
+if command -v kvido &>/dev/null && kvido --help &>/dev/null; then
+  echo "kvido already in PATH at $(command -v kvido) — skipping alias offer"
+fi
+```
+
+If `kvido` is already in PATH and `kvido --help` exits successfully, skip this step entirely — the alias would be redundant.
+
+Otherwise, offer the user a shell alias for quick launching:
 
 1. Derive alias name from `memory/persona.md` assistant name (lowercase, strip diacritics via `iconv -f utf-8 -t ascii//TRANSLIT`). Fallback: `kvido`.
 2. Ask: "Do you want to create a shell alias `<name>` for quick launching?"
