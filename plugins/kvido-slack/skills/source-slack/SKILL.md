@@ -5,7 +5,7 @@ allowed-tools: Read, Bash, mcp__claude_ai_Slack__slack_search_public_and_private
 user-invocable: false
 ---
 
-> **Configuration:** Via `skills/config.sh` (`sources.slack.*` keys). DM credentials from `.env`.
+> **Configuration:** Via `skills/config.sh` (`sources.slack.*` keys). Credentials (`slack.bot_token`, `slack.dm_channel_id`) via `kvido config` — resolved from `.env` references in `settings.json`.
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 

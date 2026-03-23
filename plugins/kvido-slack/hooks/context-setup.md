@@ -3,9 +3,11 @@
 ## Prerequisites
 | Key | Required | Check |
 |-----|----------|-------|
-| SLACK_BOT_TOKEN | yes (in .env) | non-empty in $KVIDO_HOME/.env |
+| slack.bot_token | yes (in settings.json) | kvido config 'slack.bot_token' returns non-empty |
 
 ## Config Keys
 | Key | Required | Check |
 |-----|----------|-------|
+| slack.bot_token | yes | kvido config 'slack.bot_token' |
+| slack.dm_channel_id | yes | kvido config 'slack.dm_channel_id' |
 | sources.slack.channels or sources.slack.dm_channels | yes, at least one | kvido config --keys returns non-empty |

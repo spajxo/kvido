@@ -29,8 +29,8 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
 
 - `state/` — ephemeral runtime state (`current.md`, `session-context.md`, `log.jsonl`, `heartbeat-state.json`, `tasks/`, `dashboard.html`)
 - `memory/` — persistent context (`memory.md`, journals, weekly notes, projects, people, decisions, learnings)
-- `settings.json` — runtime configuration
-- `.env` — secrets and integration tokens
+- `settings.json` — runtime configuration (use `kvido config 'key'` to read values; `"$ENV_VAR"` references are resolved from `.env` automatically)
+- `.env` — secrets only (referenced from `settings.json` via `"$ENV_VAR"` syntax)
 
 All `state/` and `memory/` paths in Kvido skills and agents resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/`.
 

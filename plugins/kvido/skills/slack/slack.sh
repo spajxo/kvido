@@ -11,23 +11,17 @@ set -euo pipefail
 #   slack.sh reactions <message_ts> [channel]
 #   slack.sh delete [channel] <message_ts>
 #   slack.sh download <url_private> [output_dir]
-# Channel is optional — defaults to $SLACK_DM_CHANNEL_ID from .env
+# Channel is optional — defaults to slack.dm_channel_id from settings.json
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-ENV_FILE="${KVIDO_HOME}/.env"
-if [[ -f "$ENV_FILE" ]]; then
-  set -a
-  source "$ENV_FILE"
-  set +a
-fi
 TEMPLATES_DIR="$SCRIPT_DIR/templates"
 
 SLACK_API="https://slack.com/api"
-TOKEN="${SLACK_BOT_TOKEN:-}"
+TOKEN=$(bash "$SCRIPT_DIR/../config.sh" 'slack.bot_token' '' 2>/dev/null || true)
 
 if [[ -z "$TOKEN" ]]; then
-  echo "Error: SLACK_BOT_TOKEN not set in .env" >&2
+  echo "Error: slack.bot_token not set in settings.json (use \"\$SLACK_BOT_TOKEN\" to reference .env)" >&2
   exit 1
 fi
 
@@ -35,10 +29,11 @@ ACTION="${1:-}"
 shift || true
 
 # If next arg looks like a Slack channel/DM ID (C.../D.../G...), consume it.
-# Otherwise fall back to $SLACK_DM_CHANNEL_ID from .env.
+# Otherwise fall back to slack.dm_channel_id from settings.json.
 # Sets global CHANNEL_SHIFTED=true if caller should shift, false otherwise.
 CHANNEL_SHIFTED=false
 RESOLVED_CHANNEL=""
+_DEFAULT_CHANNEL=""
 resolve_channel() {
   CHANNEL_SHIFTED=false
   if [[ "${1:-}" =~ ^[CDG][A-Z0-9]+ ]]; then
@@ -46,11 +41,14 @@ resolve_channel() {
     CHANNEL_SHIFTED=true
     return 0
   fi
-  if [[ -z "${SLACK_DM_CHANNEL_ID:-}" ]]; then
-    echo "Error: channel not provided and SLACK_DM_CHANNEL_ID not set" >&2
+  if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+    _DEFAULT_CHANNEL=$(bash "$SCRIPT_DIR/../config.sh" 'slack.dm_channel_id' '' 2>/dev/null || true)
+  fi
+  if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+    echo "Error: channel not provided and slack.dm_channel_id not set in settings.json" >&2
     exit 1
   fi
-  RESOLVED_CHANNEL="$SLACK_DM_CHANNEL_ID"
+  RESOLVED_CHANNEL="$_DEFAULT_CHANNEL"
   return 0
 }
 
@@ -279,7 +277,7 @@ case "$ACTION" in
   react)
     # Usage: slack.sh react <ts> <emoji> [channel]
     # Adds a reaction to a message. Emoji without colons (e.g. "eyes", "white_check_mark").
-    # Channel defaults to $SLACK_DM_CHANNEL_ID.
+    # Channel defaults to slack.dm_channel_id from settings.json.
     [[ $# -lt 2 ]] && { echo "Usage: slack.sh react <ts> <emoji> [channel]" >&2; exit 1; }
     REACT_TS="$1"; shift
     REACT_EMOJI="$1"; shift

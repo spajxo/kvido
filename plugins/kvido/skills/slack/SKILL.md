@@ -99,7 +99,7 @@ Read `kvido config 'skills.slack.batching'`. Batch notifications are managed by 
 
 ## Auth
 
-`SLACK_BOT_TOKEN` (xoxb) from `.env`.
+Bot token read via `kvido config 'slack.bot_token'`. Store the actual token in `$KVIDO_HOME/.env` as `SLACK_BOT_TOKEN=xoxb-...` and reference it from `settings.json` as `"slack.bot_token": "$SLACK_BOT_TOKEN"`.
 
 Minimum required scopes (based on actually called API methods):
 
