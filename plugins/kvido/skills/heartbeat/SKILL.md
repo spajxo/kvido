@@ -30,7 +30,7 @@ Messages in `CHAT_MESSAGES` block are in `--heartbeat` format: one line per mess
 
 The script automatically: increments iteration_count, sets last_quick, reads Slack DM, checks worker queue.
 
-Read `state/today.md` and `state/current.md` for context.
+Read `state/current.md` for context. Review recent activity via `kvido log list --today --format human --limit 20`.
 
 ### Cron reconciliation
 
@@ -80,7 +80,7 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
      kvido task note <slug> "Cancelled via chat"
      kvido task move <slug> cancelled
      ```
-   - Simple status questions answerable from loaded state/current.md and state/today.md
+   - Simple status questions answerable from loaded state/current.md and `kvido log list --today`
 
    For trivial: compose response, create `notify:chat:<ts>` TODO (in_progress), deliver via `kvido slack send|reply chat --var message="<response>"`, mark notify TODO completed. Log: `kvido log add chat inline --message "<summary>"`
 

@@ -71,7 +71,7 @@ source_ref: "1773933088.437"
 - Read any files in the repository
 - Call source skills and tool skills (glab, acli, slack.sh, gws)
 - Call MCP tools (Atlassian, Slack, Calendar)
-- Write to `state/today.md`
+- Log via `kvido log add`
 - Dispatch sub-agents (researcher, reviewer) for in-depth analysis
 
 ### What Worker must not do
@@ -166,7 +166,7 @@ Use conventional commit message (feat/fix/chore) based on the type of change.
 |---------|-----|
 | Sending Slack messages directly via `slack.sh` | Worker returns NL output — heartbeat handles all delivery |
 | Chaining workers (dispatching another worker from worker) | Forbidden. Create a follow-up task via `task.sh create` instead. |
-| Modifying `state/current.md` | Owned by heartbeat. Worker writes only to `state/today.md` and task notes. |
+| Modifying `state/current.md` | Owned by heartbeat. Worker logs via `kvido log add` and writes task notes. |
 | Skipping cancel check at start | Always `task.sh find` first — task may have been cancelled while queued |
 | Continuing past timeout | Check elapsed time; if > `task_timeout_minutes`, emit partial result and move to `failed/` |
 | Ignoring pipeline phase | Always read `phase` from `task.sh read` — execute only the current phase, not the whole task |

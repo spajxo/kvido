@@ -57,7 +57,7 @@ Collect repos with uncommitted changes or stashes.
 Create journal by combining:
 - Session parser (what was worked on, how long)
 - Git activity (commits today)
-- Heartbeat log from `state/today.md`
+- Activity timeline from `kvido log list --today --format human`
 - WIP and blocker status from `state/current.md`
 - Uncommitted work (repo: N modified, M untracked, K stashes)
 
@@ -103,7 +103,7 @@ Write to `memory/journal/YYYY-MM-DD.md`.
 Build time summary from session-parser + git-activity + calendar:
 - Group by Jira ticket/project
 - Estimate time (round to 15 min; git-only = 15 min/commit, max 2h)
-- Meetings from `state/today.md` as separate lines
+- Meetings from calendar data as separate lines
 - No ticket = `(internal)`
 
 Fetch existing worklogs via Atlassian MCP:

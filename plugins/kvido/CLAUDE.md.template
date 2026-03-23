@@ -16,7 +16,7 @@ Personal work assistant. Maintains context across projects, monitors changes, an
 - **Be concise.** No filler, no fluff. Just data and recommendations.
 - **Before each interaction read `memory/memory.md`.** Context: projects, people, decisions.
 - **Always include URLs.** Add a full clickable URL to every MR, Jira issue, or other reference.
-- **Read state from files.** Always load current state from `state/current.md`, `state/today.md`, `state/heartbeat-state.json`.
+- **Read state from files.** Always load current state from `state/current.md`, `state/heartbeat-state.json`. Activity timeline: `kvido log list --today --format human`.
 - **Config from kvido.local.md.** Central configuration is in `.claude/kvido.local.md` (access via `skills/config.sh`).
 - **Silence by default.** Don't output anything unless it's useful.
 - **Write results to files.** Findings belong in state/memory files, not just in the conversation.
@@ -75,7 +75,8 @@ Patterns: `show dashboard`, `open dashboard`, `dashboard`, `status`, `overview` 
 | File | Description |
 |------|-------------|
 | `state/current.md` | Current focus, WIP, blockers |
-| `state/today.md` | Daily briefing + heartbeat log |
+| `state/today.md` | Morning briefing (written by morning skill) |
+| `state/activity-log.jsonl` | Unified activity log (managed by `kvido log`) |
 | `state/heartbeat-state.json` | Heartbeat state |
 | `state/dashboard.html` | HTML dashboard |
 
