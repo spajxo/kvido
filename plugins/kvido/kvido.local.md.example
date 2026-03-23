@@ -2,7 +2,7 @@
 # =============================================================================
 # kvido.local.md — Kvido assistant configuration
 # =============================================================================
-# Copy to .claude/kvido.local.md in your workspace and fill in your data.
+# Copy to ~/.config/kvido/kvido.local.md and fill in your data.
 # Usage: skills/config.sh 'key' [default]
 # Usage: skills/config.sh --keys 'prefix'
 # Example: skills/config.sh 'sources.gmail.max_results'

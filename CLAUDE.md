@@ -15,7 +15,7 @@ plugins/
 │   ├── .claude-plugin/plugin.json
 │   ├── agents/                    ← subagent definitions (YAML frontmatter + markdown)
 │   ├── commands/                  ← slash commands (thin wrappers → SKILL.md)
-│   ├── hooks/                     ← pre-compact state injection
+│   ├── hooks/                     ← context-<phase>.md hook files
 │   └── skills/                    ← SKILL.md + bash helpers
 ├── kvido-gitlab/                  ← source plugin (requires glab)
 ├── kvido-jira/                    ← source plugin (requires acli or Atlassian MCP)
@@ -30,12 +30,34 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 ## Key design decisions
 
 - **Source plugins reference core scripts** (`skills/slack/slack.sh`, `skills/worker/task.sh`) via relative paths. This works because they are always invoked by agents running in the core plugin's context — never standalone.
-- **Config** is always read via `skills/config.sh 'flat.key'` — never parse `kvido.local.md` directly.
+- **Config** is always read via `skills/config.sh 'flat.key'` — never parse `$KVIDO_HOME/kvido.local.md` directly.
 - **All bash scripts** use `set -euo pipefail`.
 - **Agents never send Slack messages directly** — they return NL output. Heartbeat delivers via `slack.sh`.
 - **Prompts default to English**. Runtime language is configured in the user's `memory/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The SKILL.md for each source plugin documents the MCP fallback procedure.
 - **config.sh is duplicated** across all source plugins (each has its own copy). When modifying config.sh, update all copies.
+
+## KVIDO_HOME
+
+All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
+- `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, heartbeat-state.json, tasks/, dashboard.html)
+- `memory/` — persistent (memory.md, journals, projects, weekly, learnings)
+- `kvido.local.md` — configuration
+- `.env` — secrets (Slack tokens, channel IDs)
+
+The `kvido` CLI `cd`s into `$KVIDO_HOME` before launching Claude. Config is at `$KVIDO_HOME/kvido.local.md`.
+
+## Plugin Hook System
+
+Plugins contribute instructions via `hooks/context-<phase>.md` files. Assembled by `kvido context <phase>`.
+
+| Phase | When | What plugins contribute |
+|-------|------|------------------------|
+| session | Before Claude launch | State summary, project info |
+| heartbeat | Step 2c delivery | Notification templates, delivery rules |
+| planner | Step 3-7 | Event keys, triage rules, maintenance tasks |
+| setup | Validation | Prerequisites, config schema |
+| compact | Before compaction | State summary per plugin |
 
 ## Runtime architecture
 
