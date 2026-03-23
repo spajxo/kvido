@@ -19,7 +19,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-STATE_FILE="${PWD}/state/heartbeat-state.json"
+KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+STATE_FILE="${KVIDO_HOME}/state/heartbeat-state.json"
 LOCK_FILE="${STATE_FILE}.lock"
 LOCK_TIMEOUT=10  # seconds
 

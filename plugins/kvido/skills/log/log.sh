@@ -4,10 +4,11 @@ set -euo pipefail
 # kvido log — unified logging for kvido
 # Usage: kvido log <add|list|purge> [args...]
 
-ACTIVITY_LOG="${PWD}/state/log.jsonl"
+KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+ACTIVITY_LOG="${KVIDO_HOME}/state/log.jsonl"
 
 # One-time migration: rename old activity-log.jsonl → log.jsonl
-OLD_LOG="${PWD}/state/activity-log.jsonl"
+OLD_LOG="${KVIDO_HOME}/state/activity-log.jsonl"
 if [[ -f "$OLD_LOG" && ! -f "$ACTIVITY_LOG" ]]; then
   mv "$OLD_LOG" "$ACTIVITY_LOG"
 elif [[ -f "$OLD_LOG" && -f "$ACTIVITY_LOG" ]]; then
@@ -206,10 +207,10 @@ case "$ACTION" in
     fi
 
     if [[ "$ARCHIVE" == "true" ]]; then
-      mkdir -p "${PWD}/state/archive"
+      mkdir -p "${KVIDO_HOME}/state/archive"
       # Name archive after the day before the cutoff (the last day of archived data)
       ARCHIVE_DATE=$(date -d "${BEFORE} - 1 day" +%Y-%m-%d 2>/dev/null || date -v-1d -j -f "%Y-%m-%d" "$BEFORE" +%Y-%m-%d)
-      jq -c -s --arg cutoff "$CUTOFF" '.[] | select(.ts < $cutoff)' "$ACTIVITY_LOG" >> "${PWD}/state/archive/log-${ARCHIVE_DATE}.jsonl"
+      jq -c -s --arg cutoff "$CUTOFF" '.[] | select(.ts < $cutoff)' "$ACTIVITY_LOG" >> "${KVIDO_HOME}/state/archive/log-${ARCHIVE_DATE}.jsonl"
       echo "Archived $OLD_COUNT entries to state/archive/log-${ARCHIVE_DATE}.jsonl"
     fi
 
@@ -221,7 +222,7 @@ case "$ACTION" in
 
     # Clean old archives (older than 7 days)
     if [[ "$ARCHIVE" == "true" ]]; then
-      find "${PWD}/state/archive" -name "log-*.jsonl" -mtime +7 -delete 2>/dev/null || true
+      find "${KVIDO_HOME}/state/archive" -name "log-*.jsonl" -mtime +7 -delete 2>/dev/null || true
     fi
     ;;
 
