@@ -24,13 +24,13 @@ Returns pre-categorized data per kvido.local.md `categories` + total meeting tim
 3. Format output: `- HH:MM–HH:MM — Summary [category]` per event, then total count
 
 ### watch
-If `state/today.md` contains Today's Schedule, use existing data.
+If `state/planner-state.md` contains a `## Today's Schedule` section (written by morning run), use existing data.
 Otherwise run `fetch.sh`. If it returns exit code 10, follow the MCP fallback from the fetch section above.
 Filter meetings starting in the next 60 min → reminder event.
 
 ## Schedule
-- morning: fetch (today)
+- morning: fetch (today), write schedule to `state/planner-state.md` section `## Today's Schedule`
 - heartbeat-quick: skip
 - heartbeat-full: watch (meetings in next 60 min)
 - heartbeat-maintenance: skip
-- eod: skip (data already in today.md)
+- eod: skip (schedule data already in planner-state.md)

@@ -41,7 +41,7 @@ For new messages from other users (not from `SLACK_USER_ID`) determine notificat
 
 | Level | When | Action |
 |-------|------|--------|
-| `silent` | FYI, informational messages | Log: `- **HH:MM** [dm/<name>] <truncated text>` to `state/today.md` |
+| `silent` | FYI, informational messages | `kvido log add chat silent --message "[dm/<name>] <truncated text>"` |
 | `batch` | Less urgent, can wait | Return in NL output with `Event (batch):` prefix — heartbeat delivers at next full heartbeat |
 | `immediate` | Requires response — question, request, blocking someone | `slack.sh send event --var emoji="💬" --var title="DM from <name>" --var description="<text max 100 chars>" --var source="Slack DM" --var reference="open DM" --var timestamp="<HH:MM>"` |
 
@@ -75,11 +75,11 @@ Signals to report (desktop level):
 - User repeats the same question
 Report format: `[ds-parking/marvin] <description of issue or opportunity>`
 
-After analysis, write findings to `state/today.md` as a separate section `## Marvin QA`.
-If the section does not yet exist in today.md, append it at the end of the file.
-If it exists, append new findings below the existing section content.
-Format for each finding: `- **HH:MM** <description of issue or opportunity>`
-If no new findings were found, write nothing to today.md (silent output).
+After analysis, log each finding via:
+```bash
+kvido log add planner marvin-qa --message "<description of issue or opportunity>"
+```
+If no new findings were found, log nothing (silent output).
 
 ### triage-detect
 
