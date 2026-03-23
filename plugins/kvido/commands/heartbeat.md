@@ -139,8 +139,8 @@ echo "$TRIAGE_JSON" | kvido triage-poll
 Output: `[{"slug":"fix-auth-bug","result":"approved|rejected|pending"},...]`
 
 For each result:
-- `approved` → log `- **HH:MM** [triage] <slug> approved -> todo`, mark `triage:<slug>` TODO completed
-- `rejected` → log `- **HH:MM** [triage] <slug> rejected -> cancelled`, mark TODO completed
+- `approved` → `kvido log add triage approved --message "<slug> approved -> todo"`, mark `triage:<slug>` TODO completed
+- `rejected` → `kvido log add triage rejected --message "<slug> rejected -> cancelled"`, mark TODO completed
 - `pending` → skip
 
 ---
@@ -223,7 +223,7 @@ Max 1 worker per iteration.
 If `TARGET_PRESET != ACTIVE_PRESET`:
 1. `CronDelete` old job → `CronCreate` new with matching expression
 2. `kvido heartbeat-state set cron_job_id` + `active_preset`
-3. Log: `- **HH:MM** [heartbeat] Adaptive: {ACTIVE} -> {TARGET}`
+3. `kvido log add heartbeat adaptive --message "interval {ACTIVE} -> {TARGET}"`
 
 ---
 
