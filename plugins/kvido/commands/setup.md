@@ -99,23 +99,7 @@ Read `$KVIDO_HOME/.env`. If it contains empty values (keys with `=""` or `=`):
 2. Offer help filling them in (how to find Slack IDs, where to get tokens, etc.)
 3. If the user provides values, write them to `.env`
 
-### d) Shell alias
-
-Offer the user a shell alias for quick launching:
-
-1. Derive alias name from `memory/persona.md` assistant name (lowercase, strip diacritics via `iconv -f utf-8 -t ascii//TRANSLIT`). Fallback: `kvido`.
-2. Ask: "Do you want to create a shell alias `<name>` for quick launching?"
-3. If yes:
-   - Detect shell rc file: if `$SHELL` contains `zsh` → `~/.zshrc`, else `~/.bashrc`
-   - Append to rc file (only if alias not already present):
-     ```bash
-     alias <name>='kvido'
-     ```
-   - Inform user: "Alias created. Run `source ~/.zshrc` (or `~/.bashrc`) or restart your shell to activate it."
-4. If no: skip silently.
-
-
-### e) Source plugin config validation
+### d) Source plugin config validation
 
 For each installed source plugin (via `kvido discover-sources`), verify that `kvido.local.md` contains the required config keys. Use `kvido config` to check.
 
