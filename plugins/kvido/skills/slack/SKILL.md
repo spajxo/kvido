@@ -63,7 +63,7 @@ In `templates/` — JSON files with `{{placeholder}}` variables. Unified format:
 | `eod` | 🌙 | `date`, `summary`, `session_time`, `done_count`, `open_count` | EOD summary |
 | `event` | (custom `{{emoji}}`) | `emoji`, `title`, `description`, `source`, `reference`, `timestamp` | Planner notifications, heartbeat events |
 | `worker-report` | 🔧 | `title`, `results`, `task_id`, `duration` | Worker task completion |
-| `triage-item` | 📋 | `issue`, `title`, `description`, `priority`, `size`, `assignee`, `issue_url` | Individual triage item |
+| `triage-item` | 📋 | `slug`, `title`, `description`, `priority`, `size`, `assignee` | Individual triage item |
 | `maintenance` | 🔧 | `librarian`, `enricher`, `self_improver`, `health`, `timestamp` | Maintenance summary |
 | `chat` | 💬 | `message` | General messages, chat replies |
 
