@@ -189,15 +189,18 @@ case "$ACTION" in
     if [[ "$DRY_RUN" == "true" ]]; then
       echo "Would purge $OLD_COUNT entries before $BEFORE ($KEEP_COUNT kept)."
       if [[ "$ARCHIVE" == "true" ]]; then
-        echo "Would archive to state/archive/activity-log-${BEFORE}.jsonl"
+        ARCHIVE_DATE=$(date -d "${BEFORE} - 1 day" +%Y-%m-%d 2>/dev/null || date -v-1d -j -f "%Y-%m-%d" "$BEFORE" +%Y-%m-%d)
+        echo "Would archive to state/archive/activity-log-${ARCHIVE_DATE}.jsonl"
       fi
       exit 0
     fi
 
     if [[ "$ARCHIVE" == "true" ]]; then
       mkdir -p "${PWD}/state/archive"
-      jq -c -s --arg cutoff "$CUTOFF" '.[] | select(.ts < $cutoff)' "$ACTIVITY_LOG" >> "${PWD}/state/archive/activity-log-${BEFORE}.jsonl"
-      echo "Archived $OLD_COUNT entries to state/archive/activity-log-${BEFORE}.jsonl"
+      # Name archive after the day before the cutoff (the last day of archived data)
+      ARCHIVE_DATE=$(date -d "${BEFORE} - 1 day" +%Y-%m-%d 2>/dev/null || date -v-1d -j -f "%Y-%m-%d" "$BEFORE" +%Y-%m-%d)
+      jq -c -s --arg cutoff "$CUTOFF" '.[] | select(.ts < $cutoff)' "$ACTIVITY_LOG" >> "${PWD}/state/archive/activity-log-${ARCHIVE_DATE}.jsonl"
+      echo "Archived $OLD_COUNT entries to state/archive/activity-log-${ARCHIVE_DATE}.jsonl"
     fi
 
     # Keep only entries >= cutoff

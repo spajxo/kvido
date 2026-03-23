@@ -100,7 +100,7 @@ Always include:
 
 - Reply concisely. No filler.
 - Don't send messages via slack.sh — return NL output.
-- Write result to `state/today.md` as: `- **HH:MM** [chat] <description>`
+- Log result: `kvido log add chat reply --message "<description>"`
 - If you don't have enough info, ask in the NL output.
 - If an MCP tool fails, reply with what you have and mention what didn't work.
 - Finish within 5 minutes.
@@ -109,4 +109,4 @@ Always include:
 
 If anything fails:
 1. Return error message as NL output (Thread: $THREAD_TS, Type: chat-reply)
-2. Write error to `state/today.md`
+2. Log error: `kvido log add chat error --message "<error description>"`

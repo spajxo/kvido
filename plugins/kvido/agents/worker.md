@@ -43,7 +43,7 @@ PHASE: {{PHASE}}
 
 6. Compile NL output with result per SKILL.md Report Format. Don't send via slack.sh.
 
-7. `state/today.md` log: `- **HH:MM** [worker] {{TASK_SLUG}}: <summary>`
+7. Log: `kvido log add worker complete --message "{{TASK_SLUG}}: <summary>" --task_id "{{TASK_SLUG}}"`
 
 8. If worktree:
      `kvido task note {{TASK_SLUG}} "## Result\nBranch: <branch>, pushed. <description>"`
