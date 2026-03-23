@@ -179,8 +179,8 @@ _read_fm() {
 
 _read_body_section() {
   local file="$1" section="$2"
+  # Read everything after the section header until EOF (no early stop on nested ##)
   awk -v s="## $section" '
-    found && /^## / { exit }
     found { print }
     $0 == s { found=1 }
   ' "$file"
@@ -249,8 +249,8 @@ if [[ -d "$TASKS_DIR" ]]; then
     done
   done
   if [[ ${#TASK_ENTRIES[@]} -gt 0 ]]; then
-    # Escape </script> sequences to prevent breaking the <script> tag
-    TASKS_JSON=$(printf '%s\n' "${TASK_ENTRIES[@]}" | jq -s '.' | sed 's/<\/script>/<\\\/script>/g')
+    # Escape </script> sequences (case-insensitive) to prevent breaking the <script> tag
+    TASKS_JSON=$(printf '%s\n' "${TASK_ENTRIES[@]}" | jq -s '.' | sed 's/<\/[sS][cC][rR][iI][pP][tT]>/<\\\/script>/gi')
   fi
 fi
 
