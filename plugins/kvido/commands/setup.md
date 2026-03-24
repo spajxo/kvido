@@ -140,8 +140,46 @@ For each missing file, create with minimal content:
 - `$KVIDO_HOME/memory/people/_index.md` → `# People`
 - `$KVIDO_HOME/memory/decisions/_index.md` → `# Decisions`
 - `$KVIDO_HOME/state/heartbeat-state.json` → default schema (iteration_count: 0, all timestamps null, last_chat_ts: "0", cron_job_id: "", active_preset: "10m", last_interaction_ts: null)
-- `$KVIDO_HOME/state/current.md` → empty template (Active Focus, WIP, Blockers, Parked, Notes for Tomorrow)
-- `$KVIDO_HOME/state/planner-state.md` → empty planner state template
+
+### State CLI wrappers validation
+
+#### planner-state migration
+
+Check if the legacy markdown file exists without its replacement JSON file — this means migration has not run yet:
+
+```bash
+if [[ -f "$KVIDO_HOME/state/planner-state.md" && ! -f "$KVIDO_HOME/state/planner-state.json" ]]; then
+  echo "planner-state.md found without planner-state.json — running migration"
+  kvido skills/planner-state/migrate.sh
+fi
+```
+
+#### planner-state last-run
+
+Verify that `kvido planner-state last-run get` returns a value. If the JSON file is missing or the command fails, initialise with reset:
+
+```bash
+if ! kvido planner-state last-run get &>/dev/null; then
+  echo "planner-state missing or unreadable — initialising with reset"
+  kvido planner-state reset
+fi
+```
+
+#### source-health
+
+Verify that `kvido source-health get` works. The command auto-creates `state/source-health.json` if missing, so a failure here indicates a deeper problem:
+
+```bash
+kvido source-health get &>/dev/null || echo "WARNING: kvido source-health get failed"
+```
+
+#### current
+
+Verify that `kvido current get` works. No initialisation is needed — an empty or missing file is valid:
+
+```bash
+kvido current get &>/dev/null || echo "WARNING: kvido current get failed"
+```
 
 ## Step 3: Planning Bootstrap
 
