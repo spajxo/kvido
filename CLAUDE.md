@@ -30,12 +30,12 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 ## Key design decisions
 
 - **Source plugins reference core scripts** (`skills/slack/slack.sh`, `skills/worker/task.sh`) via relative paths. This works because they are always invoked by agents running in the core plugin's context — never standalone.
-- **Config** is always read via `skills/config.sh 'dot.key'` — never parse `$KVIDO_HOME/settings.json` directly with jq in scripts.
+- **Config** is always read via `kvido config 'dot.key'` in source plugin scripts, or via `skills/config.sh 'dot.key'` in core plugin scripts — never parse `$KVIDO_HOME/settings.json` directly with jq.
 - **All bash scripts** use `set -euo pipefail`.
 - **Agents never send Slack messages directly** — they return NL output. Heartbeat delivers via `slack.sh`.
 - **Prompts default to English**. Runtime language is configured in the user's `memory/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The SKILL.md for each source plugin documents the MCP fallback procedure.
-- **config.sh is duplicated** across all source plugins (each has its own copy). When modifying config.sh, update all copies. It is a thin jq wrapper — `skills/config.sh 'a.b.c'` maps dot-notation to JSON path `.a.b.c` in `settings.json`.
+- **config.sh lives only in the core plugin** (`plugins/kvido/skills/config.sh`). Source plugins call `kvido config 'a.b.c'` instead of maintaining their own copy. The `kvido config` CLI delegates to `skills/config.sh`.
 
 ## KVIDO_HOME
 

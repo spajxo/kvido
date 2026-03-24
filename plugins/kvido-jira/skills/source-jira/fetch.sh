@@ -2,7 +2,7 @@
 # fetch.sh — aggregate Jira issues across monitored projects
 #
 # Usage: fetch.sh [--since YYYY-MM-DD] [--project KEY]
-# Reads projects from central settings.json via config.sh
+# Reads projects from central settings.json via kvido config
 # Output: plain text summary of open issues per project
 #
 # --since: only show issues updated since given date (optional)
@@ -10,8 +10,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
+CONFIG="kvido config"
 
 if ! command -v acli &>/dev/null; then
   echo "FALLBACK: acli not available, use MCP" >&2
@@ -28,7 +27,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Parse projects from central settings.json via config.sh
+# Parse projects from central settings.json via kvido config
 projects=()
 labels=()
 jql_filters=()

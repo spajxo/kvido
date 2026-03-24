@@ -5,7 +5,7 @@ allowed-tools: Read, Bash, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql
 user-invocable: false
 ---
 
-> **Configuration:** Via `skills/config.sh` (`sources.jira.*` keys). Credentials (e.g. `ATLASSIAN_CLOUD_ID`) can be referenced as `"$ENV_VAR"` in `settings.json` and resolved via `kvido config`.
+> **Configuration:** Via `kvido config` (`sources.jira.*` keys). Credentials (e.g. `ATLASSIAN_CLOUD_ID`) can be referenced as `"$ENV_VAR"` in `settings.json` and resolved via `kvido config` from `.env`.
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
@@ -23,8 +23,8 @@ Output: plain text, one block per project.
 
 **MCP fallback:** If fetch.sh exits with code 10 (`acli` not available), use Atlassian MCP directly:
 
-1. Read project config via `skills/config.sh --keys 'sources.jira.projects'`
-2. For each project, get its JQL filter: `skills/config.sh 'sources.jira.projects.<KEY>.filter'`
+1. Read project config via `kvido config --keys 'sources.jira.projects'`
+2. For each project, get its JQL filter: `kvido config 'sources.jira.projects.<KEY>.filter'`
 3. Call `mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql(jql="<filter>", maxResults=20)`
 4. Format output the same way: `=== Project (N issues) ===` then `  KEY [status] summary` per issue
 
