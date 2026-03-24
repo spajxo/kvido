@@ -107,16 +107,45 @@ Usage: kvido [command] [args...]
 Commands:
   (none)                            Launch Claude with /kvido:heartbeat
   heartbeat                         Run heartbeat data gather
-  task <subcommand> [args]          Manage tasks (list, find, move, note, update...)
-  heartbeat-state <subcommand>      Read/write heartbeat state
-  config <key>                      Read kvido config values
-  skills/<script>.sh [args]         Direct script dispatch
-  agents/<script>.sh [args]         Direct agent dispatch
+  task <subcommand> [args]          Manage tasks (list, find, move, note, update, create...)
+  heartbeat-state <subcommand>      Read/write heartbeat state (get, set, increment...)
+  config <key> [default]            Read kvido config values from settings.json
+  log <subcommand> [args]           Activity log (add, list, purge)
+  slack <subcommand> [args]         Slack messaging (send, reply, edit, read, react, delete...)
+  context <phase>                   Assemble plugin context for a lifecycle phase
+  skills/<script>.sh [args]         Direct script dispatch (backward compat)
+  agents/<script>.sh [args]         Direct agent dispatch (backward compat)
 
 Flags:
   --root                            Print plugin root path
   --install                         Install wrapper to ~/.local/bin/kvido
   --help, -h                        Show this help message
+
+Task subcommands:
+  create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]
+  read <slug>           Returns frontmatter + content as key=value
+  read-raw <slug>       Returns raw markdown content
+  update <slug> <field> <value>
+  move <slug> <status>  Moves task (triage|todo|in-progress|done|failed|cancelled)
+  list [status]         Lists tasks, optional filter by status
+  find <slug>           Returns current status of task
+  note <slug> "<text>"  Appends text to Worker Notes
+  count [status]        Count of tasks, optionally per status
+
+Log subcommands:
+  add <agent> <action> [--message "..."] [--task_id "..."] [--tokens N] [--duration_ms N]
+  list [--today] [--format json|human] [--limit N] [--summary]
+  purge [--before YYYY-MM-DD]
+
+Slack subcommands:
+  send [channel] <template> [--var key=value]...
+  reply [channel] <thread_ts> <template> [--var key=value]...
+  edit [channel] <message_ts> <template> [--var key=value]...
+  read [channel] [--limit N] [--oldest ts] [--thread ts]
+  react <ts> <emoji> [channel]
+  reactions <message_ts> [channel]
+  delete [channel] <message_ts>
+  download <url_private> [output_dir]
 HELP
     ;;
   --root)

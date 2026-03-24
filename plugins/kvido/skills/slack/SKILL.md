@@ -2,7 +2,7 @@
 name: slack
 description: Use when sending Slack messages, formatting Block Kit payloads, or managing thread delivery.
 tool-type: interactive
-cli: slack.sh
+cli: kvido slack
 allowed-tools: Read, Bash
 user-invocable: false
 ---
@@ -13,12 +13,12 @@ user-invocable: false
 
 # Slack
 
-Slack is the primary communication channel. All messages go through the `slack.sh` wrapper over the Slack Web API (curl + jq) with a bot token.
-Heartbeat is the sole orchestrator of delivery policy; `slack.sh` is the LLM-facing Slack interface.
+Slack is the primary communication channel. All messages go through `kvido slack` (wraps `slack.sh` over the Slack Web API with curl + jq and a bot token).
+Heartbeat is the sole orchestrator of delivery policy; `kvido slack` is the LLM-facing Slack interface.
 
 ## Usage
 
-Heartbeat decides whether to send a message immediately, batch it, or just log it. When sending, it calls `slack.sh` directly.
+Heartbeat decides whether to send a message immediately, batch it, or just log it. When sending, it calls `kvido slack` directly.
 
 ### Send a message
 
@@ -81,13 +81,13 @@ In `templates/` — JSON files with `{{placeholder}}` variables. Unified format:
 |-------|----------|
 | `silent` | Log via `kvido log add` only, no Slack message |
 | `batch` | Heartbeat creates a notify TODO with pending status, delivers at next full heartbeat |
-| `immediate` | `slack.sh send` with the appropriate template — sent immediately |
+| `immediate` | `kvido slack send` with the appropriate template — sent immediately |
 
 ## Threading
 
 Flat messages as default. Thread only on escalation:
-1. First notification → `slack.sh send` → save `ts` to `reported` entry
-2. Escalation of the same event → `slack.sh reply` into the original message's thread
+1. First notification → `kvido slack send` → save `ts` to `reported` entry
+2. Escalation of the same event → `kvido slack reply` into the original message's thread
 
 ## Focus Mode
 
@@ -121,13 +121,13 @@ Scopes `channels:read`, `groups:read`, `im:read`, `im:write`, `users:read` and `
 
 | Mistake | Fix |
 |---------|-----|
-| Agent calling `slack.sh` directly | Only heartbeat calls `slack.sh`. Agents return NL output. |
+| Agent calling `kvido slack` directly | Only heartbeat calls `kvido slack`. Agents return NL output. |
 | Using `ts` as `thread_ts` for replies | `thread_ts` is the parent message ts, not the reply ts |
 | Sending without template | Always use a template from `templates/`. Raw text goes through `chat` template. |
 | Threading by default | Flat messages are default. Thread only for escalation of same event. |
 | Adding unauthorized scopes | Only `chat:write`, `im:history`, `reactions:write`, `reactions:read` are required. |
-| Ignoring `slack.sh` exit code | Exit 1 = failure. Log error, don't retry silently. |
+| Ignoring `kvido slack` exit code | Exit 1 = failure. Log error, don't retry silently. |
 
 ## Fallback
 
-If `slack.sh` fails → log error, return exit 1. Slack MCP remains available as a manual fallback for search.
+If `kvido slack` fails → log error, return exit 1. Slack MCP remains available as a manual fallback for search.

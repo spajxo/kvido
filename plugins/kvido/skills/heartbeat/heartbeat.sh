@@ -134,6 +134,21 @@ else
   PLANNER_DUE="false"
 fi
 
+# --- Resolve owner user ID ---
+# 1. Try kvido config 'slack.user_id' (resolves $SLACK_USER_ID from .env)
+# 2. Fall back to $SLACK_USER_ID env var directly
+# 3. Fall back to cached value in heartbeat-state (owner_user_id)
+OWNER_USER_ID=$($CONFIG 'slack.user_id' '' 2>/dev/null || true)
+if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
+  OWNER_USER_ID="${SLACK_USER_ID:-}"
+fi
+if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
+  OWNER_USER_ID=$(jq -r '.owner_user_id // ""' "$STATE_FILE" 2>/dev/null || echo "")
+fi
+if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
+  echo "WARNING: slack.user_id not configured — message annotation disabled. Set SLACK_USER_ID in .env or slack.user_id in settings.json." >&2
+fi
+
 # --- Extended: Chat messages, worker check, state update ---
 
 # Read last 15 Slack DM messages in heartbeat format (compact key=value lines)
@@ -152,6 +167,27 @@ else
   CHAT_MESSAGES=$("$SLACK_SH" read --limit 15 --heartbeat 2>/dev/null || echo "")
 fi
 # Empty string means no messages — that is valid (no fallback needed)
+
+# Annotate messages: replace raw "user=<ID>" with "user:" (owner) or "bot:" (others).
+# This allows the heartbeat skill to distinguish owner messages without comparing raw IDs.
+# The annotation applies to both top-level messages and indented thread replies.
+if [[ -n "$OWNER_USER_ID" && -n "$CHAT_MESSAGES" ]]; then
+  ANNOTATED=""
+  while IFS= read -r line; do
+    # Extract user ID from "user=<ID>" token
+    if [[ "$line" =~ user=([^[:space:]]+) ]]; then
+      msg_user="${BASH_REMATCH[1]}"
+      if [[ "$msg_user" == "$OWNER_USER_ID" ]]; then
+        line="${line/user=$msg_user/user:}"
+      else
+        line="${line/user=$msg_user/bot:}"
+      fi
+    fi
+    ANNOTATED="${ANNOTATED}${line}"$'\n'
+  done <<< "$CHAT_MESSAGES"
+  # Strip trailing newline added by loop
+  CHAT_MESSAGES="${ANNOTATED%$'\n'}"
+fi
 
 # Check next worker task (returns slug or empty)
 TASK_SH="$PLUGIN_ROOT/skills/worker/task.sh"
@@ -183,9 +219,11 @@ echo "CRON_JOB_ID=$CRON_JOB_ID"
 echo "INTERACTION_AGO_MIN=$INTERACTION_AGO_MIN"
 echo "PLANNER_DUE=$PLANNER_DUE"
 echo "NEXT_TASK=$NEXT_TASK"
+echo "OWNER_USER_ID=$OWNER_USER_ID"
 # CHAT_MESSAGES is compact key=value lines (--heartbeat format), output last
-# Top-level: ts=... user=... text="..." [reactions=...] [reply_count=N] [latest_reply=...]
-# Thread replies: "  ┗ ts=... user=... text="..." [reactions=...]"
+# Top-level: ts=... user:|bot: text="..." [reactions=...] [reply_count=N] [latest_reply=...]
+# Thread replies: "  ┗ ts=... user:|bot: text="..." [reactions=...]"
+# user: = owner (OWNER_USER_ID), bot: = any other sender
 # Empty lines separate top-level messages
 echo "CHAT_MESSAGES_START"
 echo "$CHAT_MESSAGES"

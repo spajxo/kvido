@@ -42,7 +42,7 @@ After fetch check:
     for f in "$d"*.md; do
       [[ -f "$f" ]] || continue
       SLUG=$(basename "$f" .md)
-      TASK_DATA=$(skills/worker/task.sh read "$SLUG" 2>/dev/null) || continue
+      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
       src=$(echo "$TASK_DATA" | grep '^SOURCE=' | cut -d= -f2-)
       [[ "$src" == "jira" ]] || continue
       echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-
@@ -51,7 +51,7 @@ After fetch check:
   ```
   If no matching task exists → create triage task:
   ```bash
-  skills/worker/task.sh create \
+  kvido task create \
     --title "[KEY] summary" \
     --instruction "Jira ticket: summary. Key: KEY" \
     --source jira \
