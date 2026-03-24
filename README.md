@@ -4,10 +4,46 @@
 
 # kvido
 
-A Claude Code plugin marketplace that turns your terminal into a living workspace assistant.
-Install the core plugin and add source plugins for the tools you use.
+A Claude Code plugin that turns your terminal into a living workspace assistant. Kvido runs in the background, watches your tools (GitLab, Jira, Slack, Calendar, Gmail), and keeps you informed — all through Slack.
+
+## What does it do?
+
+- **Heartbeat loop** — runs every 10 minutes unattended, checking your sources for changes and delivering Slack notifications
+- **Planner** — detects new MRs, Jira status changes, calendar events, unread emails, and Slack mentions
+- **Worker** — picks up tasks from a queue and executes them autonomously (code reviews, research, follow-ups)
+- **Chat** — reply to Kvido in Slack DM and it responds, delegates tasks, or gives you a daily briefing
+- **Triage** — processes unsorted tasks in your backlog, prioritizes, and assigns
+
+Just type `kvido` in your terminal, leave it running, and interact through Slack.
+
+## How It Works
+
+```
+heartbeat (cron, every 10 min)
+├── reads Slack DM → trivial: reply inline / non-trivial: dispatch chat-agent
+├── checks worker queue → dispatch worker if task pending
+└── every Nth tick → dispatch planner
+    └── discover-sources.sh → finds installed source plugins
+        ├── fetches data from each (gitlab, jira, slack, calendar, gmail, sessions)
+        ├── detects changes vs previous state
+        └── sends Slack notifications for new events
+```
+
+## Daily Usage
+
+| Trigger | Action |
+|---------|--------|
+| `/kvido:heartbeat` | Start the cron loop (default 10 min, adaptive) |
+| "good morning" in Slack DM | Daily briefing — schedule, overnight changes, focus |
+| "done for today" in Slack DM | End-of-day journal, worklog check |
+| "going to sleep" in Slack DM | Pause heartbeat until morning |
+| "turbo" in Slack DM | Switch to 1-min heartbeat interval for 30 min |
+| `/kvido:triage` | Process unsorted tasks in the backlog |
+| `/kvido:setup` | Re-run setup / health check |
 
 ## Plugins
+
+Kvido is a plugin marketplace — install the core and add source plugins for the tools you use:
 
 | Plugin | Description | Prerequisites |
 |--------|-------------|---------------|
@@ -64,33 +100,6 @@ Shell rule: `kvido` without arguments launches Claude Code. Any argument switche
 
 Slash commands (`/kvido:setup`, `/kvido:heartbeat`, `/kvido:triage`) are used inside Claude Code, not as shell subcommands.
 
-Kvido-specific environment variables (set in `~/.config/kvido/.env` or your shell):
-
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `KVIDO_HOME` | `~/.config/kvido` | Runtime state, memory, config, and secrets |
-| `KVIDO_NAME` | `kvido` | Session name (`--name`) |
-| `KVIDO_PERMISSION_MODE` | `default` | Permission mode (`--permission-mode`) |
-| `KVIDO_EXTRA_ARGS` | | Extra CLI flags passed to Claude Code |
-
-All official `ANTHROPIC_*` and `CLAUDE_CODE_*` env vars (model, effort, API key, proxy, ...) work automatically — just set them in `~/.config/kvido/.env` or your environment. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code/settings#environment-variables).
-
-## Daily Usage
-
-Start a Claude Code session in your project directory and run `/kvido:heartbeat` to activate the cron loop. The heartbeat runs every 10 minutes unattended — checking Slack, dispatching the planner and worker agents, and delivering notifications.
-
-| Trigger | Action |
-|---------|--------|
-| `/kvido:heartbeat` | Start the cron loop (default 10 min, adaptive) |
-| "good morning" in Slack DM | Daily briefing — schedule, overnight changes, focus |
-| "done for today" in Slack DM | End-of-day journal, worklog check |
-| "going to sleep" in Slack DM | Pause heartbeat until morning |
-| "turbo" in Slack DM | Switch to 1-min heartbeat interval for 30 min |
-| `/kvido:triage` | Process unsorted tasks in the backlog |
-| `/kvido:setup` | Re-run setup / health check |
-
-Leave the terminal open — the heartbeat loop runs unattended in the background.
-
 ## Configuration
 
 All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`), created by `/kvido:setup`:
@@ -103,18 +112,16 @@ All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`), created by
 
 Config is read at runtime via `kvido config 'dot.key'` — never parse `settings.json` directly.
 
-## How It Works
+Kvido-specific environment variables (set in `~/.config/kvido/.env` or your shell):
 
-```
-heartbeat (cron, every 10 min)
-├── reads Slack DM → trivial: reply inline / non-trivial: dispatch chat-agent
-├── checks worker queue → dispatch worker if task pending
-└── every Nth tick → dispatch planner
-    └── discover-sources.sh → finds installed source plugins
-        ├── fetches data from each (gitlab, jira, slack, calendar, gmail, sessions)
-        ├── detects changes vs previous state
-        └── sends Slack notifications for new events
-```
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `KVIDO_HOME` | `~/.config/kvido` | Runtime state, memory, config, and secrets |
+| `KVIDO_NAME` | `kvido` | Session name (`--name`) |
+| `KVIDO_PERMISSION_MODE` | `default` | Permission mode (`--permission-mode`) |
+| `KVIDO_EXTRA_ARGS` | | Extra CLI flags passed to Claude Code |
+
+All official `ANTHROPIC_*` and `CLAUDE_CODE_*` env vars (model, effort, API key, proxy, ...) work automatically — just set them in `~/.config/kvido/.env` or your environment. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code/settings#environment-variables).
 
 ## License
 
