@@ -185,8 +185,6 @@ if [[ -d "$TASKS_DIR" ]]; then
       SIZE=$(_read_fm "$f" "size")
       SOURCE=$(_read_fm "$f" "source")
       SOURCE_REF=$(_read_fm "$f" "source_ref")
-      PIPELINE=$(_read_fm "$f" "pipeline")
-      PHASE=$(_read_fm "$f" "phase")
       WORKTREE=$(_read_fm "$f" "worktree")
       GOAL=$(_read_fm "$f" "goal")
       RECURRING=$(_read_fm "$f" "recurring")
@@ -205,8 +203,6 @@ if [[ -d "$TASKS_DIR" ]]; then
         --arg size "$SIZE" \
         --arg source "$SOURCE" \
         --arg source_ref "$SOURCE_REF" \
-        --arg pipeline "$PIPELINE" \
-        --arg phase "$PHASE" \
         --arg worktree "$WORKTREE" \
         --arg goal "$GOAL" \
         --arg recurring "$RECURRING" \
@@ -217,7 +213,7 @@ if [[ -d "$TASKS_DIR" ]]; then
         --arg instruction "$INSTRUCTION" \
         --arg worker_notes "$WORKER_NOTES" \
         '{slug:$slug, status:$status, title:$title, priority:$priority, size:$size,
-          source:$source, source_ref:$source_ref, pipeline:$pipeline, phase:$phase,
+          source:$source, source_ref:$source_ref,
           worktree:$worktree, goal:$goal, recurring:$recurring, waiting_on:$waiting_on,
           created_at:$created_at, updated_at:$updated_at, triage_slack_ts:$triage_slack_ts,
           instruction:$instruction, worker_notes:$worker_notes}')
@@ -680,8 +676,6 @@ function renderDetail(slug) {
     ['Size', t.size ? '<span class="badge badge-size">' + esc(t.size) + '</span>' : null],
     ['Source', t.source],
     ['Source Ref', t.source_ref],
-    ['Pipeline', t.pipeline],
-    ['Phase', t.phase],
     ['Worktree', t.worktree],
     ['Goal', t.goal],
     ['Recurring', t.recurring],

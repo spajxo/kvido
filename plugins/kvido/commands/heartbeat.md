@@ -1,6 +1,6 @@
 ---
 description: Heartbeat — orchestrator, chat check, worker dispatch, log, adaptive interval
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, TodoWrite, TodoRead, mcp__claude_ai_Slack__slack_read_channel
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, TaskCreate, TaskList, TaskUpdate, TaskGet, TaskOutput, mcp__claude_ai_Slack__slack_read_channel
 ---
 
 # Heartbeat
@@ -59,7 +59,7 @@ Read `state/current.md` for context. Review recent activity via `kvido log list 
 
 ### Recovery check
 
-Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from a previous iteration (orphaned agents):
+Use `TaskList` to list all existing tasks. If any `in_progress` tasks exist from a previous iteration (orphaned agents):
 - `chat:*` in_progress -- mark `completed` (chat agent from previous session is gone, next new message will create fresh task)
 - `worker:*` in_progress -- leave as-is (worker tracks state via local task files independently)
 - `planner` in_progress -- mark `completed` (planner will be re-dispatched on next due interval)
@@ -73,7 +73,7 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
 
 1. **Filter new messages:** Messages in `CHAT_MESSAGES` block with prefix `user:` (owner messages), `ts` > `last_chat_ts`. Skip messages with prefix `bot:` (not from owner). If messages are in raw `user=<ID>` format (annotation disabled), compare the ID against `OWNER_USER_ID` from heartbeat output to identify owner messages.
 
-2. **Check for active chat agent:** Use `TodoRead` -- look for any `chat:*` task with status `in_progress`.
+2. **Check for active chat agent:** Use `TaskList` -- look for any `chat:*` task with status `in_progress`.
 
 3. **Classify and handle new message:**
 
@@ -100,23 +100,23 @@ Use `TodoRead` to list all existing tasks. If any `in_progress` tasks exist from
      ```
    - Simple status questions answerable from loaded state/current.md and `kvido log list --today`
 
-   For trivial: compose response, create `notify:chat:<ts>` TODO (in_progress), deliver via `kvido slack send|reply chat --var message="<response>"`, mark notify TODO completed. Log: `kvido log add chat inline --message "<summary>"`
+   For trivial: compose response, create `notify:chat:<ts>` task via `TaskCreate` (mark in_progress via `TaskUpdate`), deliver via `kvido slack send|reply chat --var message="<response>"`, mark task completed via `TaskUpdate`. Log: `kvido log add chat inline --message "<summary>"`
 
-   **Non-trivial** — requires MCP lookup, research, task creation, or pipeline response:
+   **Non-trivial** — requires MCP lookup, research, or task creation:
    - If no active `chat:*` task:
-     - `TodoWrite` task `chat:<ts>` with status `in_progress`
+     - `TaskCreate` subject `chat:<ts>`, then `TaskUpdate` status `in_progress`
      - Load last 10 messages; if thread reply, load whole thread
      - Dispatch `chat-agent` (`run_in_background: true`) with template vars: CHAT_HISTORY, NEW_MESSAGE, THREAD_TS, CURRENT_STATE, MEMORY
    - If active `chat:*` task exists:
      - Send ack: `kvido slack send chat --var message="One moment..."`
-     - `TodoWrite` task `chat:<ts>` with status `pending`
+     - `TaskCreate` subject `chat:<ts>` (stays `pending`)
 
    Update: `kvido heartbeat-state set last_chat_ts "<ts>"` + `kvido heartbeat-state set last_interaction_ts "$(date -Iseconds)"`
 
 4. **Agent completion:** When a dispatched chat-agent completes (background task finishes), in the next heartbeat iteration:
-   - `TodoRead` -- find `chat:*` tasks with status `in_progress`
+   - `TaskList` -- find `chat:*` tasks with status `in_progress`
    - Since the agent has already finished, proceed to **Step 3c** for output processing and inline delivery
-   - After delivery is processed, mark chat task as `completed`
+   - After delivery is processed, mark chat task as `completed` via `TaskUpdate`
    - Check for `pending` chat tasks -- if any exist, dispatch next one (FIFO) -- but only AFTER delivery is processed for the completed task
 
 ---
@@ -129,7 +129,7 @@ Triage TODOs are created in Step 3c when heartbeat delivers a `triage-item` noti
 
 ### Polling reactions
 
-Use `TodoRead` to find all `triage:*` tasks (not completed). Build JSON input and delegate to bash:
+Use `TaskList` to find all `triage:*` tasks (not completed). Build JSON input and delegate to bash:
 
 ```bash
 # Build input: [{"slug":"fix-auth-bug","ts":"1773..."},...]
@@ -139,15 +139,15 @@ echo "$TRIAGE_JSON" | kvido triage-poll
 Output: `[{"slug":"fix-auth-bug","result":"approved|rejected|pending"},...]`
 
 For each result:
-- `approved` → `kvido log add triage approved --message "<slug> approved -> todo"`, mark `triage:<slug>` TODO completed
-- `rejected` → `kvido log add triage rejected --message "<slug> rejected -> cancelled"`, mark TODO completed
+- `approved` → `kvido log add triage approved --message "<slug> approved -> todo"`, mark `triage:<slug>` task completed via `TaskUpdate`
+- `rejected` → `kvido log add triage rejected --message "<slug> rejected -> cancelled"`, mark task completed via `TaskUpdate`
 - `pending` → skip
 
 ---
 
 ## Step 3c: Agent Output Processing & Delivery
 
-When a background agent completes (detected via TodoRead — task status is `in_progress` but agent has returned result), process its output and deliver directly from heartbeat via `kvido slack`.
+When a background agent completes (detected via `TaskList` — task status is `in_progress` but agent has returned result), process its output and deliver directly from heartbeat via `kvido slack`.
 
 ### Delivery rules
 
@@ -163,44 +163,44 @@ Heartbeat is responsible for parsing agent output into structured fields, decidi
 
 1. Read agent's NL output (returned by Agent tool)
 2. Parse `total_tokens` + `duration_ms` from `<usage>` tag → `kvido log add <type> execute --tokens ... --duration_ms ... --message "<summary>"`
-3. Create `notify:<type>:<id>` TODO (in_progress)
-4. Apply delivery rules → deliver via `kvido slack` → mark TODO completed
-5. Mark agent task as completed
+3. `TaskCreate` subject `notify:<type>:<id>`, then `TaskUpdate` status `in_progress`
+4. Apply delivery rules → deliver via `kvido slack` → mark task completed via `TaskUpdate`
+5. Mark agent task as completed via `TaskUpdate`
 
 ### Per-agent specifics
 
 | Agent | Parse fields | Template | Level | Extra |
 |-------|-------------|----------|-------|-------|
 | chat-agent | `Reply`, `Thread`, `Type` | `chat` | always `immediate` | After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
-| planner | Prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:` | per-line mapping from slack templates | per delivery rules | `Triage:` → create `triage:<slug>` TODO with `ts`. `Dispatch:` → dispatch named agent. `No notifications.` → skip. |
+| planner | Prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:` | per-line mapping from slack templates | per delivery rules | `Triage:` → `TaskCreate` subject `triage:<slug>` with `ts` in description. `Dispatch:` → dispatch named agent. `No notifications.` → skip. |
 | worker | `Result`, `Task`, `Type`, `Source` | `worker-report` | `high` for error, else `normal` | — |
 | other | template variables per agent | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
 
 ### Batch flush
 
-Flush `notify:*` TODOs with `pending` status when: planner iteration runs, or focus mode switches off. Re-deliver stored template+vars via `kvido slack`. On failure, leave `pending` for next flush.
+Flush `notify:*` tasks with `pending` status (via `TaskList`) when: planner iteration runs, or focus mode switches off. Re-deliver stored template+vars via `kvido slack`. On failure, leave `pending` for next flush.
 
 ---
 
 ## Step 4: Planner Dispatch
 
-1. Use `TodoRead` -- check if `planner` task exists with status `in_progress`. If yes -- skip (planner still running).
+1. Use `TaskList` -- check if `planner` task exists with status `in_progress`. If yes -- skip (planner still running).
 2. If `PLANNER_DUE == true` (from `heartbeat.sh`) and no active planner:
-   - `TodoWrite` task `planner` with status `in_progress` and description `"Planner dispatch at <timestamp>"`
+   - `TaskCreate` subject `planner`, description `"Planner dispatch at <timestamp>"`, then `TaskUpdate` status `in_progress`
    - Dispatch `planner` agent (`run_in_background: true`)
    - Pass context: `CURRENT_STATE` (state/current.md), `MEMORY` (memory/memory.md)
    - Log: `kvido log add planner dispatch --message "iteration <N>"`
-3. If planner agent completed since last check -- update `planner` task to `completed`.
+3. If planner agent completed since last check -- `TaskUpdate` planner task to `completed`.
 
 ---
 
 ## Step 5: Worker Dispatch
 
-1. `TodoRead` — if any `worker:*` in_progress → skip (max 1 concurrent).
+1. `TaskList` — if any `worker:*` in_progress → skip (max 1 concurrent).
 2. `NEXT_TASK=$(kvido task list todo --sort priority | head -1)` — empty → skip.
 3. `kvido task move "$NEXT_TASK" in-progress` + `kvido task read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION, PHASE, WORKTREE.
    - Pipeline task without phase → set default: `kvido task update "$NEXT_TASK" phase brainstorm|implement`
-4. `TodoWrite` task `worker:<NEXT_TASK>` (in_progress).
+4. `TaskCreate` subject `worker:<NEXT_TASK>`, then `TaskUpdate` status `in_progress`.
 5. Model from config: `kvido config 'skills.worker.models.<SIZE>'` (or `kvido config 'skills.worker.urgent_model'` if PRIORITY==urgent).
 6. Dispatch `worker` agent (`run_in_background: true`, model per size). If `WORKTREE=true` → add `isolation: "worktree"`.
 7. Log: `kvido log add worker dispatch --message "<NEXT_TASK>" --task_id "<NEXT_TASK>"`.
@@ -233,7 +233,7 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 |---------|-----|
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
 | Dispatching chat-agent for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
-| Dispatching worker when one is already `in_progress` | Check TodoRead for `worker:*` in_progress first |
+| Dispatching worker when one is already `in_progress` | Check `TaskList` for `worker:*` in_progress first |
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 2 |
 | Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |
 | Not updating `last_chat_ts` after processing | Always `kvido heartbeat-state set last_chat_ts` after chat handling |
@@ -245,6 +245,6 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **State-first.** Read from files, write to files.
 - **Time from system.** `date -Iseconds`.
 - **Max 1 worker per iteration.** Planner + 1 worker + 1 chat-agent is maximum.
-- **TodoWrite is the single source of truth** for dispatch tracking. No file-based locks.
+- **Task tools (`TaskCreate`/`TaskList`/`TaskUpdate`) are the single source of truth** for dispatch tracking. No file-based locks.
 - **Dependency rule:** Do not dispatch chat-agent if one is already `in_progress`. Do not dispatch worker if one is already `in_progress`. Planner can run alongside chat-agent but not alongside another planner.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
