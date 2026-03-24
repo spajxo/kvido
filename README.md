@@ -11,8 +11,8 @@ Install the core plugin and add source plugins for the tools you use.
 | kvido-gitlab | GitLab MR tracking, activity monitoring | `glab` |
 | kvido-jira | Jira issue tracking, status changes | `acli` or Atlassian MCP |
 | kvido-slack | Slack channel monitoring, message watching | `SLACK_BOT_TOKEN` |
-| kvido-calendar | Google Calendar schedule tracking, meeting alerts | Google Calendar MCP |
-| kvido-gmail | Email monitoring, priority filtering | `gws` |
+| kvido-calendar | Google Calendar schedule tracking, meeting alerts | `gws` or Google Calendar MCP |
+| kvido-gmail | Email monitoring, priority filtering | `gws` or Gmail MCP |
 | kvido-sessions | Claude Code session analysis | none |
 
 ## Installation
