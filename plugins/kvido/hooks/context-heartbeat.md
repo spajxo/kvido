@@ -1,5 +1,11 @@
 # Heartbeat Delivery Rules
 
+## Delivery Contract
+
+Heartbeat is the single owner of Slack message delivery. No agent, source plugin, or worker may call `kvido slack send|reply|edit` directly. They return structured NL output; heartbeat parses it and delivers according to the rules below.
+
+**Review check:** Any new source plugin or agent prompt must NOT contain `kvido slack send|reply|edit` calls. Verify before merge.
+
 ## Notification levels
 
 | Level | Behavior |
