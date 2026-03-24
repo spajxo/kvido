@@ -75,13 +75,13 @@ If the message is a reply to a worker task thread or contains "pipeline"/"brains
 
 ### Triage approval (via text)
 
-If the message contains ✅/❌/👍/👎 or "approved"/"rejected" and `state/planner-state.md` section `## Triage Pending` exists:
+If the message contains ✅/❌/👍/👎 or "approved"/"rejected"/"approve"/"reject" followed by a slug or positional reference:
 
-1. Parse the reply — assign to items by order
-2. Approve: `kvido task move <slug> todo`
-3. Reject: `kvido task note <slug> "Rejected via chat" && kvido task move <slug> cancelled`
-4. Modify: add feedback as comment
-5. Delete processed items from `## Triage Pending`
+1. List pending triage tasks: `kvido task list triage`
+2. Match the user's intent to task slugs (by name, order, or explicit slug)
+3. Approve: `kvido task move <slug> todo`
+4. Reject: `kvido task note <slug> "Rejected via chat" && kvido task move <slug> cancelled`
+5. Modify: `kvido task note <slug> "<user feedback>"`
 
 ### Direct reply
 
