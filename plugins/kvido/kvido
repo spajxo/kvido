@@ -32,7 +32,7 @@ _resolve_root() {
   if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -d "$CLAUDE_PLUGIN_ROOT" ]]; then
     # Verify this is actually the kvido plugin root
     if [[ -f "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" ]] && \
-       grep -q '"name".*"kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null; then
+       jq -e '.name == "kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" &>/dev/null; then
       echo "$CLAUDE_PLUGIN_ROOT"
       return
     fi
@@ -133,7 +133,7 @@ HELP
 export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -d "$CLAUDE_PLUGIN_ROOT" ]]; then
   if [[ -f "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" ]] && \
-     grep -q '"name".*"kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null; then
+     jq -e '.name == "kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" &>/dev/null; then
     exec "$CLAUDE_PLUGIN_ROOT/kvido" "$@"
   fi
 fi
