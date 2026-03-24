@@ -29,8 +29,6 @@ triage/ → todo/ → in-progress/ → done/
 - `size: s|m|l|xl`
 - `source: planner|slack|recurring|self-improver|manual|jira|interests`
 - `source_ref: <slack ts, jira key, commit hash>`
-- `pipeline: true` — multi-phase task flag
-- `phase: brainstorm|spec|implement|review`
 - `waiting_on: <what is being waited on>`
 - `recurring: <trigger JSON>`
 
@@ -92,49 +90,6 @@ If a task takes > `task_timeout_minutes` (from `settings.json`):
 2. `kvido task note "$TASK_SLUG" "## Failed\nTimeout after Xm"` + `kvido task move "$TASK_SLUG" failed`
 3. If progress > 50% → add follow-up: `kvido task create "<title>" --priority medium --size s`
 
-## Pipeline phases (opt-in for l/xl tasks)
-
-Worker supports a structured pipeline for large tasks. Pipeline is opt-in — activated by frontmatter `pipeline: true` (automatic for size l/xl).
-
-### When to use pipeline
-
-- `size: l` or `size: xl` → automatically `pipeline: true` + `phase: brainstorm`
-- `size: s` and `size: m` → pipeline not used (standard execution)
-
-### Behavior per phase
-
-#### brainstorm
-1. Read the task instruction and all available context
-2. Add worker note with questions and ambiguities
-3. Send Slack message with questions (max 5 questions, brief)
-4. `kvido task move "$TASK_SLUG" todo` + `kvido task update "$TASK_SLUG" waiting_on "<description>"`
-5. Chat-responder writes answers as worker note, updates phase
-6. On next run: evaluate if enough context
-   - No → another round of questions (max 3 rounds)
-   - Yes → `kvido task update "$TASK_SLUG" phase spec` + `kvido task move "$TASK_SLUG" todo`
-
-#### spec
-1. Propose 2–3 approaches (minimal, clean, pragmatic)
-2. Worker note + Slack message
-3. `kvido task update "$TASK_SLUG" waiting_on "<waiting for choice>"`
-4. Chat-responder writes choice, `kvido task update "$TASK_SLUG" phase implement`
-
-#### implement
-Standard worker execution per the chosen spec.
-When done: `kvido task update "$TASK_SLUG" phase review` + `kvido task move "$TASK_SLUG" todo`.
-
-#### review
-1. Go through the implementation — bugs, conventions, simplifications
-2. Worker note + Slack message
-3. If blockers → `kvido task update "$TASK_SLUG" waiting_on "<blocker>"`
-4. If OK → `kvido task move "$TASK_SLUG" done`
-
-### Pipeline rules
-- Worker always checks phase from `kvido task read` at start
-- Each phase is a separate worker run (task returns to todo between phases)
-- Max 3 Slack messages total for the entire pipeline
-- User can interrupt via cancel (slug via chat)
-
 ## Worktree & PR mode
 
 If a task has frontmatter `worktree: true`, worker runs in an isolated git worktree (heartbeat sets `isolation: "worktree"` on the Agent tool).
@@ -167,7 +122,6 @@ Use conventional commit message (feat/fix/chore) based on the type of change.
 | Modifying `state/current.md` | Owned by heartbeat. Worker logs via `kvido log add` and writes task notes. |
 | Skipping cancel check at start | Always `kvido task find` first — task may have been cancelled while queued |
 | Continuing past timeout | Check elapsed time; if > `task_timeout_minutes`, emit partial result and move to `failed/` |
-| Ignoring pipeline phase | Always read `phase` from `kvido task read` — execute only the current phase, not the whole task |
 | Pushing to main in worktree mode | Always push to feature branch. Never push directly to main. |
 
 ## Report format
