@@ -37,17 +37,8 @@ New/changed tickets compared to previous planner-state = events.
 After fetch check:
 - New ticket assignee=me → dedup check:
   ```bash
-  # Iterate existing tasks with source jira
-  for d in state/tasks/*/; do
-    for f in "$d"*.md; do
-      [[ -f "$f" ]] || continue
-      SLUG=$(basename "$f" .md)
-      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
-      src=$(echo "$TASK_DATA" | grep '^SOURCE=' | cut -d= -f2-)
-      [[ "$src" == "jira" ]] || continue
-      echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-
-    done
-  done
+  # List existing tasks with source jira
+  kvido task list --source jira --format slug-title
   ```
   If no matching task exists → create triage task:
   ```bash
