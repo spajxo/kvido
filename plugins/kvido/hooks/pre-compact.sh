@@ -5,6 +5,12 @@ set -euo pipefail
 
 cat > /dev/null
 
+# Skip context injection for non-kvido sessions
+if [[ -z "${KVIDO_SESSION:-}" ]]; then
+  jq -n '{"continue": true}'
+  exit 0
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
 
