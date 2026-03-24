@@ -12,6 +12,17 @@ if [[ -z "${KVIDO_SESSION:-}" ]]; then
   exit 0
 fi
 
+# Show owl banner
+cat >&2 << 'OWL'
+
+        ^...^
+       / o,o \
+       |):::(|
+     ====w=w====
+       kvido
+
+OWL
+
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"

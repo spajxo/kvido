@@ -294,7 +294,8 @@ body {
   font-size: 13px; line-height: 1.6; padding: 24px 20px; max-width: 1200px; margin: 0 auto;
   -webkit-font-smoothing: antialiased;
 }
-header { margin-bottom: 16px; }
+header { margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+.header-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(122,162,247,0.3)); }
 header h1 {
   color: var(--text-bright); font-size: 1.1em; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
   display: flex; align-items: center; gap: 8px;
@@ -490,8 +491,22 @@ footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20p
 <body>
 HTMLEOF
 
+# Avatar — base64 inline (works in self-contained HTML)
+AVATAR_SRC="$PLUGIN_ROOT/assets/kvido-avatar.png"
+AVATAR_B64=""
+if [[ -f "$AVATAR_SRC" ]]; then
+  AVATAR_B64="data:image/png;base64,$(base64 -w0 "$AVATAR_SRC" 2>/dev/null || base64 "$AVATAR_SRC" 2>/dev/null)"
+fi
+
+AVATAR_HTML=""
+if [[ -n "$AVATAR_B64" ]]; then
+  AVATAR_HTML="<img class=\"header-avatar\" src=\"${AVATAR_B64}\" alt=\"Kvido\">"
+fi
+
 cat >> "$TMP_FILE" << HTMLEOF
 <header>
+${AVATAR_HTML}
+<div>
 <h1>Kvido Dashboard</h1>
 <div class="meta">
   <span class="meta-tag">${TODAY}</span>
@@ -500,6 +515,7 @@ cat >> "$TMP_FILE" << HTMLEOF
   <span class="meta-tag zone-badge zone-${ZONE}">${ZONE}</span>
   <span class="meta-tag">interaction ${INTERACTION_AGO} ago</span>
   <span class="meta-tag">$(date +%H:%M:%S)</span>
+</div>
 </div>
 </header>
 

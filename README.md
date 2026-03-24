@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="plugins/kvido/assets/kvido-avatar.png" alt="Kvido" width="200">
+</p>
+
 # kvido
 
 A Claude Code plugin marketplace that turns your terminal into a living workspace assistant.

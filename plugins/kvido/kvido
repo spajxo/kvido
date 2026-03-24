@@ -103,6 +103,11 @@ case "${1:-}" in
     ;;
   --help|-h)
     cat <<'HELP'
+        ^...^
+       / o,o \
+       |):::(|
+     ====w=w====
+
 Usage: kvido [command] [args...]
 
 Commands:
