@@ -100,7 +100,7 @@ Use `TaskList` to list all existing tasks. If any `in_progress` tasks exist from
      ```
    - Simple status questions answerable from `kvido current get` and `kvido log list --today`
 
-   For trivial: compose response, create `notify:chat:<ts>` task via `TaskCreate` (mark in_progress via `TaskUpdate`), deliver via `kvido slack send|reply chat --var message="<response>"`, mark task completed via `TaskUpdate`. Log: `kvido log add chat inline --message "<summary>"`
+   For trivial: compose response, create `notify:chat:<ts>` task via `TaskCreate` (mark in_progress via `TaskUpdate`), deliver via `kvido slack reply dm <ts> chat --var message="<response>"` (use the message `ts` as the thread root — this threads the reply under the original message), mark task completed via `TaskUpdate`. Log: `kvido log add chat inline --message "<summary>"`
 
    **Non-trivial** — requires MCP lookup, research, or task creation:
    - If no active `chat:*` task:
@@ -108,7 +108,7 @@ Use `TaskList` to list all existing tasks. If any `in_progress` tasks exist from
      - Load last 10 messages; if thread reply, load whole thread
      - Dispatch `chat-agent` (`run_in_background: true`) with template vars: CHAT_HISTORY, NEW_MESSAGE, THREAD_TS, CURRENT_STATE, MEMORY
    - If active `chat:*` task exists:
-     - Send ack: `kvido slack send chat --var message="One moment..."`
+     - Send ack: `kvido slack reply dm <ts> chat --var message="One moment..."` (thread under the new message)
      - `TaskCreate` subject `chat:<ts>` (stays `pending`)
 
    Update: `kvido heartbeat-state set last_chat_ts "<ts>"` + `kvido heartbeat-state set last_interaction_ts "$(date -Iseconds)"`
@@ -171,7 +171,7 @@ Heartbeat is responsible for parsing agent output into structured fields, decidi
 
 | Agent | Parse fields | Template | Level | Extra |
 |-------|-------------|----------|-------|-------|
-| chat-agent | `Reply`, `Thread`, `Type` | `chat` | always `immediate` | After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
+| chat-agent | `Reply`, `Thread`, `Type` | `chat` | always `immediate` | Extract `ORIGINAL_TS` from task subject `chat:<ts>`. If `Thread` non-empty: `kvido slack reply dm <Thread> chat --var message="<Reply>"`. If `Thread` empty (top-level): `kvido slack reply dm <ORIGINAL_TS> chat --var message="<Reply>"`. After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
 | planner | Prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:` | per-line mapping from slack templates | per delivery rules | `Triage:` → `TaskCreate` subject `triage:<slug>` with `ts` in description. `Dispatch:` → dispatch named agent. `No notifications.` → skip. |
 | worker | `Result`, `Task`, `Type`, `Source` | `worker-report` | `high` for error, else `normal` | — |
 | other | template variables per agent | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
