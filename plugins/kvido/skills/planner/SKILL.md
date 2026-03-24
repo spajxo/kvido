@@ -116,12 +116,25 @@ kvido task list triage
 
 **Triage items are NOT auto-approved.** They stay in `triage` until the user explicitly approves.
 
-For each task (max 3 per run):
-1. Read task detail: `kvido task read <slug>` — understand what is requested
-2. Evaluate relevance and urgency
-3. **Clear request** → add to approval batch:
+Get current time for staleness check:
+```bash
+date -u +%s
+```
+
+For each task, read its detail: `kvido task read <slug>`. Parse `UPDATED_AT` (or `CREATED_AT` if `UPDATED_AT` is empty) and compute age in seconds: `current_epoch - updated_at_epoch`. A task is **stale** if age > 43200 (12 hours).
+
+Separate tasks into two buckets:
+- **New** — not yet stale (age ≤ 12h)
+- **Stale** — stale (age > 12h), still in triage
+
+Fill the batch of max 3 from new items first, then stale items to fill remaining slots. Stale items are re-surfaced so the user gets another chance to approve or reject them.
+
+For each task selected (max 3 total across new + stale):
+1. Evaluate relevance and urgency
+2. **Clear request** → add to approval batch:
    - Suggest: title (max 8 words), priority, size, assignee=agent, brief description
-4. **Unclear** → include in output: `Question: <slug> '<title>' — <question for user>. Urgency: normal.` Leave task for next run.
+   - For stale items append `(re-surface, stale >12h)` to the description
+3. **Unclear** → include in output: `Question: <slug> '<title>' — <question for user>. Urgency: normal.` Leave task for next run.
 
 ### 6b: User context reminders (memory/state-first)
 
@@ -149,9 +162,19 @@ For each triage item include in output:
 Triage: <slug> '<title>' — <description>. Priority: <priority>. Size: <size>. Assignee: <assignee>.
 ```
 
+For stale re-surfaced items use:
+```
+Triage: <slug> '<title>' — <description> (re-surface, stale >12h). Priority: <priority>. Size: <size>. Assignee: <assignee>.
+```
+
 Also write a note on the task indicating the triage item was sent — but WITHOUT a Slack ts (heartbeat will fill that in after delivery):
 ```bash
 kvido task note <slug> "Triage: sent for approval. Awaiting user decision."
+```
+
+For stale re-surfaced items use:
+```bash
+kvido task note <slug> "Triage: re-surfaced (stale >12h). Awaiting user decision."
 ```
 
 **Note:** Planner runs as a subagent and does NOT have access to task tools (`TaskCreate`/`TaskUpdate`). Heartbeat (main session) will create `triage:<slug>` tasks for polling after delivery via `kvido slack`. Planner only writes notes on tasks and returns NL output.
@@ -161,7 +184,7 @@ Include stale user task reminders in output:
 Reminder: Waiting on you: <project/source> — <brief follow-up or blocker>.
 ```
 
-Max 3 triage items per run.
+Max 3 triage items per run (new items take priority over stale re-surfaces).
 
 ---
 
