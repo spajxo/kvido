@@ -1,6 +1,6 @@
 ---
 name: triage
-description: Use when processing untriaged items in state/tasks/triage/ or enforcing WIP limits.
+description: Use when processing untriaged items (`kvido task list triage`) or enforcing WIP limits.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 ---
 
