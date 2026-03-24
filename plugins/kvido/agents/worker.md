@@ -34,13 +34,13 @@ SOURCE_REF: {{SOURCE_REF}}
 
 3. Execute the task per `{{INSTRUCTION}}`. Work autonomously.
 
-5. Compile report per SKILL.md Report Format.
+4. Compile report per SKILL.md Report Format.
 
-6. Compile NL output with result per SKILL.md Report Format. Don't send via `kvido slack`.
+5. Compile NL output with result per SKILL.md Report Format. Don't send via `kvido slack`.
 
-7. Log: `kvido log add worker complete --message "{{TASK_SLUG}}: <summary>" --task_id "{{TASK_SLUG}}"`
+6. Log: `kvido log add worker complete --message "{{TASK_SLUG}}: <summary>" --task_id "{{TASK_SLUG}}"`
 
-8. If worktree:
+7. If worktree:
      `kvido task note {{TASK_SLUG}} "## Result\nBranch: <branch>, pushed. <description>"`
      `kvido task move {{TASK_SLUG}} done`
    If standard completion:

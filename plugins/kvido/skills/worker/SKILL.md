@@ -9,7 +9,7 @@ Worker executes assigned tasks asynchronously in the background of the heartbeat
 All queue management goes through `kvido task`.
 Tasks are local markdown files in `state/tasks/` — status is the folder name, metadata is YAML frontmatter.
 
-## Pipeline
+## Task Status Flow
 
 ```
 triage/ → todo/ → in-progress/ → done/
