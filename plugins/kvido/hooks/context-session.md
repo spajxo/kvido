@@ -19,24 +19,19 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
 - Treat the current working directory as the project context and `$KVIDO_HOME` as Kvido runtime state.
 - Before making workflow decisions, read:
   - `memory/memory.md`
-  - `kvido current get` — current focus and WIP state
-  - `kvido heartbeat-state get-json` — heartbeat runtime state (sleep, turbo, intervals, last timestamps)
-- Session context is auto-injected via `kvido context session`.
+  - `kvido current get`
+  - `kvido heartbeat-state get-json`
 - Review recent activity with `kvido log list --today --format human`.
 - Use `kvido config 'key.subkey'` for configuration lookups instead of parsing files directly.
 
 ## Runtime Layout
 
-- `state/` — ephemeral runtime state; access via CLI:
-  - current focus/WIP: `kvido current get`
-  - heartbeat state: `kvido heartbeat-state get-json`
-  - activity log: `kvido log list`
-  - tasks: `kvido task list [state]`
-- `memory/` — persistent context (`memory.md`, journals, weekly notes, projects, people, decisions, learnings); read directly as markdown files under `$KVIDO_HOME/memory/`
+- `state/` — ephemeral runtime state; access via CLI: `kvido current`, `kvido planner-state`, `kvido heartbeat-state`, `kvido task`, `kvido log`, `kvido source-health`
+- `memory/` — persistent context (`memory.md`, journals, weekly notes, projects, people, decisions, learnings)
 - `settings.json` — runtime configuration (use `kvido config 'key'` to read values; `"$ENV_VAR"` references are resolved from `.env` automatically)
 - `.env` — secrets only (referenced from `settings.json` via `"$ENV_VAR"` syntax)
 
-All `state/` and `memory/` paths in Kvido skills and agents resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/`. Use `kvido` CLI commands to access state; read `memory/` files directly.
+All state operations use `kvido` CLI wrappers. Memory paths resolve to `$KVIDO_HOME/memory/`.
 
 ## Orchestration Contract
 
