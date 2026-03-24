@@ -233,7 +233,6 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 |---------|-----|
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
 | Dispatching chat-agent for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
-| Sending Slack directly from agents | Only heartbeat calls `kvido slack`. Agents return NL output. |
 | Dispatching worker when one is already `in_progress` | Check TodoRead for `worker:*` in_progress first |
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 2 |
 | Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |

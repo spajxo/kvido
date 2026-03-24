@@ -132,7 +132,6 @@ Scopes `channels:read`, `groups:read`, `im:read`, `im:write`, `users:read` and `
 
 | Mistake | Fix |
 |---------|-----|
-| Agent calling `kvido slack` directly | Only heartbeat calls `kvido slack`. Agents return NL output. |
 | Using `ts` as `thread_ts` for replies | `thread_ts` is the parent message ts, not the reply ts |
 | Sending without template | Always use a template from `templates/`. Raw text goes through `chat` template. |
 | Threading by default | Flat messages for single events. Use digest threading for 2+ events per planner cycle. |
