@@ -83,6 +83,24 @@ Setup will:
 
 Runtime instructions are loaded through plugin hooks — Kvido does not need a `CLAUDE.md` in your project.
 
+## Auto-update
+
+By default, plugins installed from third-party marketplaces (like this one) have auto-update **disabled**. To enable automatic updates, open the interactive plugin UI:
+
+```bash
+claude plugin
+```
+
+Navigate to the kvido-assistant marketplace entry and toggle auto-update on for each plugin you want to keep current.
+
+To disable all automatic updates globally, set the environment variable:
+
+```bash
+export DISABLE_AUTOUPDATER=1
+```
+
+> **Note:** There is a known upstream bug ([anthropics/claude-code#26744](https://github.com/anthropics/claude-code/issues/26744)) where auto-pull for third-party marketplaces may only work reliably for the official Anthropic marketplace. If auto-update does not trigger, run `claude plugin update` manually after new releases.
+
 ## Quick Commands
 
 After `/kvido:setup`, the `kvido` CLI is available at `~/.local/bin/kvido`:
