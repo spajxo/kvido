@@ -1,6 +1,6 @@
 {
   "name": "kvido-sessions",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "Kvido source plugin for Claude Code session analysis",
   "keywords": [
     "kvido",
