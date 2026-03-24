@@ -188,7 +188,7 @@ Update `state/planner-state.md` — sections: Last Run (timestamp, counters), Ti
 
 Return a natural language summary of all notifications. Format per item:
 
-- **Event:** `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: <high|normal|low>.`
+- **Event:** `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: <high|normal|low>. Severity: <:red_circle:|:large_yellow_circle:|:large_green_circle:>.`
 - **Event (batch):** `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal.`
 - **Triage:** `Triage: <slug> '<title>' — <description>. Priority: <p>. Size: <s>. Assignee: <a>.`
 - **Reminder:** `Reminder: <text>. Urgency: normal.`
