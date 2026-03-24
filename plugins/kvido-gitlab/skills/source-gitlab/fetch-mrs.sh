@@ -2,7 +2,7 @@
 # fetch-mrs.sh — aggregate open MR status across monitored repos
 #
 # Usage: fetch-mrs.sh [--priority high|normal|low]
-# Reads repos from central settings.json via config.sh
+# Reads repos from central settings.json via kvido config
 # Output: plain text summary of open MRs (authored + reviewing) with CI status
 #
 # Note: must cd into each repo for glab to work (glab uses git remote context)
@@ -10,8 +10,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
+CONFIG="kvido config"
 
 PRIORITY_FILTER=""
 
@@ -80,7 +79,7 @@ process_repo() {
   echo ""
 }
 
-# Parse repos from central settings.json via config.sh
+# Parse repos from central settings.json via kvido config
 for repo_key in $($CONFIG --keys 'sources.gitlab.repos'); do
   repo_path=$($CONFIG "sources.gitlab.repos.${repo_key}.path")
   repo_priority=$($CONFIG "sources.gitlab.repos.${repo_key}.priority" "normal")

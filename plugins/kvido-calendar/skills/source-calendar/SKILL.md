@@ -5,7 +5,7 @@ allowed-tools: Read, Bash, mcp__claude_ai_Google_Calendar__gcal_list_events
 user-invocable: false
 ---
 
-> **Configuration:** Via `skills/config.sh` (`sources.calendar.*` keys).
+> **Configuration:** Via `kvido config` (`sources.calendar.*` keys).
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
@@ -20,7 +20,7 @@ Returns pre-categorized data per settings.json `categories` + total meeting time
 **MCP fallback:** If fetch.sh exits with code 10 (`gws` not available), use Google Calendar MCP directly:
 
 1. Call `mcp__claude_ai_Google_Calendar__gcal_list_events(calendarId="primary", timeMin="<date>T00:00:00Z", timeMax="<date>T23:59:59Z", singleEvents=true, orderBy="startTime")`
-2. Categorize events using config: `skills/config.sh --keys 'sources.calendar.categories'`
+2. Categorize events using config: `kvido config --keys 'sources.calendar.categories'`
 3. Format output: `- HH:MM–HH:MM — Summary [category]` per event, then total count
 
 ### watch

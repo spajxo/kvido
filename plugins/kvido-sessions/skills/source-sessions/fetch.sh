@@ -5,7 +5,7 @@
 # Default: yesterday
 #
 # Dependencies: jq, date, grep
-# Reads idle_threshold_min from settings.json via config.sh
+# Reads idle_threshold_min from settings.json via kvido config
 #
 # Optimizations vs original:
 #   1. Pre-filter files by first/last timestamp date (no jq cost for non-matching files)
@@ -13,8 +13,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
+CONFIG="kvido config"
 
 # ── Config ────────────────────────────────────────────────────────────────────
 IDLE_THRESHOLD_MIN=$($CONFIG 'sources.sessions.idle_threshold_min')

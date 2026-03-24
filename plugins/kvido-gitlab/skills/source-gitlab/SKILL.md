@@ -5,7 +5,7 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Configuration:** Via `skills/config.sh` (`sources.gitlab.*` keys).
+> **Configuration:** Via `kvido config` (`sources.gitlab.*` keys).
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
@@ -33,7 +33,7 @@ New MR where I am reviewer, not in backlog → triage item:
 `- [ ] Review MR !IID: title (repo) #source:gitlab #added:YYYY-MM-DD #ref:repo!IID`
 
 ### health
-For each repo via `skills/config.sh --keys 'sources.gitlab.repos'`:
+For each repo via `kvido config --keys 'sources.gitlab.repos'`:
 ```bash
 test -d <path>/.git && echo "OK: <name>" || echo "FAIL: <name>"
 ```

@@ -5,7 +5,7 @@ allowed-tools: Read, Bash, mcp__claude_ai_Slack__slack_search_public_and_private
 user-invocable: false
 ---
 
-> **Configuration:** Via `skills/config.sh` (`sources.slack.*` keys). Credentials (`slack.bot_token`, `slack.dm_channel_id`) via `kvido config` — resolved from `.env` references in `settings.json`.
+> **Configuration:** Via `kvido config` (`sources.slack.*` keys). Credentials (`slack.bot_token`, `slack.dm_channel_id`) resolved from `.env` references in `settings.json`.
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 
@@ -29,11 +29,11 @@ Output: JSON array. Filter via `jq`:
 
 List DM channels to monitor:
 ```bash
-skills/config.sh --keys 'sources.slack.dm_channels'
+kvido config --keys 'sources.slack.dm_channels'
 ```
 For each entry where `channel_id` is defined (skip entries without `channel_id`):
 ```bash
-CHANNEL_ID=$(skills/config.sh "sources.slack.dm_channels.<name>.channel_id")
+CHANNEL_ID=$(kvido config "sources.slack.dm_channels.<name>.channel_id")
 skills/slack/slack.sh read "$CHANNEL_ID" --limit 5 --oldest "$last_dm_ts"
 ```
 
@@ -54,7 +54,7 @@ skills/heartbeat/heartbeat-state.sh set last_dm_ts "<newest ts>"
 
 ### watch-channels
 
-List watched channels via `skills/config.sh --keys 'sources.slack.channels'`. For channels with `priority: high` and `priority: normal` where `channel_id` is set:
+List watched channels via `kvido config --keys 'sources.slack.channels'`. For channels with `priority: high` and `priority: normal` where `channel_id` is set:
 
 **Transport selection:**
 - Channel without `use_mcp` (or `use_mcp: false`) → use `slack.sh read` (Bot token, standard):

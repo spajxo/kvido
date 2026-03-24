@@ -5,7 +5,7 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Configuration:** Via `skills/config.sh` (`sources.sessions.*` keys).
+> **Configuration:** Via `kvido config` (`sources.sessions.*` keys).
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 

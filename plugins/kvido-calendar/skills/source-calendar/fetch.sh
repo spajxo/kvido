@@ -5,8 +5,7 @@
 
 set -euo pipefail
 
-SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG="$(cd "$SKILL_DIR/.." && pwd)/config.sh"
+CONFIG="kvido config"
 
 # Target date (default: today)
 TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
