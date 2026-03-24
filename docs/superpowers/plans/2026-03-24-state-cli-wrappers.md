@@ -148,7 +148,7 @@ Insert before `*)` in the case statement:
         hours="${max_age%h}"
         cutoff=$(date -Iseconds -d "-${hours} hours")
         _locked_write \
-          '[.events | to_entries[] | select(.value.last_reported >= $cutoff)] | from_entries as $kept | . * {events: $kept}' \
+          '.events |= ([to_entries[] | select(.value.last_reported >= $cutoff)] | from_entries)' \
           --arg cutoff "$cutoff"
         ;;
       *)
@@ -464,7 +464,7 @@ case "${1:-}" in
     if [[ -z "$source" ]]; then
       cat "$STATE_FILE"
     else
-      jq -r --arg k "$source" '.[$k] // empty' "$STATE_FILE"
+      jq -r --arg k "$source" '.[$k].status // empty' "$STATE_FILE"
     fi
     ;;
   set)
@@ -479,7 +479,7 @@ case "${1:-}" in
       fi
       _ensure_file
       updated=$(jq --arg k "$source" --arg s "$status" --arg t "$now" \
-        '.[$k] = $s | .timestamp = $t' "$STATE_FILE")
+        '.[$k] = {status: $s, timestamp: $t}' "$STATE_FILE")
       _atomic_write "$updated"
     )
     ;;
