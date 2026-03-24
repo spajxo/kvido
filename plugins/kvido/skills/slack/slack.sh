@@ -97,6 +97,8 @@ build_blocks() {
         fi
         local key="${2%%=*}"
         local value="${2#*=}"
+        # Convert escaped \n sequences to actual newlines so Slack renders line breaks
+        value=$(printf '%b' "$value")
         jq_args+=(--arg "$key" "$value")
         shift 2
         ;;
