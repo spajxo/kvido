@@ -17,63 +17,87 @@ Install the core plugin and add source plugins for the tools you use.
 
 ## Installation
 
+Install plugins from the marketplace — no need to clone this repo:
+
 ```bash
-mkdir ~/kvido && cd ~/kvido && git init
+# Add the marketplace
+claude plugin marketplace add https://github.com/spajxo/kvido
 
-# Install core + sources you need
-claude plugin install kvido
-claude plugin install kvido-gitlab
-claude plugin install kvido-slack
+# Install core plugin + any source plugins you need
+claude plugin install kvido@kvido-assistant
+claude plugin install kvido-gitlab@kvido-assistant
+claude plugin install kvido-slack@kvido-assistant
 # ...
-
-claude    # launch Claude Code
 ```
 
-Run `/kvido:setup` inside the session — it bootstraps `state/`, `memory/`, `settings.json`, and `.env`. Runtime instructions are loaded through plugin hooks, so Kvido does not need to copy its own `CLAUDE.md` into your project. Setup also detects installed source plugins and offers to install missing ones.
+Then open Claude Code in any project directory and run `/kvido:setup`:
+
+```bash
+claude    # in your project directory
+# inside the session: /kvido:setup
+```
+
+Setup will:
+- Create `$KVIDO_HOME` (default: `~/.config/kvido`) with `state/`, `memory/`, `settings.json`, and `.env`
+- Install the `kvido` CLI wrapper to `~/.local/bin/kvido`
+- Validate prerequisites and source plugin config
+- Detect installed source plugins and suggest missing ones
+
+Runtime instructions are loaded through plugin hooks — Kvido does not need a `CLAUDE.md` in your project.
 
 ## Quick Commands
 
-After setup, use the shell alias (offered during `/kvido:setup`) or:
+After `/kvido:setup`, the `kvido` CLI is available at `~/.local/bin/kvido`:
 
 ```bash
 kvido                             # launch Claude Code with /kvido:heartbeat
-kvido heartbeat                   # run skills/heartbeat/heartbeat.sh
-kvido task list todo              # worker queue helper
+kvido heartbeat                   # run the heartbeat script directly
+kvido task list todo              # list worker queue tasks
+kvido config 'skills.heartbeat.wh_start'   # read a config value
 ```
 
-Shell rule: `kvido` without arguments launches Claude Code. Any argument switches to bash script dispatch (`kvido heartbeat`, `kvido task`, `kvido slack`, ...). Slash commands like `/kvido:setup` and `/kvido:morning` are used inside Claude Code, not as shell subcommands.
+Shell rule: `kvido` without arguments launches Claude Code. Any argument switches to bash script dispatch (`kvido heartbeat`, `kvido task`, `kvido slack`, `kvido config`, ...).
 
-Kvido-specific environment variables (set in `.env` or shell):
+Slash commands (`/kvido:setup`, `/kvido:heartbeat`, `/kvido:triage`) are used inside Claude Code, not as shell subcommands.
+
+Kvido-specific environment variables (set in `~/.config/kvido/.env` or your shell):
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
+| `KVIDO_HOME` | `~/.config/kvido` | Runtime state, memory, config, and secrets |
 | `KVIDO_NAME` | `kvido` | Session name (`--name`) |
 | `KVIDO_PERMISSION_MODE` | `default` | Permission mode (`--permission-mode`) |
-| `KVIDO_EXTRA_ARGS` | | Extra CLI flags |
+| `KVIDO_EXTRA_ARGS` | | Extra CLI flags passed to Claude Code |
 
-All official `ANTHROPIC_*` and `CLAUDE_CODE_*` env vars (model, effort, API key, proxy, ...) work automatically — just set them in `.env` or your environment. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code/settings#environment-variables).
+All official `ANTHROPIC_*` and `CLAUDE_CODE_*` env vars (model, effort, API key, proxy, ...) work automatically — just set them in `~/.config/kvido/.env` or your environment. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code/settings#environment-variables).
 
 ## Daily Usage
 
+Start a Claude Code session in your project directory and run `/kvido:heartbeat` to activate the cron loop. The heartbeat runs every 10 minutes unattended — checking Slack, dispatching the planner and worker agents, and delivering notifications.
+
 | Trigger | Action |
 |---------|--------|
-| "good morning" / `/kvido:morning` | Daily briefing — schedule, overnight changes, focus |
-| "start heartbeat" / `/kvido:heartbeat` | Start the cron loop (default 10 min) |
-| "done for today" / `/kvido:eod` | End-of-day journal, worklog check |
-| "going to sleep" | Pause heartbeat until morning |
-| "turbo" | Switch to faster heartbeat interval for 30 min |
+| `/kvido:heartbeat` | Start the cron loop (default 10 min, adaptive) |
+| "good morning" in Slack DM | Daily briefing — schedule, overnight changes, focus |
+| "done for today" in Slack DM | End-of-day journal, worklog check |
+| "going to sleep" in Slack DM | Pause heartbeat until morning |
+| "turbo" in Slack DM | Switch to 1-min heartbeat interval for 30 min |
+| `/kvido:triage` | Process unsorted tasks in the backlog |
+| `/kvido:setup` | Re-run setup / health check |
 
 Leave the terminal open — the heartbeat loop runs unattended in the background.
 
 ## Configuration
 
-All gitignored, created by `/kvido:setup`:
+All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`), created by `/kvido:setup`:
 
 | File | Purpose |
 |------|---------|
-| `settings.json` | Sources config — Slack channels, GitLab repos, Jira projects, Gmail filters. See `settings.json.example` in the plugin. |
-| `.env` | Credentials — `SLACK_BOT_TOKEN`, `SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`. Optional: `ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`. |
+| `settings.json` | Sources config — Slack channels, GitLab repos, Jira projects, Gmail filters. See `plugins/kvido/settings.json.example` for reference. |
+| `.env` | Credentials — `SLACK_BOT_TOKEN`, `SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`, `SLACK_USER_NAME`. Optional: `ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`. |
 | `memory/persona.md` | Assistant name, personality, language, tone. |
+
+Config is read at runtime via `kvido config 'dot.key'` — never parse `settings.json` directly.
 
 ## How It Works
 
