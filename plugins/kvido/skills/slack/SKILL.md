@@ -7,8 +7,6 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 > **Configuration:** Use `kvido config 'key'` for focus mode and batching settings.
 
 # Slack

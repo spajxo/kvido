@@ -5,8 +5,6 @@ allowed-tools: Read, Write
 user-invocable: false
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 > **Configuration:** Use `kvido config 'skills.daily_questions.enabled'`. If `false`, skip.
 
 # Daily Questions

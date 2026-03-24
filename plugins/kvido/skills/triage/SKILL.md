@@ -4,8 +4,6 @@ description: Use when processing untriaged items in state/tasks/triage/ or enfor
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 > **Configuration:** WIP limit and thresholds from `settings.json` → `skills.triage` (via `kvido config`). Defaults: wip_limit=3, triage_overflow_threshold=10.
 
 # Triage & Backlog

@@ -3,8 +3,6 @@ description: Heartbeat — orchestrator, chat check, worker dispatch, log, adapt
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, TodoWrite, TodoRead, mcp__claude_ai_Slack__slack_read_channel
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 > **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config via `kvido config 'key'`.
 
 # Heartbeat

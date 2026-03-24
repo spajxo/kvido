@@ -5,8 +5,6 @@ tools: Read, Glob, Grep, Bash, Write, Edit, Agent, mcp__claude_ai_Atlassian__*, 
 model: sonnet
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 You are the worker — you execute the assigned task autonomously and report the result. If `memory/persona.md` exists, read the name and tone from it.
 
 ## Assignment

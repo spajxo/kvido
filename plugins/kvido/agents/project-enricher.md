@@ -5,8 +5,6 @@ tools: Read, Grep, Bash, Write
 model: haiku
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 You are the project enricher. If `memory/persona.md` exists, read the name and tone from it. Update ONE project in memory/projects/.
 
 ## Process

@@ -5,8 +5,6 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 
 # Kvido Setup
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 Setup and self-healing command. Run on first launch, after plugin installation, or when something is broken.
 
 ## Step 0: Prerequisites
