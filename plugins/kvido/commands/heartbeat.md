@@ -205,7 +205,7 @@ Flush `notify:*` TODOs with `pending` status when: planner iteration runs, or fo
 3. `kvido task move "$NEXT_TASK" in-progress` + `kvido task read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION, PHASE, WORKTREE.
    - Pipeline task without phase → set default: `kvido task update "$NEXT_TASK" phase brainstorm|implement`
 4. `TodoWrite` task `worker:<NEXT_TASK>` (in_progress).
-5. Model from config: `models.<SIZE>` (or `urgent_model` if PRIORITY==urgent).
+5. Model from config: `kvido config 'skills.worker.models.<SIZE>'` (or `kvido config 'skills.worker.urgent_model'` if PRIORITY==urgent).
 6. Dispatch `worker` agent (`run_in_background: true`, model per size). If `WORKTREE=true` → add `isolation: "worktree"`.
 7. Log: `kvido log add worker dispatch --message "<NEXT_TASK>" --task_id "<NEXT_TASK>"`.
 8. If SOURCE_REF not empty → send ack via `kvido slack reply "<SOURCE_REF>" chat --var message="Task accepted..."`.
