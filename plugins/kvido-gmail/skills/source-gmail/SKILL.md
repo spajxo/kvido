@@ -19,7 +19,7 @@ Output: human-readable summary — from, subject, date, snippet. Max `max_result
 
 **MCP fallback:** If fetch.sh exits with code 10 (`gws` not available), use Gmail MCP directly:
 
-1. Read config: `kvido config 'sources.gmail.watch_query'` and `sources.gmail.max_results`
+1. Read config: `kvido config 'sources.gmail.watch_query'` and `kvido config 'sources.gmail.max_results'`
 2. Call `mcp__claude_ai_Gmail__gmail_search_messages(query="<watch_query>", max_results=<max_results>)`
 3. For each message, call `mcp__claude_ai_Gmail__gmail_read_message(message_id="<id>")`
 4. Format output: `- From: ... / Subject: ... / Date: ... / Preview: ...` per message

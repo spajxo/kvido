@@ -160,7 +160,7 @@ Also write a note on the task indicating the triage item was sent — but WITHOU
 kvido task note <slug> "Triage: sent for approval. Awaiting user decision."
 ```
 
-**Note:** Planner runs as a subagent and does NOT have access to TodoWrite. Heartbeat (main session) will create `triage:<slug>` todo tasks for polling after delivery via `slack.sh`. Planner only writes notes on tasks and returns NL output.
+**Note:** Planner runs as a subagent and does NOT have access to TodoWrite. Heartbeat (main session) will create `triage:<slug>` todo tasks for polling after delivery via `kvido slack`. Planner only writes notes on tasks and returns NL output.
 
 Include stale user task reminders in output:
 ```
@@ -206,7 +206,7 @@ If no notifications are needed, return: `No notifications.`
 | Sending duplicate notification for already reported event | Always check Reported Events keys before notifying |
 | Auto-approving triage items | Triage items stay in `triage/` until user explicitly approves via reaction |
 | Creating worker tasks for things planner can log | Planner only creates tasks for actual work; status updates and reminders go into output as `Event:` or `Reminder:` |
-| Calling `slack.sh` directly | Planner runs as subagent — no Slack access. Return NL output with prefixed lines. |
+| Calling `kvido slack` directly | Planner runs as subagent — no Slack access. Return NL output with prefixed lines. |
 | Skipping `last_*_date` update after maintenance task creation | Always update planner-state.md timestamps to prevent duplicate maintenance tasks |
 | Notifying `immediate` during focus mode | Check calendar for active focus events — suppress to `batch` |
 | Creating user-facing tasks from legacy assigned tickets | Only remind in text output, never create new workflow from old tickets |

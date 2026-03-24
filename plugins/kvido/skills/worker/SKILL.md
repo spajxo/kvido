@@ -51,25 +51,25 @@ source_ref: "1773933088.437"
 <worker output>
 ```
 
-## task.sh subcommands
+## kvido task subcommands
 
 | Subcommand | Action |
 |------------|--------|
-| `task.sh create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Creates task file, returns slug. Pipeline auto for l/xl. |
-| `task.sh read <slug>` | Returns frontmatter + content as key=value |
-| `task.sh read-raw <slug>` | Returns raw markdown content of task file |
-| `task.sh update <slug> <field> <value>` | Updates frontmatter field |
-| `task.sh move <slug> <status>` | Moves task to a different status folder |
-| `task.sh list [status]` | Lists tasks (optional filter by status) |
-| `task.sh find <slug>` | Finds task and returns its current status (folder) |
-| `task.sh note <slug> "<text>"` | Appends text to ## Worker Notes |
-| `task.sh count [status]` | Count of tasks (optionally per status) |
+| `kvido task create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Creates task file, returns slug. Pipeline auto for l/xl. |
+| `kvido task read <slug>` | Returns frontmatter + content as key=value |
+| `kvido task read-raw <slug>` | Returns raw markdown content of task file |
+| `kvido task update <slug> <field> <value>` | Updates frontmatter field |
+| `kvido task move <slug> <status>` | Moves task to a different status folder |
+| `kvido task list [status]` | Lists tasks (optional filter by status) |
+| `kvido task find <slug>` | Finds task and returns its current status (folder) |
+| `kvido task note <slug> "<text>"` | Appends text to ## Worker Notes |
+| `kvido task count [status]` | Count of tasks (optionally per status) |
 
 ## Rules
 
 ### What Worker may do
 - Read any files in the repository
-- Call source skills and tool skills (glab, acli, slack.sh, gws)
+- Call source skills and tool skills (glab, acli, kvido slack, gws)
 - Call MCP tools (Atlassian, Slack, Calendar)
 - Log via `kvido log add`
 - Dispatch sub-agents (researcher, reviewer) for in-depth analysis
@@ -91,8 +91,8 @@ STATUS=$(kvido task find "$TASK_SLUG")
 ### Timeout
 If a task takes > `task_timeout_minutes` (from `settings.json`):
 1. Send partial result with what you have
-2. `task.sh note "$TASK_SLUG" "## Failed\nTimeout after Xm"` + `task.sh move "$TASK_SLUG" failed`
-3. If progress > 50% → add follow-up: `task.sh create "<title>" --priority medium --size s`
+2. `kvido task note "$TASK_SLUG" "## Failed\nTimeout after Xm"` + `kvido task move "$TASK_SLUG" failed`
+3. If progress > 50% → add follow-up: `kvido task create "<title>" --priority medium --size s`
 
 ## Pipeline phases (opt-in for l/xl tasks)
 
@@ -109,30 +109,30 @@ Worker supports a structured pipeline for large tasks. Pipeline is opt-in — ac
 1. Read the task instruction and all available context
 2. Add worker note with questions and ambiguities
 3. Send Slack message with questions (max 5 questions, brief)
-4. `task.sh move "$TASK_SLUG" todo` + `task.sh update "$TASK_SLUG" waiting_on "<description>"`
+4. `kvido task move "$TASK_SLUG" todo` + `kvido task update "$TASK_SLUG" waiting_on "<description>"`
 5. Chat-responder writes answers as worker note, updates phase
 6. On next run: evaluate if enough context
    - No → another round of questions (max 3 rounds)
-   - Yes → `task.sh update "$TASK_SLUG" phase spec` + `task.sh move "$TASK_SLUG" todo`
+   - Yes → `kvido task update "$TASK_SLUG" phase spec` + `kvido task move "$TASK_SLUG" todo`
 
 #### spec
 1. Propose 2–3 approaches (minimal, clean, pragmatic)
 2. Worker note + Slack message
-3. `task.sh update "$TASK_SLUG" waiting_on "<waiting for choice>"`
-4. Chat-responder writes choice, `task.sh update "$TASK_SLUG" phase implement`
+3. `kvido task update "$TASK_SLUG" waiting_on "<waiting for choice>"`
+4. Chat-responder writes choice, `kvido task update "$TASK_SLUG" phase implement`
 
 #### implement
 Standard worker execution per the chosen spec.
-When done: `task.sh update "$TASK_SLUG" phase review` + `task.sh move "$TASK_SLUG" todo`.
+When done: `kvido task update "$TASK_SLUG" phase review` + `kvido task move "$TASK_SLUG" todo`.
 
 #### review
 1. Go through the implementation — bugs, conventions, simplifications
 2. Worker note + Slack message
-3. If blockers → `task.sh update "$TASK_SLUG" waiting_on "<blocker>"`
-4. If OK → `task.sh move "$TASK_SLUG" done`
+3. If blockers → `kvido task update "$TASK_SLUG" waiting_on "<blocker>"`
+4. If OK → `kvido task move "$TASK_SLUG" done`
 
 ### Pipeline rules
-- Worker always checks phase from `task.sh read` at start
+- Worker always checks phase from `kvido task read` at start
 - Each phase is a separate worker run (task returns to todo between phases)
 - Max 3 Slack messages total for the entire pipeline
 - User can interrupt via cancel (slug via chat)
@@ -154,8 +154,8 @@ If a task has frontmatter `worktree: true`, worker runs in an isolated git workt
 Use conventional commit message (feat/fix/chore) based on the type of change.
 
 ### After completing a worktree task
-- `task.sh note "$TASK_SLUG" "## Result\nBranch: <branch>, pushed. <description of changes>"`
-- `task.sh move "$TASK_SLUG" done`
+- `kvido task note "$TASK_SLUG" "## Result\nBranch: <branch>, pushed. <description of changes>"`
+- `kvido task move "$TASK_SLUG" done`
 - Slack report includes the branch name
 
 ---
@@ -164,12 +164,12 @@ Use conventional commit message (feat/fix/chore) based on the type of change.
 
 | Mistake | Fix |
 |---------|-----|
-| Sending Slack messages directly via `slack.sh` | Worker returns NL output — heartbeat handles all delivery |
-| Chaining workers (dispatching another worker from worker) | Forbidden. Create a follow-up task via `task.sh create` instead. |
+| Sending Slack messages directly via `kvido slack` | Worker returns NL output — heartbeat handles all delivery |
+| Chaining workers (dispatching another worker from worker) | Forbidden. Create a follow-up task via `kvido task create` instead. |
 | Modifying `state/current.md` | Owned by heartbeat. Worker logs via `kvido log add` and writes task notes. |
-| Skipping cancel check at start | Always `task.sh find` first — task may have been cancelled while queued |
+| Skipping cancel check at start | Always `kvido task find` first — task may have been cancelled while queued |
 | Continuing past timeout | Check elapsed time; if > `task_timeout_minutes`, emit partial result and move to `failed/` |
-| Ignoring pipeline phase | Always read `phase` from `task.sh read` — execute only the current phase, not the whole task |
+| Ignoring pipeline phase | Always read `phase` from `kvido task read` — execute only the current phase, not the whole task |
 | Pushing to main in worktree mode | Always push to feature branch. Never push directly to main. |
 
 ## Report format

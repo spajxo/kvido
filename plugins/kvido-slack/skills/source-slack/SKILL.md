@@ -13,14 +13,14 @@ user-invocable: false
 
 > **Note:** This source plugin is always invoked by the core kvido planner/heartbeat agent. All `skills/slack/` and `skills/heartbeat/` paths refer to scripts in the core kvido plugin (resolved from the agent's working context).
 
-Reading via `slack.sh read` (Slack Web API). Search via Slack MCP (requires user context).
+Reading via `kvido slack read` (Slack Web API). Search via Slack MCP (requires user context).
 
 ## Capabilities
 
 ### watch-dm
 
 ```bash
-skills/slack/slack.sh read --limit 5
+kvido slack read --limit 5
 ```
 
 Output: JSON array. Filter via `jq`:
@@ -34,7 +34,7 @@ kvido config --keys 'sources.slack.dm_channels'
 For each entry where `channel_id` is defined (skip entries without `channel_id`):
 ```bash
 CHANNEL_ID=$(kvido config "sources.slack.dm_channels.<name>.channel_id")
-skills/slack/slack.sh read "$CHANNEL_ID" --limit 5 --oldest "$last_dm_ts"
+kvido slack read "$CHANNEL_ID" --limit 5 --oldest "$last_dm_ts"
 ```
 
 For new messages from other users (not from `SLACK_USER_ID`) determine notification level:
@@ -43,13 +43,13 @@ For new messages from other users (not from `SLACK_USER_ID`) determine notificat
 |-------|------|--------|
 | `silent` | FYI, informational messages | `kvido log add chat silent --message "[dm/<name>] <truncated text>"` |
 | `batch` | Less urgent, can wait | Return in NL output with `Event (batch):` prefix — heartbeat delivers at next full heartbeat |
-| `immediate` | Requires response — question, request, blocking someone | `slack.sh send event --var emoji="💬" --var title="DM from <name>" --var description="<text max 100 chars>" --var source="Slack DM" --var reference="open DM" --var timestamp="<HH:MM>"` |
+| `immediate` | Requires response — question, request, blocking someone | `kvido slack send event --var emoji="💬" --var title="DM from <name>" --var description="<text max 100 chars>" --var source="Slack DM" --var reference="open DM" --var timestamp="<HH:MM>"` |
 
 Decide based on context — who's writing, what they need, how urgent it is.
 
 Always update timestamp after processing:
 ```bash
-skills/heartbeat/heartbeat-state.sh set last_dm_ts "<newest ts>"
+kvido heartbeat-state set last_dm_ts "<newest ts>"
 ```
 
 ### watch-channels
@@ -57,9 +57,9 @@ skills/heartbeat/heartbeat-state.sh set last_dm_ts "<newest ts>"
 List watched channels via `kvido config --keys 'sources.slack.channels'`. For channels with `priority: high` and `priority: normal` where `channel_id` is set:
 
 **Transport selection:**
-- Channel without `use_mcp` (or `use_mcp: false`) → use `slack.sh read` (Bot token, standard):
+- Channel without `use_mcp` (or `use_mcp: false`) → use `kvido slack read` (Bot token, standard):
   ```bash
-  skills/slack/slack.sh read "<channel_id>" --limit 5
+  kvido slack read "<channel_id>" --limit 5
   ```
 - Channel with `use_mcp: true` → use Slack MCP `slack_read_channel` (reads as user — for channels where bot has no access or user context is required):
   ```
@@ -89,7 +89,7 @@ Slack messages with actionable content: "could you", "we need", "review", "take 
 ### health
 
 ```bash
-skills/slack/slack.sh read --limit 1
+kvido slack read --limit 1
 ```
 OK if returns non-empty result.
 
