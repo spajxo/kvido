@@ -79,7 +79,7 @@ slack_message() {
     echo "Error: $(echo "$result" | jq -r '.error')" >&2
     exit 1
   fi
-  [[ "$return_ts" == "true" ]] && echo "$result" | jq -r '.ts'
+  [[ "$return_ts" == "true" ]] && echo "$result" | jq -r '.ts' || true
 }
 
 # Parse --var arguments and render template through jq
