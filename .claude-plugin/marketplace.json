@@ -7,7 +7,7 @@
     {
       "name": "kvido",
       "source": "./plugins/kvido",
-      "description": "Core assistant — heartbeat, planner, worker, triage"
+      "description": "Core assistant — heartbeat, planner, worker"
     },
     {
       "name": "kvido-gitlab",

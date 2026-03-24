@@ -12,7 +12,6 @@ A Claude Code plugin that turns your terminal into a living workspace assistant.
 - **Planner** — detects new MRs, Jira status changes, calendar events, unread emails, and Slack mentions
 - **Worker** — picks up tasks from a queue and executes them autonomously (code reviews, research, follow-ups)
 - **Chat** — reply to Kvido in Slack DM and it responds, delegates tasks, or gives you a daily briefing
-- **Triage** — processes unsorted tasks in your backlog, prioritizes, and assigns
 
 Just type `kvido` in your terminal, leave it running, and interact through Slack.
 
@@ -38,7 +37,6 @@ heartbeat (cron, every 10 min)
 | "done for today" in Slack DM | End-of-day journal, worklog check |
 | "going to sleep" in Slack DM | Pause heartbeat until morning |
 | "turbo" in Slack DM | Switch to 1-min heartbeat interval for 30 min |
-| `/kvido:triage` | Process unsorted tasks in the backlog |
 | `/kvido:setup` | Re-run setup / health check |
 
 ## Plugins
@@ -47,7 +45,7 @@ Kvido is a plugin marketplace — install the core and add source plugins for th
 
 | Plugin | Description | Prerequisites |
 |--------|-------------|---------------|
-| **kvido** | Core — heartbeat, planner, worker, chat, triage | `jq` |
+| **kvido** | Core — heartbeat, planner, worker, chat | `jq` |
 | kvido-gitlab | GitLab MR tracking, activity monitoring | `glab` |
 | kvido-jira | Jira issue tracking, status changes | `acli` or Atlassian MCP |
 | kvido-slack | Slack channel monitoring, message watching | `SLACK_BOT_TOKEN` |
@@ -98,7 +96,7 @@ kvido config 'skills.heartbeat.wh_start'   # read a config value
 
 Shell rule: `kvido` without arguments launches Claude Code. Any argument switches to bash script dispatch (`kvido heartbeat`, `kvido task`, `kvido slack`, `kvido config`, ...).
 
-Slash commands (`/kvido:setup`, `/kvido:heartbeat`, `/kvido:triage`) are used inside Claude Code, not as shell subcommands.
+Slash commands (`/kvido:setup`, `/kvido:heartbeat`) are used inside Claude Code, not as shell subcommands.
 
 ## Configuration
 
