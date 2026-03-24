@@ -126,7 +126,7 @@ else
   fi
 fi
 
-# Planner dispatch check
+# Planner dispatch check — planner iterations are "full" heartbeats
 PLANNING_INTERVAL=$($CONFIG 'skills.planner.planning_interval')
 if (( ITERATION % PLANNING_INTERVAL == 0 )); then
   PLANNER_DUE="true"
@@ -193,9 +193,9 @@ fi
 TASK_SH="$PLUGIN_ROOT/skills/worker/task.sh"
 NEXT_TASK=$("$TASK_SH" list todo --sort priority 2>/dev/null | head -1 || echo "")
 
-# Update state — increment iteration and set last_quick
+# Update state — increment iteration and set last_heartbeat
 "$SCRIPT_DIR/heartbeat-state.sh" increment iteration_count
-"$SCRIPT_DIR/heartbeat-state.sh" set last_quick "$TIMESTAMP"
+"$SCRIPT_DIR/heartbeat-state.sh" set last_heartbeat "$TIMESTAMP"
 
 # Dashboard generation (never fails heartbeat — || true)
 DASH_ENABLED=$($CONFIG 'skills.dashboard.enabled' 'true')

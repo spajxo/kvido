@@ -50,7 +50,7 @@ TOTAL_RUNS=$(echo "$TOKEN_STATS_JSON" | jq '[.[].runs] | add // 0' 2>/dev/null |
 HB_FILE="$STATE_DIR/heartbeat-state.json"
 ITERATION=0
 ACTIVE_PRESET="?"
-LAST_QUICK=""
+LAST_HEARTBEAT=""
 SLEEP_UNTIL=""
 TURBO_UNTIL=""
 INTERACTION_AGO="?"
@@ -58,7 +58,7 @@ INTERACTION_AGO="?"
 if [[ -f "$HB_FILE" ]] && jq empty "$HB_FILE" 2>/dev/null; then
   ITERATION=$(jq -r '.iteration_count // 0' "$HB_FILE")
   ACTIVE_PRESET=$(jq -r '.active_preset // "?"' "$HB_FILE")
-  LAST_QUICK=$(jq -r '.last_quick // ""' "$HB_FILE")
+  LAST_HEARTBEAT=$(jq -r '.last_heartbeat // .last_quick // ""' "$HB_FILE")
   SLEEP_UNTIL=$(jq -r '.sleep_until // ""' "$HB_FILE")
   TURBO_UNTIL=$(jq -r '.turbo_until // ""' "$HB_FILE")
 

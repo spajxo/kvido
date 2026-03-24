@@ -42,7 +42,7 @@ For new messages from other users (not from `SLACK_USER_ID`) determine notificat
 | Level | When | Action |
 |-------|------|--------|
 | `silent` | FYI, informational messages | `kvido log add chat silent --message "[dm/<name>] <truncated text>"` |
-| `batch` | Less urgent, can wait | Return in NL output with `Event (batch):` prefix — heartbeat delivers at next full heartbeat |
+| `batch` | Less urgent, can wait | Return in NL output with `Event (batch):` prefix — heartbeat delivers at next planner iteration |
 | `immediate` | Requires response — question, request, blocking someone | `kvido slack send event --var emoji="💬" --var title="DM from <name>" --var description="<text max 100 chars>" --var source="Slack DM" --var reference="open DM" --var timestamp="<HH:MM>"` |
 
 Decide based on context — who's writing, what they need, how urgent it is.
@@ -96,7 +96,6 @@ OK if returns non-empty result.
 ## Schedule
 
 - morning: watch-channels (mentions since yesterday)
-- heartbeat-quick: watch-dm
-- heartbeat-full: watch-dm + watch-channels (high+normal)
+- heartbeat: watch-dm + watch-channels (high+normal)
 - heartbeat-maintenance: health
 - eod: skip

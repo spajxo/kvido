@@ -38,7 +38,6 @@ Result to `state/source-health.json` under key `gmail`.
 
 ## Schedule
 - morning: `fetch` (unread inbox)
-- heartbeat-quick: skip
-- heartbeat-full: `watch` (new since last check)
+- heartbeat: `watch` (new since last check)
 - heartbeat-maintenance: skip
 - eod: skip

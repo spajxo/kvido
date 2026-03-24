@@ -56,9 +56,8 @@ For each discovered source plugin, read its `skills/source-*/SKILL.md` from the 
 
 | Schedule | Sources to call |
 |----------|----------------|
-| morning | All installed sources (full fetch) |
-| heartbeat-quick | Only sources with `--priority high` support |
-| heartbeat-full | All installed sources |
+| morning | All installed sources |
+| heartbeat | All installed sources |
 | eod | All installed sources; kvido-sessions only when `eod_pending: true` |
 
 Each source SKILL.md defines its own fetch commands and capabilities. Read it and follow its instructions.

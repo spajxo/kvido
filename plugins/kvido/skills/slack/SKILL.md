@@ -80,7 +80,7 @@ In `templates/` — JSON files with `{{placeholder}}` variables. Unified format:
 | Level | Behavior |
 |-------|----------|
 | `silent` | Log via `kvido log add` only, no Slack message |
-| `batch` | Heartbeat creates a notify TODO with pending status, delivers at next full heartbeat |
+| `batch` | Heartbeat creates a notify TODO with pending status, delivers at next planner iteration |
 | `immediate` | `kvido slack send` with the appropriate template — sent immediately |
 
 ## Threading
@@ -95,7 +95,7 @@ Read `kvido config 'focus_mode'`. Unchanged — suppress, batching, after_focus_
 
 ## Batching
 
-Read `kvido config 'skills.slack.batching'`. Batch notifications are managed by heartbeat via notify TODOs with pending status — flushed at full heartbeat or on focus mode change.
+Read `kvido config 'skills.slack.batching'`. Batch notifications are managed by heartbeat via notify TODOs with pending status — flushed at planner iteration or on focus mode change.
 
 ## Auth
 
