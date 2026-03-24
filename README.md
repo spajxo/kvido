@@ -17,26 +17,31 @@ Install the core plugin and add source plugins for the tools you use.
 
 ## Installation
 
-Clone this repo (it is the plugin marketplace itself) and install plugins from it:
+Install plugins from the marketplace — no need to clone this repo:
 
 ```bash
-git clone https://github.com/spajxo/kvido.git ~/kvido
-cd ~/kvido
+# Add the marketplace
+claude plugin marketplace add https://github.com/spajxo/kvido
 
 # Install core plugin + any source plugins you need
-claude plugin install ./plugins/kvido
-claude plugin install ./plugins/kvido-gitlab
-claude plugin install ./plugins/kvido-slack
+claude plugin install kvido@kvido-assistant
+claude plugin install kvido-gitlab@kvido-assistant
+claude plugin install kvido-slack@kvido-assistant
 # ...
-
-claude    # launch Claude Code in your project directory
 ```
 
-Run `/kvido:setup` inside the Claude Code session — it:
-- Creates `$KVIDO_HOME` (default: `~/.config/kvido`) with `state/`, `memory/`, `settings.json`, and `.env`
-- Installs the `kvido` CLI wrapper to `~/.local/bin/kvido`
-- Validates prerequisites and source plugin config
-- Detects installed source plugins and suggests missing ones
+Then open Claude Code in any project directory and run `/kvido:setup`:
+
+```bash
+claude    # in your project directory
+# inside the session: /kvido:setup
+```
+
+Setup will:
+- Create `$KVIDO_HOME` (default: `~/.config/kvido`) with `state/`, `memory/`, `settings.json`, and `.env`
+- Install the `kvido` CLI wrapper to `~/.local/bin/kvido`
+- Validate prerequisites and source plugin config
+- Detect installed source plugins and suggest missing ones
 
 Runtime instructions are loaded through plugin hooks — Kvido does not need a `CLAUDE.md` in your project.
 
