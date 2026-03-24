@@ -24,7 +24,7 @@ Call `CronList`. If no job contains the word `heartbeat`, call `CronCreate`:
 - `recurring`: `true`
 - `prompt`: `/kvido:heartbeat`
 
-After creating the cron, save the job ID to `state/heartbeat-state.json` via `kvido heartbeat-state set cron_job_id "<job_id>"` and `kvido heartbeat-state set active_preset "10m"`.
+After creating the cron, save the job ID via `kvido heartbeat-state set cron_job_id "<job_id>"` and `kvido heartbeat-state set active_preset "10m"`.
 
 Create the cron silently — print nothing unless an error occurs.
 
@@ -48,7 +48,7 @@ The `user:` prefix means the message is from the workspace owner (you). The `bot
 
 The script automatically: increments iteration_count, sets last_heartbeat, reads Slack DM, checks worker queue.
 
-Read `state/current.md` for context. Review recent activity via `kvido log list --today --format human --limit 20`.
+Read current state via `kvido current get`. Review recent activity via `kvido log list --today --format human --limit 20`.
 
 ### Cron reconciliation
 
@@ -98,7 +98,7 @@ Use `TaskList` to list all existing tasks. If any `in_progress` tasks exist from
      kvido task note <slug> "Cancelled via chat"
      kvido task move <slug> cancelled
      ```
-   - Simple status questions answerable from loaded state/current.md and `kvido log list --today`
+   - Simple status questions answerable from `kvido current get` and `kvido log list --today`
 
    For trivial: compose response, create `notify:chat:<ts>` task via `TaskCreate` (mark in_progress via `TaskUpdate`), deliver via `kvido slack send|reply chat --var message="<response>"`, mark task completed via `TaskUpdate`. Log: `kvido log add chat inline --message "<summary>"`
 
@@ -188,7 +188,7 @@ Flush `notify:*` tasks with `pending` status (via `TaskList`) when: planner iter
 2. If `PLANNER_DUE == true` (from `heartbeat.sh`) and no active planner:
    - `TaskCreate` subject `planner`, description `"Planner dispatch at <timestamp>"`, then `TaskUpdate` status `in_progress`
    - Dispatch `planner` agent (`run_in_background: true`)
-   - Pass context: `CURRENT_STATE` (state/current.md), `MEMORY` (memory/memory.md)
+   - Pass context: `CURRENT_STATE` (`kvido current get`), `MEMORY` (memory/memory.md)
    - Log: `kvido log add planner dispatch --message "iteration <N>"`
 3. If planner agent completed since last check -- `TaskUpdate` planner task to `completed`.
 

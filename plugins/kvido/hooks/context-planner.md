@@ -2,8 +2,8 @@
 
 ## Change Detection
 
-Compare collected data against planner-state.md "## Reported Events".
-Already in Reported Events → skip (dedup). New → notify and add.
+Compare collected data against reported events via `kvido planner-state event check <key>`.
+Already reported → skip (dedup). New → notify and record with `kvido planner-state event add <key>`.
 
 ### Notification levels
 
@@ -13,7 +13,7 @@ Already in Reported Events → skip (dedup). New → notify and add.
 | batch | Output: Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal. |
 | immediate | Output: Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: high. |
 
-Decide based on: current focus (state/current.md), time, sender, event type, whether action is required.
+Decide based on: current focus (`kvido current get`), time, sender, event type, whether action is required.
 
 ### Focus mode
 Read settings.json focus_mode. Check calendar — focus event running → suppress immediate to batch.
@@ -33,7 +33,7 @@ Write note on task: kvido task note <slug> "Triage: sent for approval."
 
 ## Maintenance Tasks
 
-Recurring (max 1 per day each, check last_*_date in planner-state.md):
+Recurring (max 1 per day each, check last_*_date via `kvido planner-state last-run get <task>`):
 
 | Task | Trigger | Instruction | Size/Priority |
 |------|---------|-------------|---------------|
@@ -49,7 +49,7 @@ Recurring (max 1 per day each, check last_*_date in planner-state.md):
 | Triage overflow | triage >= 10 | Event: Triage overflow — <N> items. Urgency: normal. |
 | Backlog stale | todo low priority > 30 days | Event: suggestion |
 
-### Periodic (check timestamps in planner-state.md)
+### Periodic (check timestamps via `kvido planner-state timestamp get <key>`)
 - State hygiene: current.md WIP sync with Jira
 - Git sync (> 2h): commit + push
 - Archive rotation (> 7d): journals > 14d, weekly > 8w, decisions > 90d
