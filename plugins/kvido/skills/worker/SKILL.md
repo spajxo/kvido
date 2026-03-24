@@ -174,7 +174,7 @@ Use conventional commit message (feat/fix/chore) based on the type of change.
 
 ## Report format
 
-Return NL output — heartbeat handles delivery. Do not call `slack.sh` directly.
+Return NL output — heartbeat handles delivery. Do not call `kvido slack` directly.
 
 Structure output per the `worker-report` template (heartbeat will use it for formatting):
 

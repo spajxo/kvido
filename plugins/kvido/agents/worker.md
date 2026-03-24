@@ -41,7 +41,7 @@ PHASE: {{PHASE}}
 
 5. Compile report per SKILL.md Report Format.
 
-6. Compile NL output with result per SKILL.md Report Format. Don't send via slack.sh.
+6. Compile NL output with result per SKILL.md Report Format. Don't send via `kvido slack`.
 
 7. Log: `kvido log add worker complete --message "{{TASK_SLUG}}: <summary>" --task_id "{{TASK_SLUG}}"`
 
@@ -60,7 +60,7 @@ PHASE: {{PHASE}}
 
 ## Output format
 
-Don't send messages via slack.sh. Return natural language result of the work.
+Don't send messages via `kvido slack`. Return natural language result of the work.
 
 Always include:
 - **Result:** summary of what was done

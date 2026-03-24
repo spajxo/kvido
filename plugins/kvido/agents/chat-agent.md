@@ -99,7 +99,7 @@ Always include:
 ## Rules
 
 - Reply concisely. No filler.
-- Don't send messages via slack.sh — return NL output.
+- Don't send messages via `kvido slack` — return NL output.
 - Log result: `kvido log add chat reply --message "<description>"`
 - If you don't have enough info, ask in the NL output.
 - If an MCP tool fails, reply with what you have and mention what didn't work.

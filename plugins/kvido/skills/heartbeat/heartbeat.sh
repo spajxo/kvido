@@ -143,16 +143,7 @@ if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
   OWNER_USER_ID=$(jq -r '.owner_user_id // ""' "$STATE_FILE" 2>/dev/null || echo "")
 fi
 if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
-  # Auto-detect via auth.test (uses bot token to identify the workspace user)
-  BOT_TOKEN=$($CONFIG 'slack.bot_token' '' 2>/dev/null || true)
-  if [[ -n "$BOT_TOKEN" && "$BOT_TOKEN" != "null" ]]; then
-    AUTH_TEST=$(curl -s -H "Authorization: Bearer $BOT_TOKEN" https://slack.com/api/auth.test 2>/dev/null || true)
-    DETECTED_ID=$(echo "$AUTH_TEST" | jq -r '.user_id // ""' 2>/dev/null || true)
-    if [[ -n "$DETECTED_ID" && "$DETECTED_ID" != "null" ]]; then
-      OWNER_USER_ID="$DETECTED_ID"
-      "$SCRIPT_DIR/heartbeat-state.sh" set owner_user_id "$OWNER_USER_ID"
-    fi
-  fi
+  echo "WARNING: slack.user_id not configured and no cached owner_user_id — message annotation disabled. Set slack.user_id in settings.json." >&2
 fi
 
 # --- Extended: Chat messages, worker check, state update ---
