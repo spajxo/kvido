@@ -11,12 +11,13 @@ user-invocable: false
 
 ## Step 1: Load Context
 
-1. Read `state/planner-state.md` — what was done last run, found events, timestamps per source
-2. Read `state/current.md` — WIP, focus, blockers
+1. Load planner state — what was done last run, found events, timestamps per source:
+   - `kvido planner-state last-run get` — last run timestamp and counters
+   - `kvido planner-state event list` — previously reported events
+2. Load current focus: `kvido current get` — WIP, focus, blockers
 3. Read `memory/planner.md` — personal instructions from the user (optional, not required)
 4. Read `memory/memory.md` — long-term context (projects, people, decisions)
 5. Get current time (`date -Iseconds`) and day of week
-6. Read `state/session-context.md` for project context and state summary
 
 ---
 
@@ -24,11 +25,11 @@ user-invocable: false
 
 Go through `memory/planner.md`. Look for time triggers:
 - Format: `- HH:MM: <instruction>` or `- <day>: <instruction>`
-- If it's time to act and it hasn't been done today (check planner-state.md) → execute or create a worker task via:
+- If it's time to act and it hasn't been done today (check via `kvido planner-state timestamp get <key>` — exit 1 means not done today) → execute or create a worker task via:
   ```bash
   kvido task create --instruction "<instruction>" --size s --priority high --source planner
   ```
-- Write to planner-state.md that the action was performed
+- Record that the action was performed: `kvido planner-state timestamp set <key> <value>`
 
 If `memory/planner.md` does not exist → skip silently.
 
@@ -76,9 +77,9 @@ kvido context planner
 
 Follow the assembled rules for event dedup keys, notification levels, triage detection, and maintenance scheduling.
 
-Compare collected data against previous state in `planner-state.md` (section "## Reported Events").
+Compare collected data against previously reported events (loaded in Step 1 via `kvido planner-state event list`). Before notifying, check dedup: `kvido planner-state event check <key>` (exit 0 = already reported, skip). After notifying: `kvido planner-state event report <key>`.
 
-Log all notifications — planner-state.md "## Reported Events" + `kvido log add planner notify --message "<event summary>"`.
+Log all notifications — `kvido log add planner notify --message "<event summary>"`.
 
 ### Focus mode
 Read focus_mode via `kvido config 'focus_mode'`.
@@ -93,11 +94,11 @@ Watch for stale MR reviews, WIP tickets with no activity, status changes. Decide
 
 Read `memory/planner.md` section "## Scheduled Rules". For each rule:
 
-1. Evaluate trigger condition (time, day, "not yet today" via planner-state.md tracking)
+1. Evaluate trigger condition (time, day, "not yet today" via `kvido planner-state timestamp get <key>` — exit 1 means not done yet)
 2. If triggered:
    - Execute actions inline (gather data, create journal, dispatch librarian, etc.)
    - Compose output following the rule's delivery template
-   - Track execution in planner-state.md (e.g. last_morning_date, last_eod_date)
+   - Track execution: `kvido planner-state timestamp set <key> <value>` (e.g. key=last_morning_date, key=last_eod_date)
 3. If not triggered: skip
 
 Rules are user-defined natural language with structured triggers and actions. Interpret them flexibly. Default scheduled rules are provided by setup.
@@ -124,7 +125,7 @@ For each task (max 3 per run):
 
 ### 6b: User context reminders (memory/state-first)
 
-Read `state/current.md` and relevant changes from sources (Jira, GitLab, Gmail, Calendar, Slack). Review recent activity via `kvido log list --today --format human`. Look for:
+Load current focus via `kvido current get` and relevant changes from sources (Jira, GitLab, Gmail, Calendar, Slack). Review recent activity via `kvido log list --today --format human`. Look for:
 - items in `Work in Progress` or `Blockers` that are stale or waiting for a response
 - new external changes that should shift today's priority
 - deadlines or follow-ups that belong in `Pinned Today` or `Notes for Tomorrow`
@@ -132,16 +133,14 @@ Read `state/current.md` and relevant changes from sources (Jira, GitLab, Gmail, 
 Output is not new GitLab issues. Output is only reminders and suggestions for current context:
 - `Reminder:` for stale or pending user follow-ups
 - `Event:` if a source change should shift the day's focus
-- with a strong signal, explicitly suggest what to pin in `state/current.md`
+- with a strong signal, explicitly suggest what to pin via `kvido current set`
 
 Legacy compatibility:
 - If you find old tasks assigned to the user, never create a new workflow from them
 - You may remind about them at most once per day in the text output, if still relevant
-- Track reminder history in `state/planner-state.md`:
-```markdown
-## User Task Reminders
-- <slug>: last_reminded=<YYYY-MM-DD>
-```
+- Track reminder history via CLI:
+  - Check: `kvido planner-state reminder get <slug>` (exit 1 = not yet reminded today)
+  - Record: `kvido planner-state reminder set <slug> <YYYY-MM-DD>`
 
 ### Individual triage messages
 
@@ -170,13 +169,25 @@ Max 3 triage items per run.
 
 Evaluate need and create worker tasks. All maintenance tasks: `--source planner --goal maintenance`.
 
-Load maintenance rules from assembled context (already loaded in Step 4 via `kvido context planner`). The context defines recurring tasks, health checks, and periodic maintenance with their triggers, instructions, and size/priority. Follow those rules, checking `last_*_date` timestamps in planner-state.md to avoid duplicates.
+Load maintenance rules from assembled context (already loaded in Step 4 via `kvido context planner`). The context defines recurring tasks, health checks, and periodic maintenance with their triggers, instructions, and size/priority. Follow those rules, checking `last_*_date` timestamps via `kvido planner-state timestamp get <key>` to avoid duplicates. After creating a maintenance task, record: `kvido planner-state timestamp set <key> <value>`.
 
 ---
 
 ## Step 8: Save State
 
-Update `state/planner-state.md` — sections: Last Run (timestamp, counters), Timestamps (`last_*_date` per maintenance task), Scheduled Tasks Done Today, User Task Reminders (`<slug>: last_reminded=<date>`), Reported Events (`<event_key> | first_seen | last_reported`). Clean up Reported Events older than 48h.
+Persist state via CLI commands:
+
+1. Save last run summary (pipe JSON via stdin):
+   ```bash
+   kvido planner-state last-run set
+   ```
+2. All `last_*_date` timestamps updated in Steps 2, 5, 7 via `kvido planner-state timestamp set <key> <value>` — no separate action needed here.
+3. All reminder dates updated in Step 6b via `kvido planner-state reminder set <slug> <date>` — no separate action needed here.
+4. All event keys recorded in Step 4 via `kvido planner-state event report <key>` — no separate action needed here.
+5. Clean up stale reported events (older than 72h):
+   ```bash
+   kvido planner-state event cleanup
+   ```
 
 ---
 
@@ -198,9 +209,9 @@ If no notifications are needed, return: `No notifications.`
 
 | Mistake | Fix |
 |---------|-----|
-| Sending duplicate notification for already reported event | Always check Reported Events keys before notifying |
+| Sending duplicate notification for already reported event | Always run `kvido planner-state event check <key>` before notifying |
 | Creating worker tasks for things planner can log | Planner only creates tasks for actual work; status updates and reminders go into output as `Event:` or `Reminder:` |
-| Skipping `last_*_date` update after maintenance task creation | Always update planner-state.md timestamps to prevent duplicate maintenance tasks |
+| Skipping `last_*_date` update after maintenance task creation | Always run `kvido planner-state timestamp set <key> <value>` after creating a maintenance task to prevent duplicates |
 | Notifying `immediate` during focus mode | Check calendar for active focus events — suppress to `batch` |
 | Creating user-facing tasks from legacy assigned tickets | Only remind in text output, never create new workflow from old tickets |
 
