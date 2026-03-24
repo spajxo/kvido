@@ -29,9 +29,12 @@ fi
 SESSION_CONTEXT="$(cat "$OUTPUT")"
 
 jq -n \
-  --arg msg "$SESSION_CONTEXT" \
+  --arg ctx "$SESSION_CONTEXT" \
   '{
     "continue": true,
     "suppressOutput": true,
-    "systemMessage": $msg
+    "hookSpecificOutput": {
+      "hookEventName": "SessionStart",
+      "additionalContext": $ctx
+    }
   }'
