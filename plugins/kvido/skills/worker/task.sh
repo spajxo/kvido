@@ -134,13 +134,12 @@ cmd_create() {
   # Title: explicit or first ~80 chars of instruction
   [[ -z "$TITLE" ]] && TITLE="${INSTRUCTION:0:80}"
 
-  # Status: slack → todo (skip triage), else → triage
+  # Status: user-initiated → todo (skip triage), agent-generated → triage
   if [[ -z "$STATUS" ]]; then
-    if [[ "$SOURCE" == "slack" ]]; then
-      STATUS="todo"
-    else
-      STATUS="triage"
-    fi
+    case "$SOURCE" in
+      slack|manual) STATUS="todo" ;;
+      *) STATUS="triage" ;;
+    esac
   fi
 
   # Pipeline auto-enable for large tasks

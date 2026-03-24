@@ -55,7 +55,7 @@ source_ref: "1773933088.437"
 
 | Subcommand | Action |
 |------------|--------|
-| `kvido task create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Creates task file, returns slug. Pipeline auto for l/xl. |
+| `kvido task create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Creates task file, returns slug. User-initiated sources (slack, manual) route to `todo/`; agent-generated sources route to `triage/`. Override with `--status`. |
 | `kvido task read <slug>` | Returns frontmatter + content as key=value |
 | `kvido task read-raw <slug>` | Returns raw markdown content of task file |
 | `kvido task update <slug> <field> <value>` | Updates frontmatter field |
