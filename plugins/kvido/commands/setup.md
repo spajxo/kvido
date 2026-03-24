@@ -139,9 +139,9 @@ For each missing file, create with minimal content:
 - `$KVIDO_HOME/memory/errors.md` → `# Errors`
 - `$KVIDO_HOME/memory/people/_index.md` → `# People`
 - `$KVIDO_HOME/memory/decisions/_index.md` → `# Decisions`
-- `$KVIDO_HOME/state/heartbeat-state.json` → default schema (iteration_count: 0, all timestamps null, last_chat_ts: "0", cron_job_id: "", active_preset: "10m", last_interaction_ts: null)
-- `$KVIDO_HOME/state/current.md` → empty template (Active Focus, WIP, Blockers, Parked, Notes for Tomorrow)
-- `$KVIDO_HOME/state/planner-state.md` → empty planner state template
+- Heartbeat state: `kvido heartbeat-state get-json` — if empty, initialize via `kvido heartbeat-state set iteration_count 0` etc.
+- Planner state: `kvido planner-state last-run get` — if fails, run `kvido planner-state reset`
+- Source health: `kvido source-health get` — auto-creates if missing
 
 ## Step 3: Planning Bootstrap
 
@@ -164,10 +164,10 @@ Add your personal instructions for the planner here.
   1. Gather data from all sources (full fetch)
   2. Summarize yesterday's work, overnight changes
   3. Show today's calendar + recommendations
-  4. Set focus in state/current.md
+  4. Set focus via `kvido current set`
   5. Run log purge: kvido log purge --before today --archive
 - Deliver: slack (template: morning)
-- Track: planner-state.md last_morning_date
+- Track: `kvido planner-state timestamp set last_morning_date <date>`
 
 ### EOD journal
 - Trigger: workday, after 16:00 (or user invokes), not yet today
@@ -176,10 +176,10 @@ Add your personal instructions for the planner here.
   2. Create journal in memory/journal/YYYY-MM-DD.md
   3. Worklog check (Jira — compare time vs logged)
   4. Dispatch librarian for memory extraction
-  5. Update state/current.md (clear focus, set notes for tomorrow)
-  6. Reset heartbeat-state.json iteration_count
+  5. Update current focus via `kvido current set` (clear focus, set notes for tomorrow)
+  6. Reset iteration count: `kvido heartbeat-state set iteration_count 0`
 - Deliver: slack (template: eod)
-- Track: planner-state.md last_eod_date
+- Track: `kvido planner-state timestamp set last_eod_date <date>`
 
 ### Friday weekly summary
 - Trigger: friday, after EOD journal

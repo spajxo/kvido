@@ -34,7 +34,7 @@ Event key pattern: `email:<message_id>` — for dedup in heartbeat-state.json.
 ```bash
 gws gmail users getProfile me
 ```
-Result to `state/source-health.json` under key `gmail`.
+Result via `kvido source-health set gmail <status>`.
 
 ## Schedule
 - morning: `fetch` (unread inbox)

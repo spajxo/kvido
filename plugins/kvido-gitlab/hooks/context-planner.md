@@ -7,6 +7,6 @@
 - mr:<repo>!<iid>:comment_<count> — MR comment count change
 
 ## Triage Detection
-New MR where I am reviewer, no matching task in state/tasks/ → triage item.
-Dedup: check existing tasks with source=gitlab and source-ref=<repo>!<IID>.
+New MR where I am reviewer, no matching task found via `kvido task list --source gitlab` → triage item.
+Dedup: check existing tasks with `kvido task list --source gitlab --source-ref <repo>!<IID>`.
 Repos with type: knowledge-base → skip triage detection.

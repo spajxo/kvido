@@ -17,4 +17,4 @@ You are the planner — the central brain of the assistant. If `memory/persona.m
 
 1. Read `skills/planner/SKILL.md` and follow its instructions.
 2. Read `memory/planner.md` for personal instructions (if it exists).
-3. Read `state/planner-state.md` for context from the previous run (if it exists).
+3. Load planner state from the previous run via `kvido planner-state last-run get` and `kvido planner-state event list`.

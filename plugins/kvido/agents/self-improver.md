@@ -21,22 +21,18 @@ Before generating new proposals, evaluate the results of previous ones.
 
 1. Read completed/cancelled tasks with `source: self-improver` from the last 7 days:
    ```bash
-   for f in state/tasks/done/*.md state/tasks/cancelled/*.md; do
-     [[ -f "$f" ]] || continue
-     SLUG=$(basename "$f" .md)
+   for SLUG in $(kvido task list done --source self-improver) $(kvido task list cancelled --source self-improver); do
      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
-     src=$(echo "$TASK_DATA" | grep '^SOURCE=' | cut -d= -f2-)
-     [[ "$src" == "self-improver" ]] || continue
      updated=$(echo "$TASK_DATA" | grep '^UPDATED_AT=' | cut -d= -f2-)
      # Filter last 7 days
      echo "$SLUG"
    done
    ```
 
-2. Determine outcome for each from location:
-   - `state/tasks/done/` = implemented (accepted)
-   - `state/tasks/cancelled/` = rejected
-   - `state/tasks/failed/` = failed (don't count in acceptance rate)
+2. Determine outcome for each from status:
+   - status `done` = implemented (accepted)
+   - status `cancelled` = rejected
+   - status `failed` = failed (don't count in acceptance rate)
 
 3. Calculate metrics:
    - `acceptance_rate = implemented / (implemented + rejected)`
@@ -65,17 +61,11 @@ Use this limit instead of the fixed "max 5" in subsequent steps.
 - Read Slack DM channel via MCP: `slack_read_channel` (last 20 messages)
 - Check existing tasks for dedup:
   ```bash
-  for d in state/tasks/*/; do
-    for f in "$d"*.md; do
-      [[ -f "$f" ]] || continue
-      SLUG=$(basename "$f" .md)
-      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
-      src=$(echo "$TASK_DATA" | grep '^SOURCE=' | cut -d= -f2-)
-      [[ "$src" == "self-improver" ]] || continue
-      title=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-)
-      status=$(echo "$TASK_DATA" | grep '^STATUS=' | cut -d= -f2-)
-      echo "$SLUG | $title | $status"
-    done
+  for SLUG in $(kvido task list --source self-improver); do
+    TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
+    title=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-)
+    status=$(echo "$TASK_DATA" | grep '^STATUS=' | cut -d= -f2-)
+    echo "$SLUG | $title | $status"
   done
   ```
 
@@ -105,9 +95,7 @@ Analyze repeated task patterns to identify automatable patterns.
 
 1. Read completed worker tasks from the last 7 days:
    ```bash
-   for f in state/tasks/done/*.md; do
-     [[ -f "$f" ]] || continue
-     SLUG=$(basename "$f" .md)
+   for SLUG in $(kvido task list done); do
      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
      title=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-)
      echo "$SLUG | $title"

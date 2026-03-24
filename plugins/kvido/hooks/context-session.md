@@ -19,20 +19,19 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
 - Treat the current working directory as the project context and `$KVIDO_HOME` as Kvido runtime state.
 - Before making workflow decisions, read:
   - `memory/memory.md`
-  - `state/current.md`
-  - `state/session-context.md`
-  - `state/heartbeat-state.json`
+  - `kvido current get`
+  - `kvido heartbeat-state get-json`
 - Review recent activity with `kvido log list --today --format human`.
 - Use `kvido config 'key.subkey'` for configuration lookups instead of parsing files directly.
 
 ## Runtime Layout
 
-- `state/` — ephemeral runtime state (`current.md`, `session-context.md`, `log.jsonl`, `heartbeat-state.json`, `tasks/`, `dashboard.html`)
+- `state/` — ephemeral runtime state; access via CLI: `kvido current`, `kvido planner-state`, `kvido heartbeat-state`, `kvido task`, `kvido log`, `kvido source-health`
 - `memory/` — persistent context (`memory.md`, journals, weekly notes, projects, people, decisions, learnings)
 - `settings.json` — runtime configuration (use `kvido config 'key'` to read values; `"$ENV_VAR"` references are resolved from `.env` automatically)
 - `.env` — secrets only (referenced from `settings.json` via `"$ENV_VAR"` syntax)
 
-All `state/` and `memory/` paths in Kvido skills and agents resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/`.
+All state operations use `kvido` CLI wrappers. Memory paths resolve to `$KVIDO_HOME/memory/`.
 
 ## Orchestration Contract
 
@@ -57,7 +56,7 @@ If no output is needed: `No notifications.`
 
 ### Task Lifecycle
 
-Tasks live in `$KVIDO_HOME/state/tasks/`. States: `pending` → `in_progress` → `completed`. Untriaged items go to `triage` state.
+Tasks are managed via `kvido task` commands. States: `pending` → `in_progress` → `completed`. Untriaged items go to `triage` state.
 
 CLI: `kvido task create`, `kvido task list [state]`, `kvido task read <slug>`, `kvido task note <slug> "<text>"`.
 
@@ -75,7 +74,7 @@ Use `kvido config 'key.subkey'` for all configuration lookups. Never parse `sett
 
 Patterns: `going to sleep`, `good night`, `pause`, `sleep` and similar.
 
-Action: set `sleep_until` in `state/heartbeat-state.json`. Default: tomorrow 06:00.
+Action: `kvido heartbeat-state set sleep_until <value>`. Default: tomorrow 06:00.
 
 ### Heartbeat Loop
 

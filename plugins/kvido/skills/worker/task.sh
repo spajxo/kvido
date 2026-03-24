@@ -9,7 +9,7 @@
 #   read-raw <slug>           # full file contents
 #   update   <slug> <key> <value>  # update frontmatter field
 #   move     <slug> <status>  # move between folders
-#   list     <status> [--sort priority]  # list slugs
+#   list     <status> [--sort priority] [--source SRC]  # list slugs
 #   find     <slug>           # returns current status
 #   note     <slug> <message> # append to ## Worker Notes
 #   count    <status>         # number of tasks in folder
@@ -259,17 +259,18 @@ cmd_move() {
 }
 
 cmd_list() {
-  local status="${1:-}" sort_mode=""
+  local status="${1:-}" sort_mode="" source_filter=""
   shift || true
 
-  [[ -z "$status" ]] && { echo "Usage: task.sh list <status> [--sort priority]" >&2; exit 1; }
+  [[ -z "$status" ]] && { echo "Usage: task.sh list <status> [--sort priority] [--source SRC]" >&2; exit 1; }
 
   local dir="$TASKS_DIR/$status"
   [[ ! -d "$dir" ]] && exit 0
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --sort) sort_mode="$2"; shift 2 ;;
+      --sort)   sort_mode="$2";     shift 2 ;;
+      --source) source_filter="$2"; shift 2 ;;
       *) shift ;;
     esac
   done
@@ -279,6 +280,10 @@ cmd_list() {
     local entries="" slug priority created_at weight
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
+      if [[ -n "$source_filter" ]]; then
+        src=$(_read_frontmatter "$f" "source")
+        [[ "$src" != "$source_filter" ]] && continue
+      fi
       slug=$(basename "$f" .md)
       priority=$(_read_frontmatter "$f" "priority")
       [[ -z "$priority" ]] && priority="medium"
@@ -293,6 +298,10 @@ cmd_list() {
     # Simple listing by filename
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
+      if [[ -n "$source_filter" ]]; then
+        src=$(_read_frontmatter "$f" "source")
+        [[ "$src" != "$source_filter" ]] && continue
+      fi
       basename "$f" .md
     done
   fi

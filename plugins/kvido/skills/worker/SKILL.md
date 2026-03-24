@@ -1,13 +1,13 @@
 ---
 name: worker
-description: Use when heartbeat dispatches the worker agent to execute a queued task from state/tasks/.
+description: Use when heartbeat dispatches the worker agent to execute a queued task from the task queue.
 ---
 
 # Worker Skill
 
 Worker executes assigned tasks asynchronously in the background of the heartbeat.
 All queue management goes through `kvido task`.
-Tasks are local markdown files in `state/tasks/` — status is the folder name, metadata is YAML frontmatter.
+Tasks are tracked as markdown files — status is managed via `kvido task move`, metadata is YAML frontmatter.
 
 ## Task Status Flow
 
@@ -72,7 +72,7 @@ source_ref: "1773933088.437"
 
 ### What Worker must not do
 - Push to remote repositories without an explicit instruction in the task
-- Modify `state/current.md` (owned by heartbeat)
+- Modify current context (owned by heartbeat — use `kvido current get` to read, never write directly)
 - Dispatch additional workers (no worker → worker chaining)
 - Send more than 3 Slack messages per task
 - Continue if task is in done/failed/cancelled (check at start)
@@ -119,7 +119,7 @@ Use conventional commit message (feat/fix/chore) based on the type of change.
 |---------|-----|
 | Sending Slack messages directly via `kvido slack` | Worker returns NL output — heartbeat handles all delivery |
 | Chaining workers (dispatching another worker from worker) | Forbidden. Create a follow-up task via `kvido task create` instead. |
-| Modifying `state/current.md` | Owned by heartbeat. Worker logs via `kvido log add` and writes task notes. |
+| Writing current context directly | Owned by heartbeat. Read via `kvido current get`. Worker logs via `kvido log add` and writes task notes. |
 | Skipping cancel check at start | Always `kvido task find` first — task may have been cancelled while queued |
 | Continuing past timeout | Check elapsed time; if > `task_timeout_minutes`, emit partial result and move to `failed/` |
 | Pushing to main in worktree mode | Always push to feature branch. Never push directly to main. |

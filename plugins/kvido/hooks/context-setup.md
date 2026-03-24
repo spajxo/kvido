@@ -27,5 +27,5 @@ $KVIDO_HOME/
 ├── .env          (secrets — keys referenced from settings.json)
 ├── settings.json
 ├── memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
-└── state/tasks/{triage,todo,in-progress,done,failed,cancelled}
+└── state/tasks/          (managed via `kvido task` commands; subdirs: triage, todo, in-progress, done, failed, cancelled)
 ```
