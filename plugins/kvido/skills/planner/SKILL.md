@@ -188,8 +188,8 @@ Update `state/planner-state.md` — sections: Last Run (timestamp, counters), Ti
 
 Return a natural language summary of all notifications. Format per item:
 
-- **Event:** `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: <high|normal|low>.`
-- **Event (batch):** `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal.`
+- **Event:** `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: <high|normal|low>. Severity: <:red_circle:|:large_yellow_circle:|:large_green_circle:>.`
+- **Event (batch):** `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal. Severity: :large_yellow_circle:.`
 - **Triage:** `Triage: <slug> '<title>' — <description>. Priority: <p>. Size: <s>. Assignee: <a>.`
 - **Reminder:** `Reminder: <text>. Urgency: normal.`
 - **Dispatch:** `Dispatch: <agent-name> KEY1=value1 KEY2=value2 ...` — heartbeat will dispatch the named agent with parameters.

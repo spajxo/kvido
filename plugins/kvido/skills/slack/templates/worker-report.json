@@ -1,5 +1,5 @@
 [
-  {"type":"section","text":{"type":"mrkdwn","text":":wrench: *{{title}}*\n{{results}}"}},
+  {"type":"section","text":{"type":"mrkdwn","text":":gear: *{{title}}*\n{{results}}"}},
   {"type":"context","elements":[
     {"type":"mrkdwn","text":"#{{task_id}} · {{duration}}"}
   ]}

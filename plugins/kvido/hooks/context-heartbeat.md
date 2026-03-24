@@ -6,6 +6,14 @@ Heartbeat is the single owner of Slack message delivery. No agent, source plugin
 
 **Review check:** Any new source plugin or agent prompt must NOT contain `kvido slack send|reply|edit` calls. Verify before merge.
 
+## Chat ack lifecycle
+
+When heartbeat detects a new chat message:
+1. `kvido slack react <ts> eyes` — immediate ack
+2. Dispatch chat-agent
+3. Deliver chat-agent reply
+4. `kvido slack unreact <ts> eyes` — remove ack
+
 ## Notification levels
 
 | Level | Behavior |
@@ -23,11 +31,35 @@ Heartbeat is the single owner of Slack message delivery. No agent, source plugin
 - everything else → immediate
 - shell failure → log error, mark notify TODO completed
 
+## Digest threading
+
+When planner returns multiple events in a single cycle:
+- 1 event → deliver as standalone (current behavior)
+- 2+ events → send digest parent via `kvido slack send ... digest`, then each event as `kvido slack reply ... <digest_ts> event`
+- `digest_ts` is ephemeral — used only within the current heartbeat execution
+
+## Batch flush threading
+
+When flushing batched notifications:
+- Send `batch-header` parent via `kvido slack send ... batch-header` → capture `ts`
+- Each batched notification as `kvido slack reply ... <batch_ts> <template>`
+
+## Processing status edits
+
+For worker and planner dispatches, heartbeat sends a status message and edits it on completion:
+
+| Dispatch | Status message | On success | On failure |
+|----------|---------------|------------|------------|
+| worker | `kvido slack send ... chat --var message=":hourglass_flowing_sand: Working on <title>..."` | `kvido slack edit ... <ts> chat --var message=":white_check_mark: Done: <title> — <duration>"` | `kvido slack edit ... <ts> chat --var message=":x: Failed: <title> — <summary>"` |
+| planner | `kvido slack send ... chat --var message=":hourglass_flowing_sand: Planner scanning..."` | `kvido slack edit ... <ts> chat --var message=":white_check_mark: Planner done — <count> events"` | `kvido slack edit ... <ts> chat --var message=":x: Planner failed — <error>"` |
+
+Chat-agent uses ack reactions only (see Chat ack lifecycle above), not status edits.
+
 ## Per-agent template mapping
 
 | Agent | Template | Level | Notes |
 |-------|----------|-------|-------|
-| chat-agent | chat | always immediate | After delivery, check pending chat tasks → dispatch next FIFO |
+| chat-agent | chat | always immediate | Ack react before dispatch, unreact after delivery. After delivery, check pending chat tasks → dispatch next FIFO |
 | planner | per-line (Event/Triage/Reminder/Dispatch) | per delivery rules | Triage → create triage:<slug> TODO. Dispatch → dispatch named agent. |
 | worker | worker-report | high for error, else normal | — |
-| other | agent name as template, fallback event | per delivery rules | — |
+| other | agent name as template, fallback event | per delivery rules | When falling back to `event` template, set `--var severity_bar=:large_yellow_circle:` as default if not provided by agent output |

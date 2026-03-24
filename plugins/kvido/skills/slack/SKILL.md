@@ -53,6 +53,14 @@ With `--thread <ts>`: reads replies in the given thread (`conversations.replies`
 kvido slack delete <channel> <message_ts>
 ```
 
+### Remove a reaction
+
+```bash
+kvido slack unreact <ts> <emoji> [channel]
+```
+
+Removes a reaction. Idempotent — succeeds even if reaction doesn't exist.
+
 ## Templates
 
 In `templates/` — JSON files with `{{placeholder}}` variables. Unified format: `section` + `context`, emoji prefix by type, separator `━━━`.
@@ -61,15 +69,18 @@ In `templates/` — JSON files with `{{placeholder}}` variables. Unified format:
 |----------|-------|------|-------|
 | `morning` | ☀️ | `date`, `briefing`, `triage_count`, `meeting_time`, `deepwork_time` | Morning briefing summary |
 | `eod` | 🌙 | `date`, `summary`, `session_time`, `done_count`, `open_count` | EOD summary |
-| `event` | (custom `{{emoji}}`) | `emoji`, `title`, `description`, `source`, `reference`, `timestamp` | Planner notifications, heartbeat events |
-| `worker-report` | 🔧 | `title`, `results`, `task_id`, `duration` | Worker task completion |
+| `event` | (custom `{{emoji}}`) | `severity_bar`, `emoji`, `title`, `description`, `source`, `reference`, `timestamp` | Planner notifications, heartbeat events |
+| `worker-report` | ⚙️ | `title`, `results`, `task_id`, `duration` | Worker task completion |
 | `triage-item` | 📋 | `slug`, `title`, `description`, `priority`, `size`, `assignee` | Individual triage item |
-| `maintenance` | 🔧 | `librarian`, `enricher`, `self_improver`, `health`, `timestamp` | Maintenance summary |
+| `maintenance` | 🩺 | `librarian`, `enricher`, `self_improver`, `health`, `timestamp` | Maintenance summary |
 | `chat` | 💬 | `message` | General messages, chat replies |
+| `digest` | (custom `{{emoji}}`) | `emoji`, `title`, `summary`, `stats` | Digest thread parent |
+| `batch-header` | (custom `{{emoji}}`) | `emoji`, `title`, `summary`, `count`, `timestamp` | Batch flush thread parent |
 
 **Emoji conventions:**
 - 📋 triage, triage overflow
-- 🔧 worker report, maintenance
+- ⚙️ worker report
+- 🩺 maintenance
 - 📊 planner notifications (use as `emoji` var in `event`)
 - ☀️ morning
 - 🌙 eod
@@ -85,9 +96,13 @@ In `templates/` — JSON files with `{{placeholder}}` variables. Unified format:
 
 ## Threading
 
-Flat messages as default. Thread only on escalation:
-1. First notification → `kvido slack send` → save `ts` to `reported` entry
-2. Escalation of the same event → `kvido slack reply` into the original message's thread
+Flat messages as default. Threading applies in these cases:
+
+1. **Single event** — `kvido slack send` (standalone, flat)
+2. **Digest (2+ events from planner cycle)** — `kvido slack send` digest parent → `kvido slack reply` individual events into thread
+3. **Batch flush** — `kvido slack send` batch-header parent → `kvido slack reply` batched items into thread
+4. **Escalation of same event** — `kvido slack reply` into the original message's thread
+5. **Morning/eod briefings** — standalone (never threaded)
 
 ## Focus Mode
 
@@ -107,7 +122,7 @@ Minimum required scopes (based on actually called API methods):
 |-------|-----------|
 | `chat:write` | `chat.postMessage`, `chat.update`, `chat.delete` |
 | `im:history` | `conversations.history`, `conversations.replies` (DM channel) |
-| `reactions:write` | `reactions.add` |
+| `reactions:write` | `reactions.add`, `reactions.remove` |
 | `reactions:read` | `reactions.get` |
 
 Optional (only if the assistant reads channels outside DM):
@@ -124,7 +139,7 @@ Scopes `channels:read`, `groups:read`, `im:read`, `im:write`, `users:read` and `
 | Agent calling `kvido slack` directly | Only heartbeat calls `kvido slack`. Agents return NL output. |
 | Using `ts` as `thread_ts` for replies | `thread_ts` is the parent message ts, not the reply ts |
 | Sending without template | Always use a template from `templates/`. Raw text goes through `chat` template. |
-| Threading by default | Flat messages are default. Thread only for escalation of same event. |
+| Threading by default | Flat messages for single events. Use digest threading for 2+ events per planner cycle. |
 | Adding unauthorized scopes | Only `chat:write`, `im:history`, `reactions:write`, `reactions:read` are required. |
 | Ignoring `kvido slack` exit code | Exit 1 = failure. Log error, don't retry silently. |
 
