@@ -92,10 +92,4 @@ Write to memory/weekly/YYYY-Www.md.
 
 ## Output Format
 
-- Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: <high|normal|low>. Severity: <:red_circle:|:large_yellow_circle:|:large_green_circle:>.
-- Event (batch): same format, urgency: normal. Severity: :large_yellow_circle:.
-- Triage: <slug> '<title>' — <description>. Priority: <p>. Size: <s>. Assignee: <a>.
-- Reminder: <text>. Urgency: normal.
-- Dispatch: <agent-name> KEY1=value1 KEY2=value2 ...
-
-If no notifications: "No notifications."
+See **Agent Output Grammar** in the Orchestration Contract (session context) for the canonical prefix format. The planner SKILL.md Output Format section defines the full specification.

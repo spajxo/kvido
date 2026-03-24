@@ -3,10 +3,6 @@ description: Heartbeat — orchestrator, chat check, worker dispatch, log, adapt
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, TodoWrite, TodoRead, mcp__claude_ai_Slack__slack_read_channel
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
-> **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config via `kvido config 'key'`.
-
 # Heartbeat
 
 Runs automatically via `/loop`. Be extremely brief -- no output if nothing to report.
@@ -237,7 +233,6 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 |---------|-----|
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
 | Dispatching chat-agent for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
-| Sending Slack directly from agents | Only heartbeat calls `kvido slack`. Agents return NL output. |
 | Dispatching worker when one is already `in_progress` | Check TodoRead for `worker:*` in_progress first |
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 2 |
 | Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |
@@ -252,5 +247,4 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **Max 1 worker per iteration.** Planner + 1 worker + 1 chat-agent is maximum.
 - **TodoWrite is the single source of truth** for dispatch tracking. No file-based locks.
 - **Dependency rule:** Do not dispatch chat-agent if one is already `in_progress`. Do not dispatch worker if one is already `in_progress`. Planner can run alongside chat-agent but not alongside another planner.
-- **No business agent calls `kvido slack` directly.** Heartbeat owns Slack delivery.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.

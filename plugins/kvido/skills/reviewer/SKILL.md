@@ -5,8 +5,6 @@ allowed-tools: Read, Glob, Grep, Bash
 user-invocable: false
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 # Reviewer
 
 Instructions for a worker task performing an MR review summary.

@@ -5,8 +5,6 @@ allowed-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch, mcp__claude_ai_Atlas
 user-invocable: false
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 # Researcher
 
 Instructions for a worker task performing research.

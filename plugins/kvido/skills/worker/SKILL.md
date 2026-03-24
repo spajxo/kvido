@@ -3,8 +3,6 @@ name: worker
 description: Use when heartbeat dispatches the worker agent to execute a queued task from state/tasks/.
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
 # Worker Skill
 
 Worker executes assigned tasks asynchronously in the background of the heartbeat.

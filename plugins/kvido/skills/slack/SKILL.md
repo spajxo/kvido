@@ -7,14 +7,10 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
-> **Configuration:** Use `kvido config 'key'` for focus mode and batching settings.
-
 # Slack
 
 Slack is the primary communication channel. All messages go through `kvido slack` (wraps `slack.sh` over the Slack Web API with curl + jq and a bot token).
-Heartbeat is the sole orchestrator of delivery policy; `kvido slack` is the LLM-facing Slack interface.
+Delivery ownership is defined in the Orchestration Contract (session context). `kvido slack` is the LLM-facing Slack interface.
 
 ## Usage
 
@@ -136,7 +132,6 @@ Scopes `channels:read`, `groups:read`, `im:read`, `im:write`, `users:read` and `
 
 | Mistake | Fix |
 |---------|-----|
-| Agent calling `kvido slack` directly | Only heartbeat calls `kvido slack`. Agents return NL output. |
 | Using `ts` as `thread_ts` for replies | `thread_ts` is the parent message ts, not the reply ts |
 | Sending without template | Always use a template from `templates/`. Raw text goes through `chat` template. |
 | Threading by default | Flat messages for single events. Use digest threading for 2+ events per planner cycle. |

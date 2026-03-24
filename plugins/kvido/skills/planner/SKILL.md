@@ -5,10 +5,6 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, mcp__claude_ai_Atlassian__se
 user-invocable: false
 ---
 
-**Language:** Communicate in the language set in memory/persona.md. Default: English.
-
-> **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config via `kvido config 'key'`.
-
 # Planner
 
 ---
@@ -203,9 +199,7 @@ If no notifications are needed, return: `No notifications.`
 | Mistake | Fix |
 |---------|-----|
 | Sending duplicate notification for already reported event | Always check Reported Events keys before notifying |
-| Auto-approving triage items | Triage items stay in `triage/` until user explicitly approves via reaction |
 | Creating worker tasks for things planner can log | Planner only creates tasks for actual work; status updates and reminders go into output as `Event:` or `Reminder:` |
-| Calling `kvido slack` directly | Planner runs as subagent — no Slack access. Return NL output with prefixed lines. |
 | Skipping `last_*_date` update after maintenance task creation | Always update planner-state.md timestamps to prevent duplicate maintenance tasks |
 | Notifying `immediate` during focus mode | Check calendar for active focus events — suppress to `batch` |
 | Creating user-facing tasks from legacy assigned tickets | Only remind in text output, never create new workflow from old tickets |
