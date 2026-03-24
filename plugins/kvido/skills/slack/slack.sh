@@ -8,6 +8,7 @@ set -euo pipefail
 #   slack.sh edit [channel] <message_ts> <template|-> [--var key=value]...
 #   slack.sh read [channel] [--limit N] [--oldest ts] [--thread ts] [--text]
 #   slack.sh react <ts> <emoji> [channel]
+#   slack.sh unreact <ts> <emoji> [channel]
 #   slack.sh reactions <message_ts> [channel]
 #   slack.sh delete [channel] <message_ts>
 #   slack.sh download <url_private> [output_dir]
@@ -301,6 +302,31 @@ case "$ACTION" in
       echo "ok"
     fi
     ;;
+  unreact)
+    # Usage: slack.sh unreact <ts> <emoji> [channel]
+    # Removes a reaction from a message. Emoji without colons (e.g. "eyes").
+    # Idempotent: no_reaction is treated as success.
+    [[ $# -lt 2 ]] && { echo "Usage: slack.sh unreact <ts> <emoji> [channel]" >&2; exit 1; }
+    REACT_TS="$1"; shift
+    REACT_EMOJI="$1"; shift
+    REACT_EMOJI="${REACT_EMOJI#:}"; REACT_EMOJI="${REACT_EMOJI%:}"
+    resolve_channel "${1:-}"
+    CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
+    PAYLOAD=$(jq -n --arg channel "$CHANNEL" --arg timestamp "$REACT_TS" --arg name "$REACT_EMOJI" \
+      '{channel: $channel, timestamp: $timestamp, name: $name}')
+    RESULT=$(slack_post "reactions.remove" -d "$PAYLOAD")
+    if [[ $(echo "$RESULT" | jq -r '.ok') != "true" ]]; then
+      ERR=$(echo "$RESULT" | jq -r '.error')
+      if [[ "$ERR" == "no_reaction" ]]; then
+        echo "ok"
+      else
+        echo "Error: $ERR" >&2
+        exit 1
+      fi
+    else
+      echo "ok"
+    fi
+    ;;
   reactions)
     # Usage: slack.sh reactions <message_ts> [channel]
     # Returns JSON: {"white_check_mark": true/false, "x": true/false}
@@ -350,7 +376,7 @@ case "$ACTION" in
     echo "$OUTPUT_PATH"
     ;;
   *)
-    echo "Usage: slack.sh {send|reply|edit|read|react|reactions|delete|download} ..." >&2
+    echo "Usage: slack.sh {send|reply|edit|read|react|unreact|reactions|delete|download} ..." >&2
     exit 1
     ;;
 esac
