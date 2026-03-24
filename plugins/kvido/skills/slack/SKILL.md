@@ -7,8 +7,6 @@ allowed-tools: Read, Bash
 user-invocable: false
 ---
 
-> **Configuration:** Use `kvido config 'key'` for focus mode and batching settings.
-
 # Slack
 
 Slack is the primary communication channel. All messages go through `kvido slack` (wraps `slack.sh` over the Slack Web API with curl + jq and a bot token).

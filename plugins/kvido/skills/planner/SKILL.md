@@ -5,8 +5,6 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, mcp__claude_ai_Atlassian__se
 user-invocable: false
 ---
 
-> **File paths:** All `state/` and `memory/` paths below resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/` (default: `~/.config/kvido`). Config via `kvido config 'key'`.
-
 # Planner
 
 ---

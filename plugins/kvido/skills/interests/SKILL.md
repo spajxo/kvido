@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Bash, WebSearch, WebFetch
 user-invocable: true
 ---
 
-> **Configuration:** Use `kvido config 'key'` for topics and intervals.
-
 # Interests
 
 ## Manual usage
