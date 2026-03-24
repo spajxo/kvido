@@ -198,8 +198,7 @@ Flush `notify:*` tasks with `pending` status (via `TaskList`) when: planner iter
 
 1. `TaskList` — if any `worker:*` in_progress → skip (max 1 concurrent).
 2. `NEXT_TASK=$(kvido task list todo --sort priority | head -1)` — empty → skip.
-3. `kvido task move "$NEXT_TASK" in-progress` + `kvido task read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION, PHASE, WORKTREE.
-   - Pipeline task without phase → set default: `kvido task update "$NEXT_TASK" phase brainstorm|implement`
+3. `kvido task move "$NEXT_TASK" in-progress` + `kvido task read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION, WORKTREE.
 4. `TaskCreate` subject `worker:<NEXT_TASK>`, then `TaskUpdate` status `in_progress`.
 5. Model from config: `kvido config 'skills.worker.models.<SIZE>'` (or `kvido config 'skills.worker.urgent_model'` if PRIORITY==urgent).
 6. Dispatch `worker` agent (`run_in_background: true`, model per size). If `WORKTREE=true` → add `isolation: "worktree"`.
