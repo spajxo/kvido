@@ -54,18 +54,12 @@ If the message contains an action verb with scope > 1 lookup ("go through", "wri
 
 If the message is a reply to a worker task thread or contains "pipeline"/"brainstorm"/reply to worker questions:
 
-1. Find the task (pipeline tasks wait for input in todo/ and in-progress/):
+1. Find pipeline tasks waiting for user input:
    ```bash
-   # Find pipeline tasks waiting for user input:
-   for f in state/tasks/todo/*.md state/tasks/in-progress/*.md; do
-     [[ -f "$f" ]] || continue
-     SLUG=$(basename "$f" .md)
+   for SLUG in $(kvido task list todo) $(kvido task list in-progress); do
      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
      PIPELINE=$(echo "$TASK_DATA" | grep '^PIPELINE=' | cut -d= -f2-)
-     if [[ "$PIPELINE" == "true" ]]; then
-       PHASE=$(echo "$TASK_DATA" | grep '^PHASE=' | cut -d= -f2-)
-       echo "$SLUG phase=$PHASE"
-     fi
+     [[ "$PIPELINE" == "true" ]] && echo "$SLUG phase=$(echo "$TASK_DATA" | grep '^PHASE=' | cut -d= -f2-)"
    done
    ```
 2. Based on phase:
@@ -75,13 +69,13 @@ If the message is a reply to a worker task thread or contains "pipeline"/"brains
 
 ### Triage approval (via text)
 
-If the message contains ✅/❌/👍/👎 or "approved"/"rejected" and `state/planner-state.md` section `## Triage Pending` exists:
+If the message contains ✅/❌/👍/👎 or "approved"/"rejected"/"approve"/"reject" followed by a slug or positional reference:
 
-1. Parse the reply — assign to items by order
-2. Approve: `kvido task move <slug> todo`
-3. Reject: `kvido task note <slug> "Rejected via chat" && kvido task move <slug> cancelled`
-4. Modify: add feedback as comment
-5. Delete processed items from `## Triage Pending`
+1. List pending triage tasks: `kvido task list triage`
+2. Match the user's intent to task slugs (by name, order, or explicit slug)
+3. Approve: `kvido task move <slug> todo`
+4. Reject: `kvido task note <slug> "Rejected via chat" && kvido task move <slug> cancelled`
+5. Modify: `kvido task note <slug> "<user feedback>"`
 
 ### Direct reply
 
