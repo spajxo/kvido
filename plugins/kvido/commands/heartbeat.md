@@ -111,6 +111,15 @@ Use `TaskList` to list all existing tasks. If any `in_progress` tasks exist from
      - Send ack: `kvido slack reply dm <ts> chat --var message="One moment..."` (thread under the new message)
      - `TaskCreate` subject `chat:<ts>` (stays `pending`)
 
+   **Task creation from user DM:** When the chat-agent (or heartbeat inline) creates a task from a user's Slack DM request, always use `--source slack`. If the request references a GitHub issue or PR, pass it via `--source-ref "github#NN"` (not `--source`). This ensures user-initiated tasks go directly to `todo/` (bypassing triage).
+
+   ```bash
+   # Correct
+   kvido task create --title "..." --instruction "..." --source slack --source-ref "github#93"
+   # Wrong — would route to triage/
+   kvido task create --title "..." --instruction "..." --source "github#93"
+   ```
+
    Update: `kvido heartbeat-state set last_chat_ts "<ts>"` + `kvido heartbeat-state set last_interaction_ts "$(date -Iseconds)"`
 
 4. **Agent completion:** When a dispatched chat-agent completes (background task finishes), in the next heartbeat iteration:
@@ -236,6 +245,7 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 2 |
 | Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |
 | Not updating `last_chat_ts` after processing | Always `kvido heartbeat-state set last_chat_ts` after chat handling |
+| Using `--source "github#NN"` when creating tasks from user DM | Use `--source slack --source-ref "github#NN"` — source=slack routes to `todo/`, source=github#NN routes to `triage/` |
 
 ## Critical Rules
 
