@@ -134,10 +134,10 @@ cmd_create() {
   # Title: explicit or first ~80 chars of instruction
   [[ -z "$TITLE" ]] && TITLE="${INSTRUCTION:0:80}"
 
-  # Status: internal sources → todo (skip triage), external → triage
+  # Status: user-initiated → todo (skip triage), agent-generated → triage
   if [[ -z "$STATUS" ]]; then
     case "$SOURCE" in
-      slack|planner|interests|self-improver) STATUS="todo" ;;
+      slack|manual) STATUS="todo" ;;
       *) STATUS="triage" ;;
     esac
   fi
