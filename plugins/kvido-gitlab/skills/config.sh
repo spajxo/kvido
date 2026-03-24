@@ -50,6 +50,9 @@ _resolve_env_ref() {
         local var_name="${BASH_REMATCH[1]}"
         _load_env
         local resolved="${!var_name:-}"
+        if [[ -z "$resolved" ]]; then
+            echo "WARNING: env var $var_name is not set or empty (referenced in settings.json)" >&2
+        fi
         echo "$resolved"
     else
         echo "$value"
