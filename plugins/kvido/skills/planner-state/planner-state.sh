@@ -44,6 +44,7 @@ _locked_write() {
   local jq_filter="$1"
   shift
   (
+    mkdir -p "$(dirname "$LOCK_FILE")"
     exec 200>"$LOCK_FILE"
     if ! flock -w "$LOCK_TIMEOUT" 200; then
       echo "planner-state.sh: timeout acquiring lock ($LOCK_TIMEOUT s)" >&2

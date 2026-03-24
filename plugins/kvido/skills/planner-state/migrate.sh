@@ -38,6 +38,7 @@ _locked_write() {
   local jq_filter="$1"
   shift
   (
+    mkdir -p "$(dirname "$LOCK_FILE")"
     exec 200>"$LOCK_FILE"
     if ! flock -w "$LOCK_TIMEOUT" 200; then
       echo "migrate.sh: timeout acquiring lock ($LOCK_TIMEOUT s)" >&2
@@ -109,6 +110,27 @@ done < <(_section "User Task Reminders")
 schedule_content="$(_section "Today's Schedule")"
 if [[ -n "$schedule_content" ]]; then
   echo "$schedule_content" | bash "$SCRIPT_DIR/planner-state.sh" schedule set
+fi
+
+# --- Last Run section ---
+# Lines: "- key: value" — build JSON object from key-value pairs
+last_run_json="{}"
+while IFS= read -r line; do
+  kv="${line#- }"
+  key="${kv%%:*}"
+  value="${kv#*: }"
+  key="$(echo "$key" | xargs)"
+  value="$(echo "$value" | xargs)"
+  [[ -z "$key" || -z "$value" ]] && continue
+  # Try to parse as number, otherwise store as string
+  if [[ "$value" =~ ^[0-9]+$ ]]; then
+    last_run_json=$(echo "$last_run_json" | jq --arg k "$key" --argjson v "$value" '.[$k] = $v')
+  else
+    last_run_json=$(echo "$last_run_json" | jq --arg k "$key" --arg v "$value" '.[$k] = $v')
+  fi
+done < <(_section "Last Run")
+if [[ "$last_run_json" != "{}" ]]; then
+  echo "$last_run_json" | bash "$SCRIPT_DIR/planner-state.sh" last-run set
 fi
 
 # --- Rename old file ---
