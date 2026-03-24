@@ -62,4 +62,4 @@ Chat-agent uses ack reactions only (see Chat ack lifecycle above), not status ed
 | chat-agent | chat | always immediate | Ack react before dispatch, unreact after delivery. After delivery, check pending chat tasks → dispatch next FIFO |
 | planner | per-line (Event/Triage/Reminder/Dispatch) | per delivery rules | Triage → create triage:<slug> TODO. Dispatch → dispatch named agent. |
 | worker | worker-report | high for error, else normal | — |
-| other | agent name as template, fallback event | per delivery rules | — |
+| other | agent name as template, fallback event | per delivery rules | When falling back to `event` template, set `--var severity_bar=:large_yellow_circle:` as default if not provided by agent output |

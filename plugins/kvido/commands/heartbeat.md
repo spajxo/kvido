@@ -178,7 +178,7 @@ Heartbeat is responsible for parsing agent output into structured fields, decidi
 | chat-agent | `Reply`, `Thread`, `Type` | `chat` | always `immediate` | After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
 | planner | Prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:` | per-line mapping from slack templates | per delivery rules | `Triage:` → create `triage:<slug>` TODO with `ts`. `Dispatch:` → dispatch named agent. `No notifications.` → skip. |
 | worker | `Result`, `Task`, `Type`, `Source` | `worker-report` | `high` for error, else `normal` | — |
-| other | template variables per agent | agent name as template, fallback `event` | per delivery rules | — |
+| other | template variables per agent | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
 
 ### Batch flush
 
