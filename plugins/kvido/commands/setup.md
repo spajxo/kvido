@@ -1,5 +1,4 @@
 ---
-name: setup
 description: Setup & self-healing — first-time onboarding, structure bootstrap, health check
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 ---
