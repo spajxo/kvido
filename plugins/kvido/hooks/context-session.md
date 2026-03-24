@@ -34,6 +34,41 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
 
 All `state/` and `memory/` paths in Kvido skills and agents resolve to `$KVIDO_HOME/state/` and `$KVIDO_HOME/memory/`.
 
+## Orchestration Contract
+
+These rules apply to all agents, skills, and hooks. Do not restate them — reference this contract.
+
+### Slack Delivery Ownership
+
+Heartbeat is the single owner of Slack message delivery. No agent, source plugin, or worker may call `kvido slack send|reply|edit` directly. Agents return structured NL output; heartbeat parses it and delivers.
+
+### Agent Output Grammar
+
+Agents return NL output with prefixed lines. Heartbeat parses these prefixes to determine template, delivery level, and routing:
+
+- `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: <high|normal|low>. Severity: <:red_circle:|:large_yellow_circle:|:large_green_circle:>.`
+- `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal. Severity: :large_yellow_circle:.`
+- `Triage: <slug> '<title>' — <description>. Priority: <p>. Size: <s>. Assignee: <a>.`
+- `Reminder: <text>. Urgency: normal.`
+- `Dispatch: <agent-name> KEY1=value1 KEY2=value2 ...`
+- `Reply: <text>` (chat-agent only)
+
+If no output is needed: `No notifications.`
+
+### Task Lifecycle
+
+Tasks live in `$KVIDO_HOME/state/tasks/`. States: `pending` → `in_progress` → `completed`. Untriaged items go to `triage` state.
+
+CLI: `kvido task create`, `kvido task list [state]`, `kvido task read <slug>`, `kvido task note <slug> "<text>"`.
+
+### Triage Approval Model
+
+Triage items are never auto-approved. They remain in `triage` state until the user explicitly approves via Slack reaction. Max 3 triage items per planner run.
+
+### Configuration
+
+Use `kvido config 'key.subkey'` for all configuration lookups. Never parse `settings.json` directly. See `settings.json.example` for available keys.
+
 ## Natural Language Triggers
 
 ### Sleep Mode
