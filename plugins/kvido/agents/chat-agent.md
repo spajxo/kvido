@@ -54,18 +54,12 @@ If the message contains an action verb with scope > 1 lookup ("go through", "wri
 
 If the message is a reply to a worker task thread or contains "pipeline"/"brainstorm"/reply to worker questions:
 
-1. Find the task (pipeline tasks wait for input in todo/ and in-progress/):
+1. Find pipeline tasks waiting for user input:
    ```bash
-   # Find pipeline tasks waiting for user input:
-   for f in state/tasks/todo/*.md state/tasks/in-progress/*.md; do
-     [[ -f "$f" ]] || continue
-     SLUG=$(basename "$f" .md)
+   for SLUG in $(kvido task list todo) $(kvido task list in-progress); do
      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
      PIPELINE=$(echo "$TASK_DATA" | grep '^PIPELINE=' | cut -d= -f2-)
-     if [[ "$PIPELINE" == "true" ]]; then
-       PHASE=$(echo "$TASK_DATA" | grep '^PHASE=' | cut -d= -f2-)
-       echo "$SLUG phase=$PHASE"
-     fi
+     [[ "$PIPELINE" == "true" ]] && echo "$SLUG phase=$(echo "$TASK_DATA" | grep '^PHASE=' | cut -d= -f2-)"
    done
    ```
 2. Based on phase:
