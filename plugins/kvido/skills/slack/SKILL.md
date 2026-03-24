@@ -10,7 +10,7 @@ user-invocable: false
 # Slack
 
 Slack is the primary communication channel. All messages go through `kvido slack` (wraps `slack.sh` over the Slack Web API with curl + jq and a bot token).
-Heartbeat is the sole orchestrator of delivery policy; `kvido slack` is the LLM-facing Slack interface.
+Delivery ownership is defined in the Orchestration Contract (session context). `kvido slack` is the LLM-facing Slack interface.
 
 ## Usage
 

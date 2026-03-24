@@ -248,5 +248,4 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **Max 1 worker per iteration.** Planner + 1 worker + 1 chat-agent is maximum.
 - **TodoWrite is the single source of truth** for dispatch tracking. No file-based locks.
 - **Dependency rule:** Do not dispatch chat-agent if one is already `in_progress`. Do not dispatch worker if one is already `in_progress`. Planner can run alongside chat-agent but not alongside another planner.
-- **No business agent calls `kvido slack` directly.** Heartbeat owns Slack delivery.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
