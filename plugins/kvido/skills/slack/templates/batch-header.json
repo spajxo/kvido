@@ -1,0 +1,6 @@
+[
+  {"type":"section","text":{"type":"mrkdwn","text":"{{emoji}} *{{title}}*\n━━━━━━━━━━━━━━━━\n{{summary}}"}},
+  {"type":"context","elements":[
+    {"type":"mrkdwn","text":"{{count}} batched · {{timestamp}}"}
+  ]}
+]
