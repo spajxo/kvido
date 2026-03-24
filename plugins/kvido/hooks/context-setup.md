@@ -10,19 +10,21 @@
 ## Config
 
 Config file: $KVIDO_HOME/settings.json
-Env file: $KVIDO_HOME/.env
+Env file: $KVIDO_HOME/.env (secrets only — referenced via "$ENV_VAR" in settings.json)
 
-### Required .env keys
-- SLACK_DM_CHANNEL_ID
-- SLACK_USER_ID
-- SLACK_USER_NAME
-- SLACK_BOT_TOKEN
+### Required settings.json keys (via kvido config)
+- slack.bot_token — Slack bot token (xoxb-...), typically "$SLACK_BOT_TOKEN"
+- slack.dm_channel_id — Self DM channel ID for assistant delivery
+- slack.user_id — Slack user ID
+- slack.user_name — Slack display name
+
+Values like "$SLACK_BOT_TOKEN" in settings.json are resolved from .env automatically by `kvido config`.
 
 ## Directory structure
 
 ```
 $KVIDO_HOME/
-├── .env
+├── .env          (secrets — keys referenced from settings.json)
 ├── settings.json
 ├── memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
 └── state/tasks/{triage,todo,in-progress,done,failed,cancelled}

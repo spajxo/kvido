@@ -73,20 +73,23 @@ Skip this step if this is a re-run and all desired sources are already installed
 
 ## Step 1: First-time Setup
 
-Detection: `$KVIDO_HOME/.env` does not exist OR `$KVIDO_HOME/memory/persona.md` does not exist → run first-time setup.
+Detection: `$KVIDO_HOME/settings.json` does not exist OR `$KVIDO_HOME/memory/persona.md` does not exist → run first-time setup.
 If both exist, skip to Step 2.
 
 ### a) Config files
 
 If files don't exist, create them:
 - `$KVIDO_HOME/settings.json` — copy `settings.json.example` from the plugin
-- `$KVIDO_HOME/.env` — create with empty values:
+- `$KVIDO_HOME/.env` — create with empty values (these are the secrets referenced from settings.json):
   ```
+  SLACK_BOT_TOKEN=
   SLACK_DM_CHANNEL_ID=
   SLACK_USER_ID=
   SLACK_USER_NAME=
-  SLACK_BOT_TOKEN=
   ```
+
+`settings.json` references these env vars using `"$ENV_VAR"` syntax (e.g. `"slack.bot_token": "$SLACK_BOT_TOKEN"`).
+`kvido config` resolves the references automatically from `.env`.
 
 ### b) Persona setup
 
@@ -97,12 +100,17 @@ If `$KVIDO_HOME/memory/persona.md` does not exist:
 2. From the answers, create `memory/persona.md` with the appropriate structure (name, language, tone, personality, URL formats). Store language as `language: en` (or the chosen language code).
 3. Also create the `memory/` directory if it doesn't exist.
 
-### c) .env values
+### c) Slack credentials (settings.json + .env)
 
-Read `$KVIDO_HOME/.env`. If it contains empty values (keys with `=""` or `=`):
-1. List the missing values and what they are used for
-2. Offer help filling them in (how to find Slack IDs, where to get tokens, etc.)
-3. If the user provides values, write them to `.env`
+Check that Slack credentials resolve correctly:
+```bash
+kvido config 'slack.bot_token'
+kvido config 'slack.dm_channel_id'
+```
+If these return empty or fail:
+1. Explain the two-file approach: secrets live in `.env`, settings.json references them with `"$VAR_NAME"` syntax
+2. Help the user fill in `.env` with actual token and channel values
+3. Confirm that `settings.json` has the `"$SLACK_BOT_TOKEN"` references (default from `settings.json.example`)
 
 ### d) Source plugin config validation
 
@@ -204,9 +212,15 @@ If `memory/this-week.md` contains a previous week:
 
 ## Step 6: Health Check
 
-### Env check
-Verify that `$KVIDO_HOME/.env` contains all required keys (`SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`, `SLACK_USER_NAME`, `SLACK_BOT_TOKEN`) and that they are not empty.
-Missing or empty → log warning.
+### Slack config check
+Verify that Slack credentials resolve correctly via `kvido config`:
+```bash
+kvido config 'slack.bot_token'
+kvido config 'slack.dm_channel_id'
+kvido config 'slack.user_id'
+kvido config 'slack.user_name'
+```
+If any return empty → log warning. Remind user to fill `.env` with actual values.
 
 ### Binary check
 ```bash

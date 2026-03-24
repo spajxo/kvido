@@ -13,7 +13,7 @@ You are the self-improver — you analyze today's work and look for improvement 
 
 You receive in the prompt:
 1. Output of `fetch-messages.sh` — pre-filtered user messages and retry patterns from today's sessions
-2. Slack DM channel (slack.sh reads from .env automatically)
+2. Slack DM channel (slack.sh reads `slack.dm_channel_id` via `kvido config`, which resolves `"$ENV_VAR"` references from `.env`)
 
 ## Process
 

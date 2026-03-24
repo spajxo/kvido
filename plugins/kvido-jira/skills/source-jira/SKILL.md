@@ -5,7 +5,7 @@ allowed-tools: Read, Bash, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql
 user-invocable: false
 ---
 
-> **Configuration:** Via `skills/config.sh` (`sources.jira.*` keys). Credentials (`ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`) from `.env`.
+> **Configuration:** Via `skills/config.sh` (`sources.jira.*` keys). Credentials (e.g. `ATLASSIAN_CLOUD_ID`) can be referenced as `"$ENV_VAR"` in `settings.json` and resolved via `kvido config`.
 
 **Language:** Communicate in the language set in memory/persona.md. Default: English.
 

@@ -12,6 +12,9 @@
 # Reads KVIDO_HOME/settings.json (standard JSON via jq).
 # Dot-notation keys map to nested JSON paths: 'a.b.c' → .a.b.c
 #
+# Env var references: values like "$ENV_VAR" in settings.json are resolved
+# from KVIDO_HOME/.env (loaded once, only when a reference is encountered).
+#
 # Exit codes:
 #   0 — success
 #   1 — config file not found
@@ -23,6 +26,38 @@ set -euo pipefail
 
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 CONFIG_FILE="${KVIDO_HOME}/settings.json"
+ENV_FILE="${KVIDO_HOME}/.env"
+
+# ── Env var reference resolution ─────────────────────────────────────────────
+# If a config value looks like "$VAR_NAME", load .env (once) and expand it.
+
+_ENV_LOADED=false
+
+_load_env() {
+    if [[ "$_ENV_LOADED" == "false" && -f "$ENV_FILE" ]]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$ENV_FILE"
+        set +a
+        _ENV_LOADED=true
+    fi
+}
+
+_resolve_env_ref() {
+    local value="$1"
+    # Match "$VAR_NAME" — whole string is an env var reference
+    if [[ "$value" =~ ^\$([A-Za-z_][A-Za-z0-9_]*)$ ]]; then
+        local var_name="${BASH_REMATCH[1]}"
+        _load_env
+        local resolved="${!var_name:-}"
+        if [[ -z "$resolved" ]]; then
+            echo "WARNING: env var $var_name is not set or empty (referenced in settings.json)" >&2
+        fi
+        echo "$resolved"
+    else
+        echo "$value"
+    fi
+}
 
 # ── Dot-notation → jq path ───────────────────────────────────────────────────
 # Converts 'a.b.c' to '.a.b.c' for use with jq.
@@ -65,7 +100,7 @@ _get_value() {
         return 3
     fi
 
-    echo "$result"
+    _resolve_env_ref "$result"
 }
 
 # ── Prefix key listing ────────────────────────────────────────────────────────
