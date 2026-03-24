@@ -135,15 +135,18 @@ else
 fi
 
 # --- Resolve owner user ID ---
-# 1. Try kvido config 'slack.user_id'
-# 2. Fall back to cached value in heartbeat-state (owner_user_id)
-# 3. Auto-detect via Slack API auth.test and cache the result
+# 1. Try kvido config 'slack.user_id' (resolves $SLACK_USER_ID from .env)
+# 2. Fall back to $SLACK_USER_ID env var directly
+# 3. Fall back to cached value in heartbeat-state (owner_user_id)
 OWNER_USER_ID=$($CONFIG 'slack.user_id' '' 2>/dev/null || true)
+if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
+  OWNER_USER_ID="${SLACK_USER_ID:-}"
+fi
 if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
   OWNER_USER_ID=$(jq -r '.owner_user_id // ""' "$STATE_FILE" 2>/dev/null || echo "")
 fi
 if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
-  echo "WARNING: slack.user_id not configured and no cached owner_user_id — message annotation disabled. Set slack.user_id in settings.json." >&2
+  echo "WARNING: slack.user_id not configured — message annotation disabled. Set SLACK_USER_ID in .env or slack.user_id in settings.json." >&2
 fi
 
 # --- Extended: Chat messages, worker check, state update ---
