@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # heartbeat.sh — Pure data gathering: time, zone, adaptive interval, Slack DM read, worker queue check, state update.
-# Orchestration logic (dispatch tracking, dependencies) is in SKILL.md via TodoWrite/TodoRead.
+# Orchestration logic (dispatch tracking, dependencies) is in heartbeat.md via TaskCreate/TaskUpdate.
 # Output: key=value lines + CHAT_MESSAGES block for LLM consumption.
 
 set -euo pipefail

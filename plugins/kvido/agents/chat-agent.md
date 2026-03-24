@@ -1,6 +1,6 @@
 ---
 name: chat-agent
-description: Handles non-trivial Slack DM messages — lookup, task creation, pipeline replies. Returns NL output for heartbeat delivery.
+description: Handles non-trivial Slack DM messages — lookup, task creation. Returns NL output for heartbeat delivery.
 tools: Read, Glob, Grep, Bash, Write, Edit, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Google_Calendar__gcal_list_events
 model: sonnet
 ---
@@ -47,23 +47,6 @@ If the message contains an action verb with scope > 1 lookup ("go through", "wri
    ```
 4. Return: `"Reply: Added to queue as $TASK_SLUG. Thread: $THREAD_TS. Type: chat-reply."`
 5. Don't try to process the task yourself.
-
-### Pipeline replies
-
-If the message is a reply to a worker task thread or contains "pipeline"/"brainstorm"/reply to worker questions:
-
-1. Find pipeline tasks waiting for user input:
-   ```bash
-   for SLUG in $(kvido task list todo) $(kvido task list in-progress); do
-     TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
-     PIPELINE=$(echo "$TASK_DATA" | grep '^PIPELINE=' | cut -d= -f2-)
-     [[ "$PIPELINE" == "true" ]] && echo "$SLUG phase=$(echo "$TASK_DATA" | grep '^PHASE=' | cut -d= -f2-)"
-   done
-   ```
-2. Based on phase:
-   - **brainstorm** → add replies as note, mark waiting resolved
-   - **spec** → add choice, change phase to implement
-   - **pipeline opt-in** → ✅/yes → activate pipeline+brainstorm, ❌/no → standard execution
 
 ### Triage approval (via text)
 

@@ -12,7 +12,6 @@ TASK_SLUG: {{TASK_SLUG}}
 INSTRUCTION: {{INSTRUCTION}}
 SIZE: {{SIZE}}
 SOURCE_REF: {{SOURCE_REF}}
-PHASE: {{PHASE}}
 
 ## Context
 {{CURRENT_STATE}}
@@ -33,22 +32,17 @@ PHASE: {{PHASE}}
     - `git push -u origin HEAD`
     - User will create MR manually
 
-3. If PHASE is non-empty and != "implement" → follow pipeline logic from SKILL.md per phase.
+3. Execute the task per `{{INSTRUCTION}}`. Work autonomously.
 
-4. Execute the task per `{{INSTRUCTION}}`. Work autonomously.
+4. Compile report per SKILL.md Report Format.
 
-5. Compile report per SKILL.md Report Format.
+5. Compile NL output with result per SKILL.md Report Format. Don't send via `kvido slack`.
 
-6. Compile NL output with result per SKILL.md Report Format. Don't send via `kvido slack`.
+6. Log: `kvido log add worker complete --message "{{TASK_SLUG}}: <summary>" --task_id "{{TASK_SLUG}}"`
 
-7. Log: `kvido log add worker complete --message "{{TASK_SLUG}}: <summary>" --task_id "{{TASK_SLUG}}"`
-
-8. If worktree:
+7. If worktree:
      `kvido task note {{TASK_SLUG}} "## Result\nBranch: <branch>, pushed. <description>"`
      `kvido task move {{TASK_SLUG}} done`
-   If pipeline phase transition:
-     `kvido task update {{TASK_SLUG}} phase review`
-     `kvido task move {{TASK_SLUG}} todo`
    If standard completion:
      `kvido task note {{TASK_SLUG}} "## Result\n<summary>"`
      `kvido task move {{TASK_SLUG}} done`

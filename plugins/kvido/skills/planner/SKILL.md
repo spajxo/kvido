@@ -155,7 +155,7 @@ Also write a note on the task indicating the triage item was sent — but WITHOU
 kvido task note <slug> "Triage: sent for approval. Awaiting user decision."
 ```
 
-**Note:** Planner runs as a subagent and does NOT have access to TodoWrite. Heartbeat (main session) will create `triage:<slug>` todo tasks for polling after delivery via `kvido slack`. Planner only writes notes on tasks and returns NL output.
+**Note:** Planner runs as a subagent and does NOT have access to task tools (`TaskCreate`/`TaskUpdate`). Heartbeat (main session) will create `triage:<slug>` tasks for polling after delivery via `kvido slack`. Planner only writes notes on tasks and returns NL output.
 
 Include stale user task reminders in output:
 ```
