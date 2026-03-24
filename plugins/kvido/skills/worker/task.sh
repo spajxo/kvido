@@ -142,13 +142,6 @@ cmd_create() {
     esac
   fi
 
-  # Pipeline auto-enable for large tasks
-  local PIPELINE=false PHASE="null"
-  if [[ "$SIZE" == "l" || "$SIZE" == "xl" ]]; then
-    PIPELINE=true
-    PHASE="brainstorm"
-  fi
-
   # Generate slug
   local base_slug slug
   base_slug=$(_slugify "$TITLE")
@@ -164,8 +157,6 @@ cmd_create() {
   local file="$TASKS_DIR/$STATUS/$slug.md"
 
   # Generate frontmatter with safe quoting
-  local phase_val="${PHASE}"
-  [[ "$phase_val" == "null" ]] && phase_val=""
   local goal_val="${GOAL:-}"
   [[ "$goal_val" == "null" ]] && goal_val=""
   local recurring_val="${RECURRING:-}"
@@ -178,8 +169,6 @@ priority: $PRIORITY
 size: $SIZE
 source: $SOURCE
 source_ref: $(_yaml_val "$SOURCE_REF")
-pipeline: $PIPELINE
-phase: $phase_val
 worktree: $WORKTREE
 goal: $goal_val
 recurring: $recurring_val
@@ -216,8 +205,6 @@ cmd_read() {
   echo "SIZE=$(_read_frontmatter "$file" 'size')"
   echo "SOURCE=$(_read_frontmatter "$file" 'source')"
   echo "SOURCE_REF=$(_read_frontmatter "$file" 'source_ref')"
-  echo "PIPELINE=$(_read_frontmatter "$file" 'pipeline')"
-  echo "PHASE=$(_read_frontmatter "$file" 'phase')"
   echo "WORKTREE=$(_read_frontmatter "$file" 'worktree')"
   echo "GOAL=$(_read_frontmatter "$file" 'goal')"
   echo "RECURRING=$(_read_frontmatter "$file" 'recurring')"
