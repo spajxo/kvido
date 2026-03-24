@@ -42,7 +42,6 @@ Intended for the self-improver agent — pre-filtered input for pattern detectio
 
 ## Schedule
 - morning: fetch (yesterday)
-- heartbeat-quick: skip
-- heartbeat-full: skip
+- heartbeat: skip
 - heartbeat-maintenance: fetch-messages (today) — for self-improver agent
 - eod: fetch (today)

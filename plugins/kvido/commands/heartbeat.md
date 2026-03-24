@@ -44,11 +44,13 @@ kvido heartbeat
 
 Output: `TIMESTAMP`, `ITERATION`, `NIGHT`, `ZONE`, `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `INTERACTION_AGO_MIN`, `PLANNER_DUE`, `NEXT_TASK`, `OWNER_USER_ID`, `SLEEP_ACTIVE`, `SLEEP_UNTIL`, `CHAT_MESSAGES_START...CHAT_MESSAGES_END`.
 
+Planner is dispatched every Nth iteration (per `planning_interval` config). Between planner iterations, heartbeat only handles DM chat and worker dispatch.
+
 Messages in `CHAT_MESSAGES` block are in `--heartbeat` format: one line per message, empty line between top-level messages: `ts=... user:|bot: text="..." [reactions=emoji1,emoji2] [reply_count=N] [latest_reply=...]`. Thread replies are under their top-level message with prefix `  ┗` (max 5 replies). Empty block = no messages.
 
 The `user:` prefix means the message is from the workspace owner (you). The `bot:` prefix means the message is from anyone else (bot or other user). `OWNER_USER_ID` contains the resolved Slack user ID (from config or cached state). If `OWNER_USER_ID` is empty, annotation is disabled and messages retain the raw `user=<ID>` format — use `SLACK_USER_ID` from `.env` or `OWNER_USER_ID` from heartbeat output to compare manually.
 
-The script automatically: increments iteration_count, sets last_quick, reads Slack DM, checks worker queue.
+The script automatically: increments iteration_count, sets last_heartbeat, reads Slack DM, checks worker queue.
 
 Read `state/current.md` for context. Review recent activity via `kvido log list --today --format human --limit 20`.
 
@@ -180,7 +182,7 @@ Heartbeat is responsible for parsing agent output into structured fields, decidi
 
 ### Batch flush
 
-Flush `notify:*` TODOs with `pending` status when: planner/full iteration runs, or focus mode switches off. Re-deliver stored template+vars via `kvido slack`. On failure, leave `pending` for next flush.
+Flush `notify:*` TODOs with `pending` status when: planner iteration runs, or focus mode switches off. Re-deliver stored template+vars via `kvido slack`. On failure, leave `pending` for next flush.
 
 ---
 

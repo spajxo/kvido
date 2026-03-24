@@ -67,7 +67,6 @@ Fallback: Atlassian MCP searchJiraIssuesUsingJql with test JQL `project = PROJ O
 
 ## Schedule
 - morning: fetch
-- heartbeat-quick: skip
-- heartbeat-full: watch (--since today)
+- heartbeat: watch (--since today)
 - heartbeat-maintenance: health
 - eod: skip (worklog check stays directly in EOD)

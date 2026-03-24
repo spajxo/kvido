@@ -17,7 +17,7 @@ user-invocable: false
 ```bash
 skills/source-gitlab/fetch-activity.sh YYYY-MM-DD [--priority high]
 ```
-`--priority high` filters only repos with `priority: high` (for quick heartbeat).
+`--priority high` filters only repos with `priority: high`.
 
 ### fetch-mrs
 ```bash
@@ -41,7 +41,6 @@ Plus: `glab auth status 2>/dev/null`
 
 ## Schedule
 - morning: fetch-activity (yesterday) + fetch-mrs
-- heartbeat-quick: fetch-activity (today) + fetch-mrs --priority high
-- heartbeat-full: fetch-activity + fetch-mrs (all)
+- heartbeat: fetch-activity (today) + fetch-mrs
 - heartbeat-maintenance: health
 - eod: fetch-activity (today)

@@ -5,7 +5,7 @@
 | Level | Behavior |
 |-------|----------|
 | immediate | Deliver via kvido slack immediately |
-| batch | Keep notify TODO as pending, flush on planner/full iteration or focus mode off |
+| batch | Keep notify TODO as pending, flush on planner iteration or focus mode off |
 | silent | Log summary via kvido log add, no Slack delivery |
 
 ## Default rules
