@@ -117,7 +117,7 @@ Commands:
   heartbeat-state <subcommand>      Read/write heartbeat state (get, set, increment...)
   config <key> [default]            Read kvido config values from settings.json
   log <subcommand> [args]           Activity log (add, list, purge)
-  slack <subcommand> [args]         Slack messaging (send, reply, edit, read, react, delete...)
+  slack <subcommand> [args]         Slack messaging (send, reply, edit, read, react, delete, upload...)
   current <get|set>                 Read/write current focus (state/current.md)
   planner-state <subcommand>        Planner state (events, timestamps, reminders, schedule, interests)
   source-health <get|set> [args]    Source health status
@@ -155,6 +155,7 @@ Slack subcommands:
   reactions <message_ts> [channel]
   delete [channel] <message_ts>
   download <url_private> [output_dir]
+  upload [channel] <file_path> [--title '...'] [--thread <ts>]
 
 Planner-state subcommands:
   event check <key>               Check if event was reported (exit 0/1)

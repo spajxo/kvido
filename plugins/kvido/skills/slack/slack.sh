@@ -12,6 +12,7 @@ set -euo pipefail
 #   slack.sh reactions <message_ts> [channel]
 #   slack.sh delete [channel] <message_ts>
 #   slack.sh download <url_private> [output_dir]
+#   slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]
 # Channel is optional — defaults to slack.dm_channel_id from settings.json
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -377,8 +378,82 @@ case "$ACTION" in
     fi
     echo "$OUTPUT_PATH"
     ;;
+  upload)
+    # Usage: slack.sh upload [channel] <file_path> [--title "..."] [--thread <ts>]
+    # Uploads a file to Slack using files.getUploadURLExternal + files.completeUploadExternal.
+    # Returns the file permalink on stdout.
+    [[ $# -lt 1 ]] && { echo "Usage: slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
+    # Disambiguate [channel] from <file_path>: if there are 2+ positional args
+    # (next arg is not a flag) and arg1 looks like a Slack channel ID, treat
+    # arg1 as channel. Otherwise arg1 is the file path — use default channel.
+    if [[ $# -ge 2 && "${2}" != --* && "${1:-}" =~ ^[CDG][A-Z0-9]+$ ]]; then
+      UPLOAD_CHANNEL="$1"; shift
+    else
+      if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+        _DEFAULT_CHANNEL=$(bash "$SCRIPT_DIR/../config.sh" 'slack.dm_channel_id' '' 2>/dev/null || true)
+      fi
+      if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+        echo "Error: channel not provided and slack.dm_channel_id not set in settings.json" >&2
+        exit 1
+      fi
+      UPLOAD_CHANNEL="$_DEFAULT_CHANNEL"
+    fi
+    [[ $# -lt 1 ]] && { echo "Usage: slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
+    UPLOAD_FILE="$1"; shift
+    UPLOAD_TITLE=""
+    UPLOAD_THREAD=""
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --title) UPLOAD_TITLE="$2"; shift 2 ;;
+        --thread) UPLOAD_THREAD="$2"; shift 2 ;;
+        *) echo "Warning: upload — unknown argument '$1'" >&2; shift ;;
+      esac
+    done
+    if [[ ! -f "$UPLOAD_FILE" ]]; then
+      echo "Error: file not found: $UPLOAD_FILE" >&2
+      exit 1
+    fi
+    UPLOAD_FILENAME=$(basename "$UPLOAD_FILE")
+    UPLOAD_FILESIZE=$(wc -c < "$UPLOAD_FILE" | tr -d ' ')
+    [[ -z "$UPLOAD_TITLE" ]] && UPLOAD_TITLE="$UPLOAD_FILENAME"
+    # Step 1: Get upload URL
+    URL_RESP=$(curl -s -X POST "$SLACK_API/files.getUploadURLExternal" \
+      -H "Authorization: Bearer $TOKEN" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      --data-urlencode "filename=$UPLOAD_FILENAME" \
+      --data-urlencode "length=$UPLOAD_FILESIZE")
+    if [[ $(echo "$URL_RESP" | jq -r '.ok') != "true" ]]; then
+      echo "Error: files.getUploadURLExternal: $(echo "$URL_RESP" | jq -r '.error')" >&2
+      exit 1
+    fi
+    UPLOAD_URL=$(echo "$URL_RESP" | jq -r '.upload_url')
+    FILE_ID=$(echo "$URL_RESP" | jq -r '.file_id')
+    # Step 2: Upload file content
+    HTTP_CODE=$(curl -s -w "%{http_code}" -o /dev/null -X POST "$UPLOAD_URL" \
+      -H "Authorization: Bearer $TOKEN" \
+      --data-binary "@$UPLOAD_FILE")
+    if [[ "$HTTP_CODE" != "200" ]]; then
+      echo "Error: file upload to pre-signed URL failed with HTTP $HTTP_CODE" >&2
+      exit 1
+    fi
+    # Step 3: Complete upload and share to channel
+    COMPLETE_FILES=$(jq -n --arg id "$FILE_ID" --arg title "$UPLOAD_TITLE" \
+      '[{id: $id, title: $title}]')
+    COMPLETE_PAYLOAD=$(jq -n \
+      --arg channel "$UPLOAD_CHANNEL" \
+      --argjson files "$COMPLETE_FILES" \
+      '{channel_id: $channel, files: $files}')
+    [[ -n "$UPLOAD_THREAD" ]] && COMPLETE_PAYLOAD=$(echo "$COMPLETE_PAYLOAD" | \
+      jq --arg ts "$UPLOAD_THREAD" '. + {thread_ts: $ts}')
+    COMPLETE_RESP=$(slack_post "files.completeUploadExternal" -d "$COMPLETE_PAYLOAD")
+    if [[ $(echo "$COMPLETE_RESP" | jq -r '.ok') != "true" ]]; then
+      echo "Error: files.completeUploadExternal: $(echo "$COMPLETE_RESP" | jq -r '.error')" >&2
+      exit 1
+    fi
+    echo "$COMPLETE_RESP" | jq -r '.files[0].permalink // ""'
+    ;;
   *)
-    echo "Usage: slack.sh {send|reply|edit|read|react|unreact|reactions|delete|download} ..." >&2
+    echo "Usage: slack.sh {send|reply|edit|read|react|unreact|reactions|delete|download|upload} ..." >&2
     exit 1
     ;;
 esac
