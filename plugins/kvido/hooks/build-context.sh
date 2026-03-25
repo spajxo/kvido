@@ -12,21 +12,6 @@ PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 echo "# Session Context"
 echo ""
 
-# ASCII avatar — from persona.md (## Avatar section) or default owl
-PERSONA_FILE="$KVIDO_HOME/memory/persona.md"
-AVATAR=""
-if [[ -f "$PERSONA_FILE" ]]; then
-  AVATAR=$(awk '/^## Avatar/{found=1; next} found && /^## /{exit} found{print}' "$PERSONA_FILE" | sed '/^[[:space:]]*$/d' | head -10)
-fi
-if [[ -z "$AVATAR" ]]; then
-  AVATAR="$(printf '        ^...^\n       / o,o \\\n       |):::(|\n     ====w=w====')"
-fi
-echo "## Avatar"
-echo '```'
-echo "$AVATAR"
-echo '```'
-echo ""
-
 # Project info
 PROJECT="${KVIDO_PROJECT:-}"
 if [[ -n "$PROJECT" ]] && git -C "$PROJECT" rev-parse --git-dir &>/dev/null 2>&1; then

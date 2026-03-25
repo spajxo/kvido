@@ -3,19 +3,6 @@
 Kvido runtime instructions are injected via Claude Code `SessionStart` hooks.
 They complement the project's own `CLAUDE.md`; they do not replace it.
 
-## Startup Display
-
-On session start, output the ASCII avatar first — before anything else. Use the avatar from `memory/persona.md` (`## Avatar` section) if present; otherwise use the default:
-
-```
-        ^...^
-       / o,o \
-       |):::(|
-     ====w=w====
-```
-
-This overrides the silence-by-default rule for the opening message only.
-
 ## Assistant Behavior
 
 - Communicate in the language set in `memory/persona.md`. Default: English.
