@@ -790,36 +790,12 @@ function renderKanban() {
     html += '</div></div>';
   }
 
-  // Archived (failed/cancelled) — also collapsed
-  var archived = TASKS.filter(function(t) { return t.status === 'failed' || t.status === 'cancelled'; });
-  if (archived.length > 0) {
-    html += '<div class="kanban-col col-done-collapsed" id="col-archived" data-status="cancelled">';
-    html += '<div class="kanban-col-header" onclick="toggleArchivedCol()" style="cursor:pointer">';
-    html += '<span class="col-title">Archived</span>';
-    html += '<span class="col-count">' + archived.length + '</span>';
-    html += '<span class="col-toggle" id="archived-toggle">expand</span>';
-    html += '</div>';
-    html += '<div class="kanban-cards">';
-    archived.forEach(function(t) {
-      html += '<div class="kanban-card" onclick="event.stopPropagation(); location.hash=\'task/' + t.slug + '\'">';
-      html += '<div class="kanban-card-title">' + esc(t.title) + '</div>';
-      html += '<div class="kanban-card-meta"><span class="badge badge-' + t.status + '">' + esc(t.status) + '</span></div>';
-      html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + esc(t.slug) + '</span></div>';
-      html += '</div>';
-    });
-    html += '</div></div>';
-  }
+  // Archived (failed/cancelled) — removed from board view
 
   el.innerHTML = html;
 }
 
-function toggleArchivedCol() {
-  var col = document.getElementById('col-archived');
-  var btn = document.getElementById('archived-toggle');
-  if (!col) return;
-  col.classList.toggle('col-done-collapsed');
-  if (btn) btn.textContent = col.classList.contains('col-done-collapsed') ? 'expand' : 'collapse';
-}
+// toggleArchivedCol removed — archived column no longer shown
 
 function renderDetail(slug) {
   showView('detail');
