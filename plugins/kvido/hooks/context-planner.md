@@ -37,7 +37,7 @@ Recurring (max 1 per day each, check last_*_date via `kvido planner-state last-r
 
 | Task | Trigger | Instruction | Size/Priority |
 |------|---------|-------------|---------------|
-| Librarian | memory/memory.md > 100 lines or learnings Recurrence >= 3 | Consolidation mode. Read agents/librarian.md | m/medium |
+| Librarian | Not yet run today (check `last_librarian_date`, max 1/day) | Consolidation mode. Read agents/librarian.md | m/medium |
 | Enricher | Oldest project in memory/projects/ > 7 days | Enrichment: <project>. Read agents/project-enricher.md | s/low |
 | Self-improver | Not yet run today | Analyze today's sessions. Read agents/self-improver.md | m/low |
 
