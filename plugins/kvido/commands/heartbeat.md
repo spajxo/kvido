@@ -220,12 +220,12 @@ Non-trivial chat from Step 3 creates `chat:<ts>` task. If another `chat:*` task 
 For each `pending` task from `TaskList` (excluding `triage:*` and `notify:*`):
 1. Check `blockedBy` — if any blocker has status `pending` or `in_progress` → skip
 2. `TaskUpdate` → `in_progress`
-3. Resolve agent config:
-   - `maintenance:*` → read `model` from `agents/<name>.md` frontmatter via: `grep '^model:' agents/<name>.md | awk '{print $2}'`. No isolation (no worktree).
-   - `worker:*` → model from `kvido config 'skills.worker.models.<SIZE>'` (or `kvido config 'skills.worker.urgent_model'` if PRIORITY==urgent). Isolation: `worktree`.
-   - `planner` → model from agent frontmatter. No isolation.
-   - `chat:*` → model from agent frontmatter. No isolation.
-4. Dispatch via `Agent` tool (`run_in_background: true`, model and isolation per above)
+3. Resolve agent config and prompt context per type:
+   - `maintenance:*` → model from `agents/<name>.md` frontmatter via: `grep '^model:' agents/<name>.md | awk '{print $2}'`. No isolation. Pass KEY=value parameters from task description as prompt variables (e.g. `PROJECT=<slug>` for enricher).
+   - `worker:*` → model from `kvido config 'skills.worker.models.<SIZE>'` (or `kvido config 'skills.worker.urgent_model'` if PRIORITY==urgent). Isolation: `worktree`. Pass template vars: TASK_SLUG, INSTRUCTION, SIZE, SOURCE_REF, CURRENT_STATE (`kvido current get`), MEMORY (`memory/memory.md`).
+   - `planner` → model from agent frontmatter. No isolation. Pass context: CURRENT_STATE (`kvido current get`), MEMORY (`memory/memory.md`).
+   - `chat:*` → model from agent frontmatter. No isolation. Load last 10 messages (if thread reply, load whole thread). Pass template vars: CHAT_HISTORY, NEW_MESSAGE, THREAD_TS, CURRENT_STATE, MEMORY.
+4. Dispatch via `Agent` tool (`run_in_background: true`, model, isolation, and prompt context per above)
 5. Log: `kvido log add <type> dispatch --message "<summary>"`
 
 ---
