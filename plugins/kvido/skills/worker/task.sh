@@ -3,16 +3,20 @@
 #
 # Usage: task.sh <command> [args...]
 #
+# Task files are named <id>-<slug>.md (e.g. 42-fix-auth-bug.md).
+# All commands accept either numeric ID or slug as identifier.
+#
 # Commands:
-#   create   --title "..." --instruction "..." [--priority medium] [--size m] ...
-#   read     <slug>           # key=value output
-#   read-raw <slug>           # full file contents
-#   update   <slug> <key> <value>  # update frontmatter field
-#   move     <slug> <status>  # move between folders
-#   list     <status> [--sort priority] [--source SRC]  # list slugs
-#   find     <slug>           # returns current status
-#   note     <slug> <message> # append to ## Worker Notes
-#   count    <status>         # number of tasks in folder
+#   create      --title "..." --instruction "..." [--priority medium] [--size m] ...
+#   read        <id|slug>           # key=value output
+#   read-raw    <id|slug>           # full file contents
+#   update      <id|slug> <key> <value>  # update frontmatter field
+#   move        <id|slug> <status>  # move between folders
+#   list        <status> [--sort priority] [--source SRC]  # list slugs
+#   find        <id|slug>           # returns current status
+#   note        <id|slug> <message> # append to ## Worker Notes
+#   count       <status>            # number of tasks in folder
+#   migrate-ids                     # assign IDs to legacy tasks
 
 set -euo pipefail
 
@@ -48,19 +52,32 @@ _unique_slug() {
 _find_task() {
   local slug="$1"
   for status_dir in $STATUSES; do
-    if [[ -f "$TASKS_DIR/$status_dir/$slug.md" ]]; then
-      echo "$status_dir"
-      return 0
-    fi
+    local dir="$TASKS_DIR/$status_dir"
+    [[ -d "$dir" ]] || continue
+    for f in "$dir"/*-"$slug".md; do
+      if [[ -f "$f" ]]; then
+        echo "$status_dir"
+        return 0
+      fi
+    done
   done
   return 1
 }
 
 _task_file() {
   local slug="$1"
-  local status
-  status=$(_find_task "$slug") || { echo "Error: task '$slug' not found" >&2; exit 1; }
-  echo "$TASKS_DIR/$status/$slug.md"
+  for status_dir in $STATUSES; do
+    local dir="$TASKS_DIR/$status_dir"
+    [[ -d "$dir" ]] || continue
+    for f in "$dir"/*-"$slug".md; do
+      if [[ -f "$f" ]]; then
+        echo "$f"
+        return 0
+      fi
+    done
+  done
+  echo "Error: task '$slug' not found" >&2
+  exit 1
 }
 
 _read_frontmatter() {
@@ -91,6 +108,57 @@ _yaml_val() {
 
 _now() {
   date -u '+%Y-%m-%dT%H:%M:%SZ'
+}
+
+_next_id() {
+  local counter_file="$KVIDO_HOME/state/task_counter"
+  local id=0
+  [[ -f "$counter_file" ]] && id=$(cat "$counter_file")
+  id=$((id + 1))
+  echo "$id" > "$counter_file.tmp" && mv "$counter_file.tmp" "$counter_file"
+  echo "$id"
+}
+
+_resolve_identifier() {
+  local identifier="$1"
+  # Slug match has priority
+  if _find_task "$identifier" >/dev/null 2>&1; then
+    echo "$identifier"
+    return 0
+  fi
+  # If purely numeric, find by ID prefix in filename
+  if [[ "$identifier" =~ ^[0-9]+$ ]]; then
+    local status_dir dir f
+    for status_dir in $STATUSES; do
+      dir="$TASKS_DIR/$status_dir"
+      [[ -d "$dir" ]] || continue
+      for f in "$dir"/"$identifier"-*.md; do
+        if [[ -f "$f" ]]; then
+          local base
+          base=$(basename "$f" .md)
+          echo "${base#*-}"
+          return 0
+        fi
+      done
+    done
+  fi
+  echo "Error: task '$identifier' not found" >&2
+  return 1
+}
+
+_task_filename() {
+  local slug="$1"
+  for status_dir in $STATUSES; do
+    local dir="$TASKS_DIR/$status_dir"
+    [[ -d "$dir" ]] || continue
+    for f in "$dir"/*-"$slug".md; do
+      if [[ -f "$f" ]]; then
+        basename "$f" .md
+        return 0
+      fi
+    done
+  done
+  return 1
 }
 
 _priority_weight() {
@@ -142,11 +210,12 @@ cmd_create() {
     esac
   fi
 
-  # Generate slug
-  local base_slug slug
+  # Generate slug and numeric ID
+  local base_slug slug TASK_ID
   base_slug=$(_slugify "$TITLE")
   [[ -z "$base_slug" ]] && base_slug="task"
   slug=$(_unique_slug "$base_slug")
+  TASK_ID=$(_next_id)
 
   local NOW
   NOW=$(_now)
@@ -154,7 +223,7 @@ cmd_create() {
   # Ensure directory exists
   mkdir -p "$TASKS_DIR/$STATUS"
 
-  local file="$TASKS_DIR/$STATUS/$slug.md"
+  local file="$TASKS_DIR/$STATUS/${TASK_ID}-${slug}.md"
 
   # Generate frontmatter with safe quoting
   local goal_val="${GOAL:-}"
@@ -164,6 +233,7 @@ cmd_create() {
 
   cat > "$file" << EOF
 ---
+task_id: $TASK_ID
 title: $(_yaml_val "$TITLE")
 priority: $PRIORITY
 size: $SIZE
@@ -191,13 +261,15 @@ EOF
 
 cmd_read() {
   local slug="${1:-}"
-  [[ -z "$slug" ]] && { echo "Usage: task.sh read <slug>" >&2; exit 1; }
+  [[ -z "$slug" ]] && { echo "Usage: task.sh read <id|slug>" >&2; exit 1; }
+  slug=$(_resolve_identifier "$slug") || exit 1
 
   local file
   file=$(_task_file "$slug")
   local status
   status=$(_find_task "$slug")
 
+  echo "TASK_ID=$(_read_frontmatter "$file" 'task_id')"
   echo "SLUG=$slug"
   echo "STATUS=$status"
   echo "TITLE=$(_read_frontmatter "$file" 'title')"
@@ -221,7 +293,8 @@ cmd_read() {
 
 cmd_read_raw() {
   local slug="${1:-}"
-  [[ -z "$slug" ]] && { echo "Usage: task.sh read-raw <slug>" >&2; exit 1; }
+  [[ -z "$slug" ]] && { echo "Usage: task.sh read-raw <id|slug>" >&2; exit 1; }
+  slug=$(_resolve_identifier "$slug") || exit 1
 
   local file
   file=$(_task_file "$slug")
@@ -230,7 +303,8 @@ cmd_read_raw() {
 
 cmd_update() {
   local slug="${1:-}" key="${2:-}" value="${3:-}"
-  [[ -z "$slug" || -z "$key" ]] && { echo "Usage: task.sh update <slug> <key> <value>" >&2; exit 1; }
+  [[ -z "$slug" || -z "$key" ]] && { echo "Usage: task.sh update <id|slug> <key> <value>" >&2; exit 1; }
+  slug=$(_resolve_identifier "$slug") || exit 1
 
   local file
   file=$(_task_file "$slug")
@@ -240,7 +314,8 @@ cmd_update() {
 
 cmd_move() {
   local slug="${1:-}" target="${2:-}"
-  [[ -z "$slug" || -z "$target" ]] && { echo "Usage: task.sh move <slug> <status>" >&2; exit 1; }
+  [[ -z "$slug" || -z "$target" ]] && { echo "Usage: task.sh move <id|slug> <status>" >&2; exit 1; }
+  slug=$(_resolve_identifier "$slug") || exit 1
 
   local current
   current=$(_find_task "$slug") || { echo "Error: task '$slug' not found" >&2; exit 1; }
@@ -251,8 +326,9 @@ cmd_move() {
 
   mkdir -p "$TASKS_DIR/$target"
 
-  local src="$TASKS_DIR/$current/$slug.md"
-  local dst="$TASKS_DIR/$target/$slug.md"
+  local src
+  src=$(_task_file "$slug")
+  local dst="$TASKS_DIR/$target/$(basename "$src")"
 
   mv "$src" "$dst"
   _update_frontmatter "$dst" "updated_at" "$(_now)"
@@ -277,14 +353,15 @@ cmd_list() {
 
   if [[ "$sort_mode" == "priority" ]]; then
     # Read all tasks, sort by priority weight then created_at
-    local entries="" slug priority created_at weight
+    local entries="" slug base priority created_at weight
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
       if [[ -n "$source_filter" ]]; then
         src=$(_read_frontmatter "$f" "source")
         [[ "$src" != "$source_filter" ]] && continue
       fi
-      slug=$(basename "$f" .md)
+      base=$(basename "$f" .md)
+      slug="${base#*-}"
       priority=$(_read_frontmatter "$f" "priority")
       [[ -z "$priority" ]] && priority="medium"
       created_at=$(_read_frontmatter "$f" "created_at")
@@ -296,27 +373,31 @@ cmd_list() {
     fi
   else
     # Simple listing by filename
+    local base
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
       if [[ -n "$source_filter" ]]; then
         src=$(_read_frontmatter "$f" "source")
         [[ "$src" != "$source_filter" ]] && continue
       fi
-      basename "$f" .md
+      base=$(basename "$f" .md)
+      echo "${base#*-}"
     done
   fi
 }
 
 cmd_find() {
   local slug="${1:-}"
-  [[ -z "$slug" ]] && { echo "Usage: task.sh find <slug>" >&2; exit 1; }
+  [[ -z "$slug" ]] && { echo "Usage: task.sh find <id|slug>" >&2; exit 1; }
+  slug=$(_resolve_identifier "$slug") || exit 1
 
   _find_task "$slug" || { echo "Error: task '$slug' not found" >&2; exit 1; }
 }
 
 cmd_note() {
   local slug="${1:-}" message="${2:-}"
-  [[ -z "$slug" || -z "$message" ]] && { echo "Usage: task.sh note <slug> <message>" >&2; exit 1; }
+  [[ -z "$slug" || -z "$message" ]] && { echo "Usage: task.sh note <id|slug> <message>" >&2; exit 1; }
+  slug=$(_resolve_identifier "$slug") || exit 1
 
   local file
   file=$(_task_file "$slug")
@@ -343,6 +424,54 @@ cmd_count() {
   echo "$count"
 }
 
+cmd_migrate() {
+  local counter_file="$KVIDO_HOME/state/task_counter"
+  local all_tasks=()
+
+  # Collect all tasks without numeric prefix
+  for status_dir in $STATUSES; do
+    local dir="$TASKS_DIR/$status_dir"
+    [[ -d "$dir" ]] || continue
+    for f in "$dir"/*.md; do
+      [[ -f "$f" ]] || continue
+      local base
+      base=$(basename "$f" .md)
+      # Skip already migrated files (start with digit followed by dash)
+      [[ "$base" =~ ^[0-9]+-. ]] && continue
+      local created_at
+      created_at=$(_read_frontmatter "$f" "created_at")
+      all_tasks+=("${created_at:-0} $f")
+    done
+  done
+
+  if [[ ${#all_tasks[@]} -eq 0 ]]; then
+    echo "No tasks to migrate." >&2
+    return 0
+  fi
+
+  # Sort by created_at and assign IDs
+  local id=0
+  [[ -f "$counter_file" ]] && id=$(cat "$counter_file")
+
+  local sorted
+  sorted=$(printf '%s\n' "${all_tasks[@]}" | sort -k1,1)
+
+  while IFS=' ' read -r _ filepath; do
+    id=$((id + 1))
+    local dir_path base slug new_path
+    dir_path=$(dirname "$filepath")
+    base=$(basename "$filepath" .md)
+    slug="$base"
+    new_path="$dir_path/${id}-${slug}.md"
+    mv "$filepath" "$new_path"
+    _update_frontmatter "$new_path" "task_id" "$id"
+    echo "Migrated: $slug → ${id}-${slug}" >&2
+  done <<< "$sorted"
+
+  echo "$id" > "$counter_file.tmp" && mv "$counter_file.tmp" "$counter_file"
+  echo "Migrated ${#all_tasks[@]} tasks. Counter: $id" >&2
+}
+
 # --- Main ---
 
 COMMAND="${1:-}"
@@ -357,9 +486,10 @@ case "$COMMAND" in
   list)     cmd_list "$@" ;;
   find)     cmd_find "$@" ;;
   note)     cmd_note "$@" ;;
-  count)    cmd_count "$@" ;;
+  count)      cmd_count "$@" ;;
+  migrate-ids) cmd_migrate "$@" ;;
   *)
-    echo "Usage: task.sh <create|read|read-raw|update|move|list|find|note|count> [args...]" >&2
+    echo "Usage: task.sh <create|read|read-raw|update|move|list|find|note|count|migrate-ids> [args...]" >&2
     exit 1
     ;;
 esac
