@@ -54,9 +54,12 @@ _find_task() {
   for status_dir in $STATUSES; do
     local dir="$TASKS_DIR/$status_dir"
     [[ -d "$dir" ]] || continue
-    # New format: <id>-<slug>.md
-    for f in "$dir"/*-"$slug".md; do
-      [[ -f "$f" ]] && { echo "$status_dir"; return 0; }
+    # New format: <id>-<slug>.md — validate extracted slug matches exactly
+    for f in "$dir"/[0-9]*-"$slug".md; do
+      [[ -f "$f" ]] || continue
+      local base
+      base=$(basename "$f" .md)
+      [[ "${base#*-}" == "$slug" ]] && { echo "$status_dir"; return 0; }
     done
     # Legacy format: <slug>.md (pre-migration)
     if [[ -f "$dir/$slug.md" ]]; then
@@ -72,8 +75,11 @@ _task_file() {
   for status_dir in $STATUSES; do
     local dir="$TASKS_DIR/$status_dir"
     [[ -d "$dir" ]] || continue
-    for f in "$dir"/*-"$slug".md; do
-      [[ -f "$f" ]] && { echo "$f"; return 0; }
+    for f in "$dir"/[0-9]*-"$slug".md; do
+      [[ -f "$f" ]] || continue
+      local base
+      base=$(basename "$f" .md)
+      [[ "${base#*-}" == "$slug" ]] && { echo "$f"; return 0; }
     done
     # Legacy format
     if [[ -f "$dir/$slug.md" ]]; then
@@ -486,7 +492,7 @@ case "$COMMAND" in
   list)     cmd_list "$@" ;;
   find)     cmd_find "$@" ;;
   note)     cmd_note "$@" ;;
-  count)      cmd_count "$@" ;;
+  count)       cmd_count "$@" ;;
   migrate-ids) cmd_migrate "$@" ;;
   *)
     echo "Usage: task.sh <create|read|read-raw|update|move|list|find|note|count|migrate-ids> [args...]" >&2
