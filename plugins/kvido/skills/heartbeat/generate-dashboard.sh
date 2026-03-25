@@ -99,19 +99,61 @@ fi
 _html_escape() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
 
 # ---------------------------------------------------------------------------
-# Source 3: current.md
+# Source 3: current.md (full content, rendered as structured HTML)
 # ---------------------------------------------------------------------------
 CURRENT_FILE="$STATE_DIR/current.md"
-FOCUS=""
-WIP=""
-BLOCKERS=""
+CURRENT_HTML=""
 
 if [[ -f "$CURRENT_FILE" ]]; then
-  # sed range: match from header to next header OR end of file, strip header lines
-  _extract_section() { sed -n "/^## $1/,/^## /{/^## /d;p}" "$CURRENT_FILE" | sed '/^$/d' | _html_escape | head -"$2"; }
-  FOCUS=$(_extract_section "Active Focus" 5)
-  WIP=$(_extract_section "Work in Progress" 10)
-  BLOCKERS=$(_extract_section "Blockers" 5)
+  # Convert markdown to structured HTML sections
+  CURRENT_HTML=$(awk '
+    BEGIN { in_section=0; has_content=0; buf="" }
+    /^# / { next }
+    /^## / {
+      if (in_section && has_content) print buf "</div>"
+      title = substr($0, 4)
+      gsub(/&/, "\\&amp;", title); gsub(/</, "\\&lt;", title); gsub(/>/, "\\&gt;", title)
+      buf = "<div class=\"current-section\"><h3>" title "</h3>"
+      in_section=1; has_content=0
+      next
+    }
+    /^$/ { if (in_section && has_content) buf = buf "<br>"; next }
+    {
+      gsub(/&/, "\\&amp;"); gsub(/</, "\\&lt;"); gsub(/>/, "\\&gt;")
+      # Render markdown checkboxes
+      if (match($0, /^- \[x\] /)) {
+        $0 = "<span class=\"check done\">✓</span> " substr($0, 7)
+      } else if (match($0, /^- \[ \] /)) {
+        $0 = "<span class=\"check todo\">○</span> " substr($0, 7)
+      }
+      # Render list items
+      if (match($0, /^- /)) {
+        $0 = "<div class=\"current-item\">" substr($0, 3) "</div>"
+      } else if (match($0, /^[0-9]+\. /)) {
+        sub(/^[0-9]+\. /, "", $0)
+        $0 = "<div class=\"current-item numbered\">" $0 "</div>"
+      }
+      # Bold
+      while (match($0, /\*\*[^*]+\*\*/)) {
+        pre = substr($0, 1, RSTART-1)
+        bold = substr($0, RSTART+2, RLENGTH-4)
+        post = substr($0, RSTART+RLENGTH)
+        $0 = pre "<strong>" bold "</strong>" post
+      }
+      # Inline code
+      while (match($0, /`[^`]+`/)) {
+        pre = substr($0, 1, RSTART-1)
+        code = substr($0, RSTART+1, RLENGTH-2)
+        post = substr($0, RSTART+RLENGTH)
+        $0 = pre "<code>" code "</code>" post
+      }
+      # HTML comments (hidden)
+      if (match($0, /&lt;!--.*--&gt;/)) next
+      buf = buf $0 "\n"
+      has_content=1
+    }
+    END { if (in_section && has_content) print buf "</div>" }
+  ' "$CURRENT_FILE")
 fi
 
 # ---------------------------------------------------------------------------
@@ -133,10 +175,7 @@ if [[ -x "$TASK_SH" ]]; then
   WQ_PROGRESS=$("$TASK_SH" count in-progress 2>/dev/null || echo 0)
   WQ_TODO=$("$TASK_SH" count todo 2>/dev/null || echo 0)
   WQ_TRIAGE=$("$TASK_SH" count triage 2>/dev/null || echo 0)
-  # Create today marker if missing (must exist before find -newer)
-  [[ -f "${KVIDO_HOME}/state/tasks/.today-marker" ]] || touch -d "${TODAY} 00:00:00" "${KVIDO_HOME}/state/tasks/.today-marker" 2>/dev/null || true
-  # Done today: count files in done/ modified today
-  WQ_DONE=$(find "${KVIDO_HOME}/state/tasks/done/" -name "*.md" -newer "${KVIDO_HOME}/state/tasks/.today-marker" 2>/dev/null | wc -l || echo 0)
+  WQ_DONE=$("$TASK_SH" count done 2>/dev/null || echo 0)
 fi
 
 # ---------------------------------------------------------------------------
@@ -276,7 +315,7 @@ HTMLEOF
 
 cat >> "$TMP_FILE" << 'HTMLEOF'
 <style>
-:root {
+:root, [data-theme="dark"] {
   --bg: #1a1b26; --bg-raised: #1f2031; --card: #24283b; --card-hover: #292e42;
   --border: #414868; --border-subtle: #2f3549;
   --text: #a9b1d6; --text-bright: #c0caf5; --accent: #7aa2f7; --accent-glow: rgba(122,162,247,0.15);
@@ -284,12 +323,23 @@ cat >> "$TMP_FILE" << 'HTMLEOF'
   --warning: #e0af68; --warning-glow: rgba(224,175,104,0.12);
   --error: #f7768e; --error-glow: rgba(247,118,142,0.12);
   --purple: #bb9af7; --muted: #565f89;
+  --scanline: rgba(255,255,255,0.008);
+}
+[data-theme="light"] {
+  --bg: #f0f1f5; --bg-raised: #e4e6ed; --card: #ffffff; --card-hover: #f7f8fb;
+  --border: #c8ccd8; --border-subtle: #dde0e9;
+  --text: #4a4f69; --text-bright: #1e2030; --accent: #3d6be5; --accent-glow: rgba(61,107,229,0.12);
+  --success: #40a02b; --success-glow: rgba(64,160,43,0.10);
+  --warning: #df8e1d; --warning-glow: rgba(223,142,29,0.10);
+  --error: #d20f39; --error-glow: rgba(210,15,57,0.10);
+  --purple: #8839ef; --muted: #8c8fa1;
+  --scanline: rgba(0,0,0,0.012);
 }
 @keyframes pulse-dot { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   background: var(--bg);
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.008) 3px, rgba(255,255,255,0.008) 4px);
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, var(--scanline) 3px, var(--scanline) 4px);
   color: var(--text); font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', monospace;
   font-size: 13px; line-height: 1.6; padding: 24px 20px; max-width: 1200px; margin: 0 auto;
   -webkit-font-smoothing: antialiased;
@@ -408,7 +458,36 @@ tbody tr:last-child td { border-bottom: none; }
 .blockers strong { color: var(--error); }
 .empty { color: var(--muted); font-style: italic; font-size: 0.82em; padding: 8px 0; }
 
+/* Current state card */
+.current-section { margin-bottom: 14px; }
+.current-section:last-child { margin-bottom: 0; }
+.current-section h3 {
+  color: var(--accent); font-size: 0.78em; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; margin-bottom: 6px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.current-item { color: var(--text); font-size: 0.88em; line-height: 1.5; padding: 2px 0 2px 12px; border-left: 2px solid var(--border-subtle); margin-bottom: 2px; }
+.current-item:hover { border-left-color: var(--accent); background: rgba(122,162,247,0.03); }
+.current-item.numbered { border-left-color: var(--warning); }
+.current-section strong { color: var(--text-bright); }
+.current-section code { background: var(--bg-raised); padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+.check { font-weight: 700; margin-right: 4px; }
+.check.done { color: var(--success); }
+.check.todo { color: var(--muted); }
+
 footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20px 0 8px; opacity: 0.5; }
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 16px; right: 20px; z-index: 100;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border-subtle);
+  color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; line-height: 1;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+.theme-toggle:hover { background: var(--card-hover); border-color: var(--border); color: var(--text-bright); transform: scale(1.1); }
 
 /* Task list/detail — kanban board */
 .badge {
@@ -458,7 +537,14 @@ footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20p
 
 /* Archived column — collapsed by default, click to expand */
 .kanban-col.col-done-collapsed .kanban-cards { display: none; }
-.kanban-col.col-done-collapsed { opacity: 0.6; min-width: 120px; flex: 0 0 120px; }
+.kanban-col.col-done-collapsed { opacity: 0.6; min-width: 44px; flex: 0 0 44px; }
+.kanban-col.col-done-collapsed .kanban-col-header {
+  flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px;
+}
+.kanban-col.col-done-collapsed .col-title {
+  writing-mode: vertical-rl; text-orientation: mixed; font-size: 0.65em; white-space: nowrap;
+}
+.kanban-col.col-done-collapsed .col-count { font-size: 0.6em; }
 .kanban-col.col-done-collapsed:hover { opacity: 0.8; }
 .col-toggle {
   font-size: 0.7em; color: var(--muted); cursor: pointer; padding: 2px 6px;
@@ -557,6 +643,7 @@ if [[ -n "$AVATAR_B64" ]]; then
 fi
 
 cat >> "$TMP_FILE" << HTMLEOF
+<button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle theme">☀</button>
 <header>
 ${AVATAR_HTML}
 <div>
@@ -585,20 +672,14 @@ ${WARNINGS_HTML}
 <div id="tab-overview" class="tab-panel active">
 
 <div class="stat-pills">
-  <div class="stat-pill pill-inprogress"><span class="stat-val">${WQ_PROGRESS}</span><span class="stat-lbl">In Progress</span></div>
-  <div class="stat-pill pill-todo"><span class="stat-val">${WQ_TODO}</span><span class="stat-lbl">Todo</span></div>
-  <div class="stat-pill pill-triage"><span class="stat-val">${WQ_TRIAGE}</span><span class="stat-lbl">Triage</span></div>
-  <div class="stat-pill pill-done"><span class="stat-val">${WQ_DONE}</span><span class="stat-lbl">Done today</span></div>
+  <div class="stat-pill pill-triage" onclick="showTab('tasks')" style="cursor:pointer"><span class="stat-val">${WQ_TRIAGE}</span><span class="stat-lbl">Triage</span></div>
+  <div class="stat-pill pill-todo" onclick="showTab('tasks')" style="cursor:pointer"><span class="stat-val">${WQ_TODO}</span><span class="stat-lbl">Todo</span></div>
+  <div class="stat-pill pill-inprogress" onclick="showTab('tasks')" style="cursor:pointer"><span class="stat-val">${WQ_PROGRESS}</span><span class="stat-lbl">In Progress</span></div>
+  <div class="stat-pill pill-done" onclick="showTab('tasks')" style="cursor:pointer"><span class="stat-val">${WQ_DONE}</span><span class="stat-lbl">Done</span></div>
 </div>
 
-<div class="grid">
-<div class="card">
-<h2>Focus & WIP</h2>
-$(if [[ -n "$FOCUS" ]]; then echo "<div class=\"focus-text\"><strong>Focus:</strong> ${FOCUS}</div>"; else echo '<div class="empty">No focus set</div>'; fi)
-$(if [[ -n "$WIP" ]]; then echo "<div class=\"focus-text\" style=\"margin-top:8px\"><strong>WIP:</strong><br>${WIP//$'\n'/<br>}</div>"; fi)
-$(if [[ -n "$BLOCKERS" ]]; then echo "<div class=\"blockers\" style=\"margin-top:8px\"><strong>Blockers:</strong><br>${BLOCKERS//$'\n'/<br>}</div>"; fi)
-</div>
-
+<div class="card current-card">
+$(if [[ -n "$CURRENT_HTML" ]]; then echo "$CURRENT_HTML"; else echo '<div class="empty">No current.md found</div>'; fi)
 </div>
 
 </div><!-- /tab-overview -->
@@ -653,8 +734,8 @@ JSEOF
 # Embed JS routing (quoted — no variable expansion needed)
 cat >> "$TMP_FILE" << 'JSEOF'
 
-var STATUS_ORDER = ['in-progress','todo','triage','done','failed','cancelled'];
-var STATUS_LABELS = {'in-progress':'In Progress','todo':'Todo','triage':'Triage','done':'Done','failed':'Failed','cancelled':'Cancelled'};
+var STATUS_ORDER = ['triage','todo','in-progress','done','failed','cancelled'];
+var STATUS_LABELS = {'triage':'Triage','todo':'Todo','in-progress':'In Progress','done':'Done','failed':'Failed','cancelled':'Cancelled'};
 var PRIORITY_ORDER = {'urgent':0,'high':1,'medium':2,'low':3,'':4};
 
 // Tab switching
@@ -742,7 +823,7 @@ function renderKanban() {
   var el = document.getElementById('kanban');
   var html = '';
   // Active columns: in-progress, todo, triage (primary focus)
-  var ACTIVE_COLS = ['in-progress','todo','triage'];
+  var ACTIVE_COLS = ['triage','todo','in-progress'];
   var active = TASKS.filter(function(t) { return ACTIVE_COLS.indexOf(t.status) !== -1; });
   // Update tab count badge
   var countEl = document.getElementById('tab-count-tasks');
@@ -772,30 +853,26 @@ function renderKanban() {
     html += '</div></div>';
   });
 
-  // Done column — shown fully (no collapse needed with tabs)
-  var done = TASKS.filter(function(t) { return t.status === 'done'; });
-  if (done.length > 0) {
-    html += '<div class="kanban-col" id="col-done" data-status="done">';
-    html += '<div class="kanban-col-header">';
-    html += '<span class="col-title">Done</span>';
-    html += '<span class="col-count">' + done.length + '</span>';
-    html += '</div>';
+  // Archived columns (done, failed, cancelled) — collapsed by default
+  ['done','failed','cancelled'].forEach(function(status) {
+    var items = TASKS.filter(function(t) { return t.status === status; });
+    var label = STATUS_LABELS[status] || status;
+    html += '<div class="kanban-col col-done-collapsed" id="col-' + status + '" data-status="' + status + '" onclick="this.classList.toggle(\'col-done-collapsed\')">';
+    html += '<div class="kanban-col-header"><span class="col-title">' + label + '</span><span class="col-count">' + items.length + '</span></div>';
     html += '<div class="kanban-cards">';
-    done.forEach(function(t) {
-      html += '<div class="kanban-card" onclick="location.hash=\'task/' + t.slug + '\'">';
+    items.sort(function(a, b) { return (b.updated_at || '').localeCompare(a.updated_at || ''); });
+    items.slice(0, 20).forEach(function(t) {
+      html += '<div class="kanban-card" onclick="event.stopPropagation(); location.hash=\'task/' + t.slug + '\'">';
       html += '<div class="kanban-card-title">' + esc(t.title) + '</div>';
       html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + esc(t.slug) + '</span><span class="kanban-card-time">' + relTime(t.updated_at) + '</span></div>';
       html += '</div>';
     });
     html += '</div></div>';
-  }
-
-  // Archived (failed/cancelled) — removed from board view
+  });
 
   el.innerHTML = html;
 }
 
-// toggleArchivedCol removed — archived column no longer shown
 
 function renderDetail(slug) {
   showView('detail');
@@ -855,6 +932,36 @@ function route() {
 renderKanban();
 window.addEventListener('hashchange', route);
 route();
+
+// Count-up animation for stat pills
+document.querySelectorAll('.stat-val').forEach(function(el) {
+  var target = parseInt(el.textContent, 10);
+  if (isNaN(target) || target === 0) return;
+  el.textContent = '0';
+  var start = performance.now();
+  var duration = 400;
+  (function tick(now) {
+    var p = Math.min((now - start) / duration, 1);
+    el.textContent = Math.round(p * target);
+    if (p < 1) requestAnimationFrame(tick);
+  })(start);
+});
+
+// Theme toggle
+(function() {
+  var html = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  var stored = localStorage.getItem('kvido-theme');
+  var theme = stored || 'dark';
+  html.setAttribute('data-theme', theme);
+  btn.textContent = theme === 'dark' ? '\u2600' : '\u263E';
+  btn.addEventListener('click', function() {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', theme);
+    localStorage.setItem('kvido-theme', theme);
+    btn.textContent = theme === 'dark' ? '\u2600' : '\u263E';
+  });
+})();
 </script>
 JSEOF
 
