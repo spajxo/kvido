@@ -3,3 +3,4 @@ memory/
 docs/superpowers/
 .env
 .claude/settings.json
+.worktrees/
