@@ -243,7 +243,7 @@ fi
 # ---------------------------------------------------------------------------
 TIMELINE_HTML=""
 if [[ "$TIMELINE_JSON" != "[]" ]]; then
-  TIMELINE_HTML=$(echo "$TIMELINE_JSON" | jq -r '.[] | "<tr><td class=\"time\">\(.ts | split("T")[1] | split("+")[0] | .[0:5])</td><td class=\"agent agent-\(.agent)\">\(.agent)</td><td>\(.action)</td><td>\(.message // .detail // "")</td><td class=\"tokens\">\(.tokens // "-")</td></tr>"' 2>/dev/null || echo "")
+  TIMELINE_HTML=$(echo "$TIMELINE_JSON" | jq -r 'reverse | .[] | "<tr><td class=\"time\">\(.ts | split("T")[1] | split("+")[0] | .[0:5])</td><td class=\"agent agent-\(.agent)\">\(.agent)</td><td>\(.action)</td><td>\(.message // .detail // "")</td><td class=\"tokens\">\(.tokens // "-")</td></tr>"' 2>/dev/null || echo "")
 fi
 
 # ---------------------------------------------------------------------------
@@ -456,9 +456,9 @@ footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20p
 .kanban-col[data-status="failed"] { border-top: 2px solid var(--error); }
 .kanban-col[data-status="cancelled"] { border-top: 2px solid var(--muted); }
 
-/* Done column — dimmed by default, expand on click */
+/* Archived column — collapsed by default, click to expand */
 .kanban-col.col-done-collapsed .kanban-cards { display: none; }
-.kanban-col.col-done-collapsed { opacity: 0.6; }
+.kanban-col.col-done-collapsed { opacity: 0.6; min-width: 120px; flex: 0 0 120px; }
 .kanban-col.col-done-collapsed:hover { opacity: 0.8; }
 .col-toggle {
   font-size: 0.7em; color: var(--muted); cursor: pointer; padding: 2px 6px;
@@ -599,13 +599,6 @@ $(if [[ -n "$WIP" ]]; then echo "<div class=\"focus-text\" style=\"margin-top:8p
 $(if [[ -n "$BLOCKERS" ]]; then echo "<div class=\"blockers\" style=\"margin-top:8px\"><strong>Blockers:</strong><br>${BLOCKERS//$'\n'/<br>}</div>"; fi)
 </div>
 
-$(if [[ -n "$TOKEN_STATS_HTML" ]]; then cat << TOKENEOF
-<div class="card">
-<h2>Token Usage ($( [[ $TOTAL_TOKENS -ge 1000 ]] && echo "$(( TOTAL_TOKENS / 1000 )).$(( TOTAL_TOKENS % 1000 / 100 ))k" || echo "${TOTAL_TOKENS}" ) total, ${TOTAL_RUNS} runs)</h2>
-${TOKEN_STATS_HTML}
-</div>
-TOKENEOF
-fi)
 </div>
 
 </div><!-- /tab-overview -->
@@ -623,6 +616,14 @@ fi)
 
 <!-- Tab 3: Activity Log -->
 <div id="tab-log" class="tab-panel">
+
+$(if [[ -n "$TOKEN_STATS_HTML" ]]; then cat << TOKENEOF
+<div class="card" style="margin-bottom:14px">
+<h2>Token Usage ($( [[ $TOTAL_TOKENS -ge 1000 ]] && echo "$(( TOTAL_TOKENS / 1000 )).$(( TOTAL_TOKENS % 1000 / 100 ))k" || echo "${TOTAL_TOKENS}" ) total, ${TOTAL_RUNS} runs)</h2>
+${TOKEN_STATS_HTML}
+</div>
+TOKENEOF
+fi)
 
 <div class="card">
 <h2>Activity Timeline (today)</h2>
@@ -771,18 +772,17 @@ function renderKanban() {
     html += '</div></div>';
   });
 
-  // Done column — collapsed by default to reduce clutter
+  // Done column — shown fully (no collapse needed with tabs)
   var done = TASKS.filter(function(t) { return t.status === 'done'; });
   if (done.length > 0) {
-    html += '<div class="kanban-col col-done-collapsed" id="col-done" data-status="done">';
-    html += '<div class="kanban-col-header" onclick="toggleDoneCol()" style="cursor:pointer">';
+    html += '<div class="kanban-col" id="col-done" data-status="done">';
+    html += '<div class="kanban-col-header">';
     html += '<span class="col-title">Done</span>';
     html += '<span class="col-count">' + done.length + '</span>';
-    html += '<span class="col-toggle" id="done-toggle">expand</span>';
     html += '</div>';
     html += '<div class="kanban-cards">';
     done.forEach(function(t) {
-      html += '<div class="kanban-card" onclick="event.stopPropagation(); location.hash=\'task/' + t.slug + '\'">';
+      html += '<div class="kanban-card" onclick="location.hash=\'task/' + t.slug + '\'">';
       html += '<div class="kanban-card-title">' + esc(t.title) + '</div>';
       html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + esc(t.slug) + '</span><span class="kanban-card-time">' + relTime(t.updated_at) + '</span></div>';
       html += '</div>';
@@ -811,14 +811,6 @@ function renderKanban() {
   }
 
   el.innerHTML = html;
-}
-
-function toggleDoneCol() {
-  var col = document.getElementById('col-done');
-  var btn = document.getElementById('done-toggle');
-  if (!col) return;
-  col.classList.toggle('col-done-collapsed');
-  if (btn) btn.textContent = col.classList.contains('col-done-collapsed') ? 'expand' : 'collapse';
 }
 
 function toggleArchivedCol() {
