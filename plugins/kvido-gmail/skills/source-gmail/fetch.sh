@@ -26,7 +26,7 @@ MESSAGES=$(gws gmail users messages list --params "$(jq -n \
   --arg q "$WATCH_QUERY" \
   --argjson max "$MAX_RESULTS" \
   '{userId: "me", q: $q, maxResults: $max}')" 2>/dev/null) || {
-  echo "ERROR: gws gmail fetch failed" >&2
+  echo "ERROR: gmail: gws gmail messages list failed" >&2
   exit 1
 }
 

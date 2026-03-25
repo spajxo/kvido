@@ -9,6 +9,11 @@ set -euo pipefail
 
 CONFIG="kvido config"
 
+if ! command -v git &>/dev/null; then
+  echo "ERROR: gitlab: git not available" >&2
+  exit 1
+fi
+
 DATE=""
 PRIORITY_FILTER=""
 

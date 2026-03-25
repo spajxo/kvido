@@ -12,6 +12,11 @@ set -euo pipefail
 
 CONFIG="kvido config"
 
+if ! command -v glab &>/dev/null; then
+  echo "ERROR: gitlab: glab CLI not available" >&2
+  exit 1
+fi
+
 PRIORITY_FILTER=""
 
 while [[ $# -gt 0 ]]; do

@@ -59,6 +59,24 @@ For each discovered source plugin, read its `skills/source-*/SKILL.md` from the 
 
 Each source SKILL.md defines its own fetch commands and capabilities. Read it and follow its instructions.
 
+### Fetch error handling
+
+When running a fetch script, capture both stdout and stderr, and check the exit code:
+
+- **Exit code 0** — success, use output normally.
+- **Exit code 10** — CLI tool not available, follow MCP fallback instructions in the source SKILL.md. This is NOT an error.
+- **Any other non-zero exit code** — fetch failure. Emit an `Event:` line for heartbeat delivery:
+
+```
+Event: :warning: <source-name> fetch failed — <error message from stderr>. Source: <source-name>. Reference: none. Urgency: normal. Severity: :large_yellow_circle:.
+```
+
+Use dedup key `fetch-error:<source-name>` and check/record via `kvido planner-state event check/report` to avoid repeated alerts.
+
+Log the failure: `kvido log add planner error --message "fetch failed: <source-name>: <stderr>"`.
+
+Continue processing remaining sources — a single source failure must not abort the planner run.
+
 ### Non-source data
 
 | Source | Command | When |
@@ -265,5 +283,5 @@ If no notifications are needed, return: `No notifications.`
 - **Max 3 triage items per run.** Don't get bogged down.
 - **Time from system.** `date -Iseconds`.
 - **Always include URLs.** Add a full clickable URL to every MR, Jira issue.
-- **If a source fails** → log warning, continue with next source.
+- **If a source fails** (non-zero, non-10 exit) → emit `Event:` with `:warning:` severity, log via `kvido log add`, dedup via `kvido planner-state event check/report`, continue with next source. Exit code 10 = MCP fallback, not an error.
 - **Don't try to do the work yourself** — create a worker task.

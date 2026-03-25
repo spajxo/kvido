@@ -24,7 +24,7 @@ EVENTS=$(gws calendar events list primary \
   --singleEvents \
   --orderBy startTime \
   --format json 2>/dev/null) || {
-  echo "ERROR: gws calendar fetch failed" >&2
+  echo "ERROR: calendar: gws calendar fetch failed for $TARGET_DATE" >&2
   exit 1
 }
 
