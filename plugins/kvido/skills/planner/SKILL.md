@@ -27,7 +27,7 @@ Go through `memory/planner.md`. Look for time triggers:
 - Format: `- HH:MM: <instruction>` or `- <day>: <instruction>`
 - If it's time to act and it hasn't been done today (check via `kvido planner-state timestamp get <key>` — exit 1 means not done today) → execute or create a worker task via:
   ```bash
-  kvido task create --instruction "<instruction>" --size s --priority high --source planner
+  kvido task create --instruction "<instruction>" --size s --priority high --source planner --no-worktree
   ```
 - Record that the action was performed: `kvido planner-state timestamp set <key> <value>`
 

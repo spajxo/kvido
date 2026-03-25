@@ -55,7 +55,7 @@ source_ref: "1773933088.437"
 
 | Subcommand | Action |
 |------------|--------|
-| `kvido task create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Creates task file (`<id>-<slug>.md`), returns slug. User-initiated sources (slack, manual) route to `todo/`; agent-generated sources route to `triage/`. Override with `--status`. |
+| `kvido task create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--no-worktree] [--goal G]` | Creates task file (`<id>-<slug>.md`), returns slug. Worktree enabled by default; use `--no-worktree` for non-code tasks. User-initiated sources (slack, manual) route to `todo/`; agent-generated sources route to `triage/`. |
 | `kvido task read <id\|slug>` | Returns frontmatter + content as key=value (includes TASK_ID) |
 | `kvido task read-raw <id\|slug>` | Returns raw markdown content of task file |
 | `kvido task update <id\|slug> <field> <value>` | Updates frontmatter field |
@@ -97,9 +97,9 @@ If a task takes > `task_timeout_minutes` (from `settings.json`):
 
 ## Worktree & PR mode
 
-If a task has frontmatter `worktree: true`, worker runs in an isolated git worktree (heartbeat sets `isolation: "worktree"` on the Agent tool).
+**Worktree is the default.** All tasks run in an isolated git worktree unless explicitly created with `--no-worktree`. Heartbeat sets `isolation: "worktree"` on the Agent tool when `worktree: true`.
 
-**Auto-worktree for assistant repo:** If a task modifies files in the assistant repository, always use worktree mode — even without an explicit `worktree: true`. Do not push directly to main.
+Use `--no-worktree` only for non-code tasks (maintenance, lookups, research).
 
 ### Rules
 - Commit all changes into the worktree branch

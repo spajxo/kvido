@@ -184,7 +184,7 @@ _priority_weight() {
 cmd_create() {
   local INSTRUCTION="" PRIORITY="medium" SIZE="m" SOURCE="manual"
   local SOURCE_REF="" RECURRING="" STATUS="" TITLE="" GOAL=""
-  local WORKTREE=false
+  local WORKTREE=true
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -197,6 +197,7 @@ cmd_create() {
       --status)      STATUS="$2"; shift 2 ;;
       --title)       TITLE="$2"; shift 2 ;;
       --worktree)    WORKTREE=true; shift ;;
+      --no-worktree) WORKTREE=false; shift ;;
       --goal)        GOAL="$2"; shift 2 ;;
       *) echo "Unknown arg: $1" >&2; exit 1 ;;
     esac
