@@ -35,11 +35,11 @@ Write note on task: kvido task note <slug> "Triage: sent for approval."
 
 Recurring (max 1 per day each, check last_*_date via `kvido planner-state last-run get <task>`):
 
-| Task | Trigger | Instruction | Size/Priority |
-|------|---------|-------------|---------------|
-| Librarian | Not yet run today (check `last_librarian_date`, max 1/day) | Consolidation mode. Read agents/librarian.md | m/medium |
-| Enricher | Oldest project in memory/projects/ > 7 days | Enrichment: <project>. Read agents/project-enricher.md | s/low |
-| Self-improver | Not yet run today | Analyze today's sessions. Read agents/self-improver.md | m/low |
+| Task | Trigger | Instruction |
+|------|---------|-------------|
+| Librarian | Not yet run today (check `last_librarian_date`, max 1/day) | `Dispatch: librarian` |
+| Enricher | Oldest project in memory/projects/ > 7 days | `Dispatch: project-enricher PROJECT=<project>` |
+| Self-improver | Not yet run today | `Dispatch: self-improver` |
 
 ### Checks (output as Event:)
 

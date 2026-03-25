@@ -188,11 +188,29 @@ Max 3 triage items per run (new items take priority over stale re-surfaces).
 
 ---
 
-## Step 7: Maintenance Planning
+## Step 7: Maintenance Dispatch
 
-Evaluate need and create worker tasks. All maintenance tasks: `--source planner --goal maintenance`.
+Evaluate maintenance needs and emit `Dispatch:` lines. Heartbeat will create tasks and dispatch agents directly (not via worker queue). Each agent determines its own mode based on current state.
 
-Load maintenance rules from assembled context (already loaded in Step 4 via `kvido context planner`). The context defines recurring tasks, health checks, and periodic maintenance with their triggers, instructions, and size/priority. Follow those rules, checking `last_*_date` timestamps via `kvido planner-state timestamp get <key>` to avoid duplicates. After creating a maintenance task, record: `kvido planner-state timestamp set <key> <value>`.
+Load maintenance rules from assembled context (already loaded in Step 4 via `kvido context planner`). The context defines recurring tasks with their triggers. Check `last_*_date` timestamps via `kvido planner-state timestamp get <key>` to avoid duplicates.
+
+For each triggered maintenance task, emit a `Dispatch:` line and record execution:
+
+```
+Dispatch: librarian
+```
+
+```bash
+kvido planner-state timestamp set last_librarian_date "$(date -Iseconds)"
+```
+
+For enricher, include the target project:
+
+```
+Dispatch: project-enricher PROJECT=<project-slug>
+```
+
+Safety: if maintenance was already dispatched today (check via `kvido planner-state timestamp get last_<agent>_date`), skip. Heartbeat also dedup-checks via TaskList before creating the task.
 
 ---
 
@@ -235,6 +253,7 @@ If no notifications are needed, return: `No notifications.`
 | Sending duplicate notification for already reported event | Always run `kvido planner-state event check <key>` before notifying |
 | Creating worker tasks for things planner can log | Planner only creates tasks for actual work; status updates and reminders go into output as `Event:` or `Reminder:` |
 | Skipping `last_*_date` update after maintenance task creation | Always run `kvido planner-state timestamp set <key> <value>` after creating a maintenance task to prevent duplicates |
+| Creating worker tasks for maintenance agents | Emit `Dispatch: <agent>` lines — heartbeat dispatches directly with agent's own model/tools |
 | Notifying `immediate` during focus mode | Check calendar for active focus events — suppress to `batch` |
 | Creating user-facing tasks from legacy assigned tickets | Only remind in text output, never create new workflow from old tickets |
 
