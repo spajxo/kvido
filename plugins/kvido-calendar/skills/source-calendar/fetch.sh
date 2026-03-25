@@ -18,11 +18,9 @@ if ! command -v gws &>/dev/null; then
 fi
 
 # Fetch events
-EVENTS=$(gws calendar events list primary \
-  --timeMin "$TIME_MIN" \
-  --timeMax "$TIME_MAX" \
-  --singleEvents \
-  --orderBy startTime \
+PARAMS=$(printf '{"calendarId":"primary","timeMin":"%s","timeMax":"%s","singleEvents":true,"orderBy":"startTime"}' "$TIME_MIN" "$TIME_MAX")
+EVENTS=$(gws calendar events list \
+  --params "$PARAMS" \
   --format json 2>/dev/null) || {
   echo "ERROR: gws calendar fetch failed" >&2
   exit 1
