@@ -383,8 +383,21 @@ case "$ACTION" in
     # Uploads a file to Slack using files.getUploadURLExternal + files.completeUploadExternal.
     # Returns the file permalink on stdout.
     [[ $# -lt 1 ]] && { echo "Usage: slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
-    resolve_channel "$1"
-    UPLOAD_CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
+    # Disambiguate [channel] from <file_path>: if there are 2+ positional args
+    # (next arg is not a flag) and arg1 looks like a Slack channel ID, treat
+    # arg1 as channel. Otherwise arg1 is the file path — use default channel.
+    if [[ $# -ge 2 && "${2}" != --* && "${1:-}" =~ ^[CDG][A-Z0-9]+$ ]]; then
+      UPLOAD_CHANNEL="$1"; shift
+    else
+      if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+        _DEFAULT_CHANNEL=$(bash "$SCRIPT_DIR/../config.sh" 'slack.dm_channel_id' '' 2>/dev/null || true)
+      fi
+      if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+        echo "Error: channel not provided and slack.dm_channel_id not set in settings.json" >&2
+        exit 1
+      fi
+      UPLOAD_CHANNEL="$_DEFAULT_CHANNEL"
+    fi
     [[ $# -lt 1 ]] && { echo "Usage: slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
     UPLOAD_FILE="$1"; shift
     UPLOAD_TITLE=""
