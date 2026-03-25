@@ -118,6 +118,7 @@ Commands:
   config <key> [default]            Read kvido config values from settings.json
   log <subcommand> [args]           Activity log (add, list, purge)
   slack <subcommand> [args]         Slack messaging (send, reply, edit, read, react, delete, upload...)
+  dashboard                         Open the dashboard HTML in the default browser
   current <get|set>                 Read/write current focus (state/current.md)
   planner-state <subcommand>        Planner state (events, timestamps, reminders, schedule, interests)
   source-health <get|set> [args]    Source health status
@@ -202,6 +203,15 @@ exec "$_P/kvido" "$@"
 WRAPPER
     chmod +x "$HOME/.local/bin/kvido"
     echo "Installed: ~/.local/bin/kvido (CLAUDE_PLUGIN_ROOT-first wrapper)"
+    ;;
+  dashboard)
+    _DASHBOARD="$KVIDO_HOME/state/dashboard.html"
+    if [[ ! -f "$_DASHBOARD" ]]; then
+      echo "ERROR: Dashboard not found: $_DASHBOARD" >&2
+      echo "Run 'kvido heartbeat' to generate the dashboard." >&2
+      exit 1
+    fi
+    xdg-open "$_DASHBOARD"
     ;;
   skills/*|agents/*)
     # Script dispatch — resolve to plugin install path
