@@ -19,6 +19,7 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
 - Treat the current working directory as the project context and `$KVIDO_HOME` as Kvido runtime state.
 - Before making workflow decisions, read:
   - `memory/memory.md`
+  - `memory/index.md` (if present) — overview of what's stored in memory; use it to decide which files to read for the current task — don't load everything
   - `kvido current get`
   - `kvido heartbeat-state get-json`
 - Review recent activity with `kvido log list --today --format human`.
