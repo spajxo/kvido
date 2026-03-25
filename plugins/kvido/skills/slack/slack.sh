@@ -14,6 +14,7 @@ set -euo pipefail
 #   slack.sh download <url_private> [output_dir]
 #   slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]
 # Channel is optional — defaults to slack.dm_channel_id from settings.json
+# Channel may also be the literal string 'dm' as a shorthand for the configured DM channel
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
@@ -40,6 +41,19 @@ resolve_channel() {
   CHANNEL_SHIFTED=false
   if [[ "${1:-}" =~ ^[CDG][A-Z0-9]+ ]]; then
     RESOLVED_CHANNEL="$1"
+    CHANNEL_SHIFTED=true
+    return 0
+  fi
+  # 'dm' is a shorthand alias for the configured DM channel
+  if [[ "${1:-}" == "dm" ]]; then
+    if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+      _DEFAULT_CHANNEL=$(bash "$SCRIPT_DIR/../config.sh" 'slack.dm_channel_id' '' 2>/dev/null || true)
+    fi
+    if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+      echo "Error: channel not provided and slack.dm_channel_id not set in settings.json" >&2
+      exit 1
+    fi
+    RESOLVED_CHANNEL="$_DEFAULT_CHANNEL"
     CHANNEL_SHIFTED=true
     return 0
   fi
