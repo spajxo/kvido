@@ -1,6 +1,6 @@
 {
   "name": "kvido-gitlab",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "Kvido source plugin for GitLab — MR tracking, activity monitoring (requires glab)",
   "keywords": [
     "kvido",
