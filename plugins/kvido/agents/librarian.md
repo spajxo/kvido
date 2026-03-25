@@ -11,37 +11,67 @@ Your task depends on the calling context (passed in the prompt):
 
 ## Extraction mode
 
-1. Read the journal file (path in prompt)
-2. Read today's activity log: `kvido log list --today --format json`
-3. Identify facts from both journal and log: new project states, decisions, people, learned lessons, notable errors or patterns
-4. For each project mentioned in the journal → read `memory/projects/<project>.md`, update "History" and "Current state" sections. Create the file if it doesn't exist.
-5. New names → add to `memory/people/_index.md`
-6. New decisions → add to `memory/decisions/_index.md`
-7. New errors/lessons → add to `memory/learnings.md` (check dedup via Pattern-Key). Recurring errors from the activity log (same agent+action failing multiple days) are strong candidates.
-8. Update `memory/this-week.md` — add a line for that day (include token usage summary from log)
-9. Update `memory/memory.md` sections "Active projects" and "Key decisions" if relevant
+Gather today's signal and persist what's worth remembering.
+
+Sources (in rough priority order):
+1. **Journal file** (path in prompt) — the user's narrative of the day
+2. **Activity log** (`kvido log list --today --format json`) — machine record of what happened
+3. **Existing memory files** — skim for facts that need updating based on today's signal
+
+For each thing worth persisting, write or update the appropriate file:
+- Project states → `memory/projects/<project>.md` (update History + Current state; create if new)
+- New people → `memory/people/_index.md`
+- Decisions → `memory/decisions/_index.md`
+- Errors and patterns → `memory/learnings.md` (dedup via Pattern-Key)
+- Day summary → `memory/this-week.md` (include token usage from log)
+- Key changes → `memory/memory.md` sections "Active projects" and "Key decisions"
+
+Focus on merging signal into existing files rather than creating duplicates. Convert relative dates to absolute. Delete contradicted facts at the source.
+
+Always finish with Index mode.
 
 ## Consolidation mode
 
-1. Read `memory/learnings.md` — look for entries with `Recurrence-Count >= 3` and `Status: open`
-2. Promote to `memory/memory.md` section "Learned lessons". Set `Status: promoted`
-3. Read `memory/memory.md` — if > 100 lines, trim:
-   - First: "Key decisions" older than 30 days → `memory/decisions/`
-   - Then: "Learned lessons" with oldest last-seen → back to learnings.md
-   - Finally: "Active projects" — shorten to one-line description
-   - Never delete: "Who I am", "People"
-4. Check freshness: project files not updated in 14+ days → mark as stale (add `<!-- STALE -->` comment)
-5. **Auto-memory sync** — find auto-memory file: `find ~/.claude/projects -name "MEMORY.md" 2>/dev/null | head -1`. Read it and all referenced files. For each:
-   - `user_*.md` → extract facts about the user (working hours, role, preferences) → check `memory/people/_index.md`, add/update user section if missing or outdated
-   - `feedback_*.md` → extract behavior rules → check `memory/learnings.md`, add as entry with `Pattern-Key: feedback/<name>` and `Status: open` if not already there (dedup via Pattern-Key)
-   - Never overwrite or delete auto-memory files — read only
+Reflect on accumulated memory and tighten it.
+
+- Promote recurring lessons: `memory/learnings.md` entries with Recurrence-Count >= 3 and Status: open → promote to `memory/memory.md` "Learned lessons", set Status: promoted
+- If `memory/memory.md` exceeds ~100 lines, trim intelligently:
+  - Old decisions → move to `memory/decisions/`
+  - Old lessons → back to `memory/learnings.md`
+  - Verbose project entries → shorten to one-liners
+  - Never delete: "Who I am", "People"
+- Mark stale: project files not updated in 14+ days → `<!-- STALE -->`
+- Auto-memory sync: scan all `MEMORY.md` files via `find ~/.claude/projects -name "MEMORY.md" 2>/dev/null` and read referenced files. Extract user facts → `memory/people/_index.md`. Extract feedback rules → `memory/learnings.md` with Pattern-Key: feedback/<name>. Read only, never overwrite.
+
+Always finish with Index mode.
 
 ## Cleanup mode
 
-1. `memory/errors.md` — resolved entries older than 30 days → delete
-2. `memory/learnings.md` — entries with `Status: promoted` → delete
-3. `memory/projects/*.md` — history older than 60 days → delete (keep milestones)
-4. `memory/decisions/` — entries older than 90 days → `memory/archive/decisions/`
-5. Activity log — `kvido log purge --before $(date -d '7 days ago' +%Y-%m-%d) --archive` (keep 7 days live, archive older)
+Remove what's no longer useful. Be conservative — delete only what's clearly expired.
+
+- `memory/learnings.md` — promoted entries → delete
+- `memory/errors.md` — resolved entries older than 30 days → delete
+- `memory/projects/*.md` — history older than 60 days → trim (keep milestones)
+- `memory/decisions/` — entries older than 90 days → `memory/archive/decisions/`
+- Activity log — `kvido log purge --before $(date -d '7 days ago' +%Y-%m-%d) --archive`
+
+Always finish with Index mode.
+
+## Index mode
+
+Regenerate `memory/index.md` — a concise table of contents of everything in memory.
+
+1. `ls` the memory directory tree to see what exists
+2. Skim existing files (headers, first lines) to understand current state
+3. Write `memory/index.md`:
+   - Max 80 lines, ~2KB. It's an **index**, not a dump.
+   - Each entry: one line under ~150 chars: `- [Title](file.md) — one-line hook`
+   - Group by category (Projects, Decisions, Learnings, People, Journal, Weekly)
+   - Include counts and latest dates where useful
+   - Remove pointers to files that no longer exist
+   - Mark stale files with a `[STALE]` prefix to preserve discoverability
+   - Add pointers to newly important files
+   - If content exceeds 80 lines, prioritize active projects and recent entries — omit archived items first
+4. Include a `Generated: YYYY-MM-DDTHH:MM:SS+00:00` (ISO 8601) timestamp on the first line
 
 Always read files before editing. Log what you did (return summary).
