@@ -205,9 +205,10 @@ If `PLANNER_DUE == true` and no `planner` task pending/in_progress:
 
 **b. Worker:**
 If `NEXT_TASK` is not empty and no `worker:*` task pending/in_progress:
-- `kvido task move "$NEXT_TASK" in-progress`
 - `kvido task read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION
+- If SOURCE_REF is set: `kvido slack reply "<SOURCE_REF>" chat --var message="Task accepted: <NEXT_TASK>. Working on it..."` (ack to the source thread)
 - `TaskCreate` subject `worker:<NEXT_TASK>`, description with task details
+- `kvido task move "$NEXT_TASK" in-progress`
 
 **c. Maintenance:**
 Handled in Step 3c when planner output contains `Dispatch:` lines (already created there).
