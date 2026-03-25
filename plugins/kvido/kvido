@@ -132,7 +132,7 @@ Flags:
   --help, -h                        Show this help message
 
 Task subcommands (all accept numeric ID or slug):
-  create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]
+  create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--goal G]
   read <id|slug>        Returns frontmatter + content as key=value
   read-raw <id|slug>    Returns raw markdown content
   update <id|slug> <field> <value>

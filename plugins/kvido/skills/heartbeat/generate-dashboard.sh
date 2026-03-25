@@ -231,7 +231,6 @@ if [[ -d "$TASKS_DIR" ]]; then
       SIZE=$(_read_fm "$f" "size")
       SOURCE=$(_read_fm "$f" "source")
       SOURCE_REF=$(_read_fm "$f" "source_ref")
-      WORKTREE=$(_read_fm "$f" "worktree")
       GOAL=$(_read_fm "$f" "goal")
       RECURRING=$(_read_fm "$f" "recurring")
       WAITING_ON=$(_read_fm "$f" "waiting_on")
@@ -250,7 +249,6 @@ if [[ -d "$TASKS_DIR" ]]; then
         --arg size "$SIZE" \
         --arg source "$SOURCE" \
         --arg source_ref "$SOURCE_REF" \
-        --arg worktree "$WORKTREE" \
         --arg goal "$GOAL" \
         --arg recurring "$RECURRING" \
         --arg waiting_on "$WAITING_ON" \
@@ -261,7 +259,7 @@ if [[ -d "$TASKS_DIR" ]]; then
         --arg worker_notes "$WORKER_NOTES" \
         '{task_id:$task_id, slug:$slug, status:$status, title:$title, priority:$priority, size:$size,
           source:$source, source_ref:$source_ref,
-          worktree:$worktree, goal:$goal, recurring:$recurring, waiting_on:$waiting_on,
+          goal:$goal, recurring:$recurring, waiting_on:$waiting_on,
           created_at:$created_at, updated_at:$updated_at, triage_slack_ts:$triage_slack_ts,
           instruction:$instruction, worker_notes:$worker_notes}')
       TASK_ENTRIES+=("$TASK_JSON")
