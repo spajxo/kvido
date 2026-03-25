@@ -416,21 +416,23 @@ case "$ACTION" in
     UPLOAD_FILENAME=$(basename "$UPLOAD_FILE")
     UPLOAD_FILESIZE=$(wc -c < "$UPLOAD_FILE" | tr -d ' ')
     [[ -z "$UPLOAD_TITLE" ]] && UPLOAD_TITLE="$UPLOAD_FILENAME"
+    # Detect MIME type for content_type (improves Slack preview quality)
+    UPLOAD_CONTENT_TYPE=$(file --mime-type -b "$UPLOAD_FILE" 2>/dev/null || echo "application/octet-stream")
     # Step 1: Get upload URL
     URL_RESP=$(curl -s -X POST "$SLACK_API/files.getUploadURLExternal" \
       -H "Authorization: Bearer $TOKEN" \
       -H "Content-Type: application/x-www-form-urlencoded" \
       --data-urlencode "filename=$UPLOAD_FILENAME" \
-      --data-urlencode "length=$UPLOAD_FILESIZE")
+      --data-urlencode "length=$UPLOAD_FILESIZE" \
+      --data-urlencode "content_type=$UPLOAD_CONTENT_TYPE")
     if [[ $(echo "$URL_RESP" | jq -r '.ok') != "true" ]]; then
       echo "Error: files.getUploadURLExternal: $(echo "$URL_RESP" | jq -r '.error')" >&2
       exit 1
     fi
     UPLOAD_URL=$(echo "$URL_RESP" | jq -r '.upload_url')
     FILE_ID=$(echo "$URL_RESP" | jq -r '.file_id')
-    # Step 2: Upload file content
+    # Step 2: Upload file content to pre-signed URL (no Authorization header — external storage)
     HTTP_CODE=$(curl -s -w "%{http_code}" -o /dev/null -X POST "$UPLOAD_URL" \
-      -H "Authorization: Bearer $TOKEN" \
       --data-binary "@$UPLOAD_FILE")
     if [[ "$HTTP_CODE" != "200" ]]; then
       echo "Error: file upload to pre-signed URL failed with HTTP $HTTP_CODE" >&2
@@ -450,7 +452,11 @@ case "$ACTION" in
       echo "Error: files.completeUploadExternal: $(echo "$COMPLETE_RESP" | jq -r '.error')" >&2
       exit 1
     fi
-    echo "$COMPLETE_RESP" | jq -r '.files[0].permalink // ""'
+    PERMALINK=$(echo "$COMPLETE_RESP" | jq -r '.files[0].permalink // ""')
+    if [[ -z "$PERMALINK" ]]; then
+      echo "Warning: upload succeeded but no permalink returned in response" >&2
+    fi
+    echo "$PERMALINK"
     ;;
   *)
     echo "Usage: slack.sh {send|reply|edit|read|react|unreact|reactions|delete|download|upload} ..." >&2
