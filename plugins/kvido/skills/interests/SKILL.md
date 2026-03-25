@@ -22,8 +22,7 @@ Read topics via `kvido config --keys 'skills.interests.topics'`. For each topic 
      --instruction "description of finding" \
      --source interests \
      --source-ref topic-slug \
-     --priority medium \
-     --no-worktree
+     --priority medium
    ```
 4. Update `last_checked`: `kvido planner-state interests set <topic>`
 5. Return findings with `urgency` from config (heartbeat decides on notification tier)

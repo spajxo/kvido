@@ -184,7 +184,6 @@ _priority_weight() {
 cmd_create() {
   local INSTRUCTION="" PRIORITY="medium" SIZE="m" SOURCE="manual"
   local SOURCE_REF="" RECURRING="" STATUS="" TITLE="" GOAL=""
-  local WORKTREE=true
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -196,9 +195,8 @@ cmd_create() {
       --recurring)   RECURRING="$2"; shift 2 ;;
       --status)      STATUS="$2"; shift 2 ;;
       --title)       TITLE="$2"; shift 2 ;;
-      --worktree)    WORKTREE=true; shift ;;
-      --no-worktree) WORKTREE=false; shift ;;
       --goal)        GOAL="$2"; shift 2 ;;
+      --worktree|--no-worktree) shift ;;  # deprecated, ignored
       *) echo "Unknown arg: $1" >&2; exit 1 ;;
     esac
   done
@@ -248,7 +246,6 @@ priority: $PRIORITY
 size: $SIZE
 source: $SOURCE
 source_ref: $(_yaml_val "$SOURCE_REF")
-worktree: $WORKTREE
 goal: $goal_val
 recurring: $recurring_val
 waiting_on: ""
@@ -286,7 +283,6 @@ cmd_read() {
   echo "SIZE=$(_read_frontmatter "$file" 'size')"
   echo "SOURCE=$(_read_frontmatter "$file" 'source')"
   echo "SOURCE_REF=$(_read_frontmatter "$file" 'source_ref')"
-  echo "WORKTREE=$(_read_frontmatter "$file" 'worktree')"
   echo "GOAL=$(_read_frontmatter "$file" 'goal')"
   echo "RECURRING=$(_read_frontmatter "$file" 'recurring')"
   echo "WAITING_ON=$(_read_frontmatter "$file" 'waiting_on')"
