@@ -14,13 +14,14 @@ set -euo pipefail
 #   slack.sh download <url_private> [output_dir]
 #   slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]
 # Channel is optional — defaults to slack.dm_channel_id from settings.json
+# Channel may also be the literal string 'dm' as a shorthand for the configured DM channel
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 TEMPLATES_DIR="$SCRIPT_DIR/templates"
 
 SLACK_API="https://slack.com/api"
-TOKEN=$(bash "$SCRIPT_DIR/../config.sh" 'slack.bot_token' '' 2>/dev/null || true)
+TOKEN=$(kvido config 'slack.bot_token' '' 2>/dev/null || true)
 
 if [[ -z "$TOKEN" ]]; then
   echo "Error: slack.bot_token not set in settings.json (use \"\$SLACK_BOT_TOKEN\" to reference .env)" >&2
@@ -43,8 +44,21 @@ resolve_channel() {
     CHANNEL_SHIFTED=true
     return 0
   fi
+  # 'dm' is a shorthand alias for the configured DM channel
+  if [[ "${1:-}" == "dm" ]]; then
+    if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+      _DEFAULT_CHANNEL=$(kvido config 'slack.dm_channel_id' '' 2>/dev/null || true)
+    fi
+    if [[ -z "$_DEFAULT_CHANNEL" ]]; then
+      echo "Error: channel not provided and slack.dm_channel_id not set in settings.json" >&2
+      exit 1
+    fi
+    RESOLVED_CHANNEL="$_DEFAULT_CHANNEL"
+    CHANNEL_SHIFTED=true
+    return 0
+  fi
   if [[ -z "$_DEFAULT_CHANNEL" ]]; then
-    _DEFAULT_CHANNEL=$(bash "$SCRIPT_DIR/../config.sh" 'slack.dm_channel_id' '' 2>/dev/null || true)
+    _DEFAULT_CHANNEL=$(kvido config 'slack.dm_channel_id' '' 2>/dev/null || true)
   fi
   if [[ -z "$_DEFAULT_CHANNEL" ]]; then
     echo "Error: channel not provided and slack.dm_channel_id not set in settings.json" >&2
@@ -384,19 +398,13 @@ case "$ACTION" in
     # Returns the file permalink on stdout.
     [[ $# -lt 1 ]] && { echo "Usage: slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
     # Disambiguate [channel] from <file_path>: if there are 2+ positional args
-    # (next arg is not a flag) and arg1 looks like a Slack channel ID, treat
-    # arg1 as channel. Otherwise arg1 is the file path — use default channel.
-    if [[ $# -ge 2 && "${2}" != --* && "${1:-}" =~ ^[CDG][A-Z0-9]+$ ]]; then
-      UPLOAD_CHANNEL="$1"; shift
+    # (next arg is not a flag) and arg1 looks like a Slack channel ID or
+    # the 'dm' alias, treat arg1 as channel. Otherwise use default channel.
+    if [[ $# -ge 2 && "${2}" != --* && ( "${1:-}" =~ ^[CDG][A-Z0-9]+$ || "${1:-}" == "dm" ) ]]; then
+      resolve_channel "$1"; UPLOAD_CHANNEL="$RESOLVED_CHANNEL"; shift
     else
-      if [[ -z "$_DEFAULT_CHANNEL" ]]; then
-        _DEFAULT_CHANNEL=$(bash "$SCRIPT_DIR/../config.sh" 'slack.dm_channel_id' '' 2>/dev/null || true)
-      fi
-      if [[ -z "$_DEFAULT_CHANNEL" ]]; then
-        echo "Error: channel not provided and slack.dm_channel_id not set in settings.json" >&2
-        exit 1
-      fi
-      UPLOAD_CHANNEL="$_DEFAULT_CHANNEL"
+      resolve_channel ""
+      UPLOAD_CHANNEL="$RESOLVED_CHANNEL"
     fi
     [[ $# -lt 1 ]] && { echo "Usage: slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
     UPLOAD_FILE="$1"; shift
