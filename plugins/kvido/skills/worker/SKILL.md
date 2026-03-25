@@ -24,7 +24,10 @@ triage/ → todo/ → in-progress/ → done/
 - `failed/` — failed
 - `cancelled/` — cancelled
 
+**Task files** are named `<id>-<slug>.md` (e.g. `42-fix-auth-bug.md`). All commands accept either numeric ID or slug.
+
 **Frontmatter fields** (metadata in YAML header):
+- `task_id: <auto-incrementing integer>`
 - `priority: urgent|high|medium|low`
 - `size: s|m|l|xl`
 - `source: planner|slack|recurring|self-improver|manual|jira|interests`
@@ -35,6 +38,7 @@ triage/ → todo/ → in-progress/ → done/
 **Task file structure:**
 ```markdown
 ---
+task_id: 42
 priority: medium
 size: m
 source: slack
@@ -51,15 +55,16 @@ source_ref: "1773933088.437"
 
 | Subcommand | Action |
 |------------|--------|
-| `kvido task create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Creates task file, returns slug. User-initiated sources (slack, manual) route to `todo/`; agent-generated sources route to `triage/`. Override with `--status`. |
-| `kvido task read <slug>` | Returns frontmatter + content as key=value |
-| `kvido task read-raw <slug>` | Returns raw markdown content of task file |
-| `kvido task update <slug> <field> <value>` | Updates frontmatter field |
-| `kvido task move <slug> <status>` | Moves task to a different status folder |
+| `kvido task create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]` | Creates task file (`<id>-<slug>.md`), returns slug. User-initiated sources (slack, manual) route to `todo/`; agent-generated sources route to `triage/`. Override with `--status`. |
+| `kvido task read <id\|slug>` | Returns frontmatter + content as key=value (includes TASK_ID) |
+| `kvido task read-raw <id\|slug>` | Returns raw markdown content of task file |
+| `kvido task update <id\|slug> <field> <value>` | Updates frontmatter field |
+| `kvido task move <id\|slug> <status>` | Moves task to a different status folder |
 | `kvido task list [status]` | Lists tasks (optional filter by status) |
-| `kvido task find <slug>` | Finds task and returns its current status (folder) |
-| `kvido task note <slug> "<text>"` | Appends text to ## Worker Notes |
+| `kvido task find <id\|slug>` | Finds task and returns its current status (folder) |
+| `kvido task note <id\|slug> "<text>"` | Appends text to ## Worker Notes |
 | `kvido task count [status]` | Count of tasks (optionally per status) |
+| `kvido task migrate-ids` | Assign numeric IDs to legacy tasks without IDs |
 
 ## Rules
 

@@ -131,16 +131,17 @@ Flags:
   --install                         Install wrapper to ~/.local/bin/kvido
   --help, -h                        Show this help message
 
-Task subcommands:
+Task subcommands (all accept numeric ID or slug):
   create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--worktree] [--goal G]
-  read <slug>           Returns frontmatter + content as key=value
-  read-raw <slug>       Returns raw markdown content
-  update <slug> <field> <value>
-  move <slug> <status>  Moves task (triage|todo|in-progress|done|failed|cancelled)
+  read <id|slug>        Returns frontmatter + content as key=value
+  read-raw <id|slug>    Returns raw markdown content
+  update <id|slug> <field> <value>
+  move <id|slug> <status>  Moves task (triage|todo|in-progress|done|failed|cancelled)
   list [status]         Lists tasks, optional filter by status
-  find <slug>           Returns current status of task
-  note <slug> "<text>"  Appends text to Worker Notes
+  find <id|slug>        Returns current status of task
+  note <id|slug> "<text>"  Appends text to Worker Notes
   count [status]        Count of tasks, optionally per status
+  migrate-ids           Assign numeric IDs to legacy tasks
 
 Log subcommands:
   add <agent> <action> [--message "..."] [--task_id "..."] [--tokens N] [--duration_ms N]

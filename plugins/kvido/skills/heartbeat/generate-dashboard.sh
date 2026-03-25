@@ -218,7 +218,14 @@ if [[ -d "$TASKS_DIR" ]]; then
       done
     fi
     for f in "${local_files[@]}"; do
-      SLUG=$(basename "$f" .md)
+      local _base
+      _base=$(basename "$f" .md)
+      if [[ "$_base" =~ ^[0-9]+-(.+)$ ]]; then
+        SLUG="${BASH_REMATCH[1]}"
+      else
+        SLUG="$_base"
+      fi
+      TASK_ID=$(_read_fm "$f" "task_id")
       TITLE=$(_read_fm "$f" "title")
       PRIORITY=$(_read_fm "$f" "priority")
       SIZE=$(_read_fm "$f" "size")
@@ -235,6 +242,7 @@ if [[ -d "$TASKS_DIR" ]]; then
       WORKER_NOTES=$(_read_body_section "$f" "Worker Notes")
 
       TASK_JSON=$(jq -n \
+        --arg task_id "$TASK_ID" \
         --arg slug "$SLUG" \
         --arg status "$status_dir" \
         --arg title "$TITLE" \
@@ -251,7 +259,7 @@ if [[ -d "$TASKS_DIR" ]]; then
         --arg triage_slack_ts "$TRIAGE_SLACK_TS" \
         --arg instruction "$INSTRUCTION" \
         --arg worker_notes "$WORKER_NOTES" \
-        '{slug:$slug, status:$status, title:$title, priority:$priority, size:$size,
+        '{task_id:$task_id, slug:$slug, status:$status, title:$title, priority:$priority, size:$size,
           source:$source, source_ref:$source_ref,
           worktree:$worktree, goal:$goal, recurring:$recurring, waiting_on:$waiting_on,
           created_at:$created_at, updated_at:$updated_at, triage_slack_ts:$triage_slack_ts,
