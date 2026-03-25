@@ -59,13 +59,9 @@ Read current state via `kvido current get`. Review recent activity via `kvido lo
 
 ### Recovery check
 
-Use `TaskList` to list all existing tasks. If any `in_progress` tasks exist from a previous iteration (orphaned agents):
-- `chat:*` in_progress -- mark `completed` (chat agent from previous session is gone, next new message will create fresh task)
-- `worker:*` in_progress -- leave as-is (worker tracks state via local task files independently)
-- `planner` in_progress -- mark `completed` (planner will be re-dispatched on next due interval)
-- `triage:*` in_progress -- mark `completed` (will be re-created by planner)
-- `notify:*` in_progress -- mark `completed` (delivery attempt was interrupted, log as potentially missed notification)
-- other agent tasks (e.g. `morning`, `eod`) in_progress -- mark `completed` (dispatched agent from previous session is gone)
+Use `TaskList` to list all existing tasks. Mark all `in_progress` tasks from a previous session as `completed` (agent process is gone from previous session). Pending tasks with unsatisfied `blockedBy` unblock automatically.
+
+Exception: for `worker:*` in_progress tasks, also run `kvido task move <slug> failed` to mark the local task file as failed (worker tracks state via local task files independently).
 
 ---
 
@@ -104,12 +100,10 @@ Use `TaskList` to list all existing tasks. If any `in_progress` tasks exist from
 
    **Non-trivial** — requires MCP lookup, research, or task creation:
    - If no active `chat:*` task:
-     - `TaskCreate` subject `chat:<ts>`, then `TaskUpdate` status `in_progress`
-     - Load last 10 messages; if thread reply, load whole thread
-     - Dispatch `chat-agent` (`run_in_background: true`) with template vars: CHAT_HISTORY, NEW_MESSAGE, THREAD_TS, CURRENT_STATE, MEMORY
+     - `TaskCreate` subject `chat:<ts>` (stays `pending` — actual dispatch happens in Step 4 unified loop)
    - If active `chat:*` task exists:
      - Send ack: `kvido slack reply dm <ts> chat --var message="One moment..."` (thread under the new message)
-     - `TaskCreate` subject `chat:<ts>` (stays `pending`)
+     - `TaskCreate` subject `chat:<ts>` with `addBlockedBy` pointing to the active chat task (stays `pending`)
 
    **Task creation from user DM:** When the chat-agent (or heartbeat inline) creates a task from a user's Slack DM request, always use `--source slack`. If the request references a GitHub issue or PR, pass it via `--source-ref "github#NN"` (not `--source`). This ensures user-initiated tasks go directly to `todo/` (bypassing triage).
 
@@ -181,9 +175,17 @@ Heartbeat is responsible for parsing agent output into structured fields, decidi
 | Agent | Parse fields | Template | Level | Extra |
 |-------|-------------|----------|-------|-------|
 | chat-agent | `Reply`, `Thread`, `Type` | `chat` | always `immediate` | Extract `ORIGINAL_TS` from task subject `chat:<ts>`. If `Thread` non-empty: `kvido slack reply dm <Thread> chat --var message="<Reply>"`. If `Thread` empty (top-level): `kvido slack reply dm <ORIGINAL_TS> chat --var message="<Reply>"`. After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
-| planner | Prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:` | per-line mapping from slack templates | per delivery rules | `Triage:` → `TaskCreate` subject `triage:<slug>` with `ts` in description. `Dispatch:` → dispatch named agent. `No notifications.` → skip. |
+| planner | Prefixed lines: `Event:`, `Event (batch):`, `Triage:`, `Reminder:`, `Dispatch:` | per-line mapping from slack templates | per delivery rules | `Triage:` → `TaskCreate` subject `triage:<slug>` with `ts` in description. `Dispatch:` → see below. `No notifications.` → skip. |
 | worker | `Result`, `Task`, `Type`, `Source` | `worker-report` | `high` for error, else `normal` | — |
 | other | template variables per agent | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
+
+#### Handling `Dispatch:` lines from planner output
+
+For each `Dispatch: <agent-name> [KEY=value ...]` line in planner output:
+1. Check if `agents/<agent-name>.md` exists (resolve path relative to plugin root). Missing → log warning, skip.
+2. Check if `maintenance:<agent-name>` task already exists (pending/in_progress) via `TaskList`. Exists → skip (dedup).
+3. `TaskCreate` subject `maintenance:<agent-name>`, description with any KEY=value parameters.
+4. If another `maintenance:*` task is pending/in_progress, set `addBlockedBy` on the new task pointing to it (max 1 concurrent maintenance).
 
 ### Batch flush
 
@@ -191,34 +193,45 @@ Flush `notify:*` tasks with `pending` status (via `TaskList`) when: planner iter
 
 ---
 
-## Step 4: Planner Dispatch
+## Step 4: Unified Dispatch Loop
 
-1. Use `TaskList` -- check if `planner` task exists with status `in_progress`. If yes -- skip (planner still running).
-2. If `PLANNER_DUE == true` (from `heartbeat.sh`) and no active planner:
-   - `TaskCreate` subject `planner`, description `"Planner dispatch at <timestamp>"`, then `TaskUpdate` status `in_progress`
-   - Dispatch `planner` agent (`run_in_background: true`)
-   - Pass context: `CURRENT_STATE` (`kvido current get`), `MEMORY` (memory/memory.md)
-   - Log: `kvido log add planner dispatch --message "iteration <N>"`
-3. If planner agent completed since last check -- `TaskUpdate` planner task to `completed`.
+### Task creation phase
+
+Create tasks for all pending dispatches. Use `TaskList` to check existing tasks before creating duplicates.
+
+**a. Planner:**
+If `PLANNER_DUE == true` and no `planner` task pending/in_progress:
+- `TaskCreate` subject `planner`, description `"Planner dispatch at <timestamp>"`
+
+**b. Worker:**
+If `NEXT_TASK` is not empty and no `worker:*` task pending/in_progress:
+- `kvido task move "$NEXT_TASK" in-progress`
+- `kvido task read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION
+- `TaskCreate` subject `worker:<NEXT_TASK>`, description with task details
+- If another `worker:*` task is pending/in_progress, set `addBlockedBy`
+
+**c. Maintenance:**
+Handled in Step 3c when planner output contains `Dispatch:` lines (already created there).
+
+**d. Chat:**
+Non-trivial chat from Step 3 creates `chat:<ts>` task. If another `chat:*` task is pending/in_progress, set `addBlockedBy`.
+
+### Dispatch phase
+
+For each `pending` task from `TaskList` (excluding `triage:*` and `notify:*`):
+1. Check `blockedBy` — if any blocker has status `pending` or `in_progress` → skip
+2. `TaskUpdate` → `in_progress`
+3. Resolve agent config:
+   - `maintenance:*` → read `model` from `agents/<name>.md` frontmatter via: `grep '^model:' agents/<name>.md | awk '{print $2}'`. No isolation (no worktree).
+   - `worker:*` → model from `kvido config 'skills.worker.models.<SIZE>'` (or `kvido config 'skills.worker.urgent_model'` if PRIORITY==urgent). Isolation: `worktree`.
+   - `planner` → model from agent frontmatter. No isolation.
+   - `chat:*` → model from agent frontmatter. No isolation.
+4. Dispatch via `Agent` tool (`run_in_background: true`, model and isolation per above)
+5. Log: `kvido log add <type> dispatch --message "<summary>"`
 
 ---
 
-## Step 5: Worker Dispatch
-
-1. `TaskList` — if any `worker:*` in_progress → skip (max 1 concurrent).
-2. `NEXT_TASK=$(kvido task list todo --sort priority | head -1)` — empty → skip.
-3. `kvido task move "$NEXT_TASK" in-progress` + `kvido task read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION.
-4. `TaskCreate` subject `worker:<NEXT_TASK>`, then `TaskUpdate` status `in_progress`.
-5. Model from config: `kvido config 'skills.worker.models.<SIZE>'` (or `kvido config 'skills.worker.urgent_model'` if PRIORITY==urgent).
-6. Dispatch `worker` agent (`run_in_background: true`, model per size, `isolation: "worktree"` always).
-7. Log: `kvido log add worker dispatch --message "<NEXT_TASK>" --task_id "<NEXT_TASK>"`.
-8. If SOURCE_REF not empty → send ack via `kvido slack reply "<SOURCE_REF>" chat --var message="Task accepted..."`.
-
-Max 1 worker per iteration.
-
----
-
-## Step 6: Adaptive Interval
+## Step 5: Adaptive Interval
 
 `heartbeat.sh` returns `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `TURBO_ACTIVE/UNTIL`, `SLEEP_ACTIVE/UNTIL`.
 
@@ -241,7 +254,8 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 |---------|-----|
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
 | Dispatching chat-agent for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
-| Dispatching worker when one is already `in_progress` | Check `TaskList` for `worker:*` in_progress first |
+| Dispatching agent when same-group task is pending/in_progress | Use `blockedBy` dependencies, dispatch loop skips blocked tasks |
+| Creating maintenance tasks via kvido task create | Maintenance uses `Dispatch:` from planner, heartbeat creates TaskCreate entries |
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 2 |
 | Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |
 | Not updating `last_chat_ts` after processing | Always `kvido heartbeat-state set last_chat_ts` after chat handling |
@@ -253,7 +267,6 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **Extremely brief.** One line per event.
 - **State-first.** Read from files, write to files.
 - **Time from system.** `date -Iseconds`.
-- **Max 1 worker per iteration.** Planner + 1 worker + 1 chat-agent is maximum.
 - **Task tools (`TaskCreate`/`TaskList`/`TaskUpdate`) are the single source of truth** for dispatch tracking. No file-based locks.
-- **Dependency rule:** Do not dispatch chat-agent if one is already `in_progress`. Do not dispatch worker if one is already `in_progress`. Planner can run alongside chat-agent but not alongside another planner.
+- **Concurrency via dependencies.** Same-group tasks use `blockedBy`. Max 1 concurrent per group (maintenance, worker, chat). Planner runs in parallel with all groups. Dispatch loop skips tasks with unresolved blockers.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
