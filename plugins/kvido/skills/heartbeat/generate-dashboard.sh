@@ -313,7 +313,33 @@ header h1::before { content: ""; display: inline-block; width: 6px; height: 6px;
 .zone-turbo { background: rgba(187,154,247,0.08); color: var(--purple); border-color: rgba(187,154,247,0.2); }
 .zone-sleep { background: rgba(86,95,137,0.15); color: var(--muted); border-color: rgba(86,95,137,0.3); }
 
-/* Views */
+/* Tab navigation */
+.tabs-nav {
+  display: flex; gap: 0; margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tab-btn {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--muted); font-family: inherit; font-size: 0.82em; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 8px 18px; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn .tab-count {
+  display: inline-block; font-size: 0.75em; font-weight: 700;
+  background: var(--bg-raised); border: 1px solid var(--border-subtle);
+  padding: 0 5px; border-radius: 10px; margin-left: 6px;
+  vertical-align: middle; font-variant-numeric: tabular-nums;
+}
+.tab-btn.active .tab-count { background: var(--accent-glow); border-color: rgba(122,162,247,0.25); color: var(--accent); }
+
+/* Tab panels */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Views inside tabs (for detail view overlay) */
 .view { display: none; }
 .view.active { display: block; }
 
@@ -327,6 +353,20 @@ header h1::before { content: ""; display: inline-block; width: 6px; height: 6px;
   color: var(--muted); font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
   margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle);
 }
+
+/* Stat pills for Overview tab */
+.stat-pills { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.stat-pill {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--card); border: 1px solid var(--border-subtle); border-radius: 6px;
+  padding: 10px 18px; min-width: 70px;
+}
+.stat-pill .stat-val { font-size: 1.5em; font-weight: 700; color: var(--text-bright); font-variant-numeric: tabular-nums; line-height: 1; }
+.stat-pill .stat-lbl { font-size: 0.65em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.stat-pill.pill-inprogress .stat-val { color: var(--accent); }
+.stat-pill.pill-todo .stat-val { color: var(--text-bright); }
+.stat-pill.pill-triage .stat-val { color: var(--warning); }
+.stat-pill.pill-done .stat-val { color: var(--success); }
 
 table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
 thead th { color: var(--muted); font-weight: 500; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px; border-bottom: 1px solid var(--border); text-align: left; }
@@ -416,6 +456,17 @@ footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20p
 .kanban-col[data-status="failed"] { border-top: 2px solid var(--error); }
 .kanban-col[data-status="cancelled"] { border-top: 2px solid var(--muted); }
 
+/* Done column — dimmed by default, expand on click */
+.kanban-col.col-done-collapsed .kanban-cards { display: none; }
+.kanban-col.col-done-collapsed { opacity: 0.6; }
+.kanban-col.col-done-collapsed:hover { opacity: 0.8; }
+.col-toggle {
+  font-size: 0.7em; color: var(--muted); cursor: pointer; padding: 2px 6px;
+  border: 1px solid var(--border-subtle); border-radius: 3px; background: var(--card);
+  transition: all 0.15s;
+}
+.col-toggle:hover { color: var(--text); border-color: var(--border); }
+
 .kanban-cards { padding: 8px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
 .kanban-cards::-webkit-scrollbar { width: 4px; }
 .kanban-cards::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 2px; }
@@ -481,6 +532,8 @@ footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20p
   .token-row .agent { min-width: 60px; font-size: 0.75em; }
   .token-value { min-width: 70px; }
   .detail-meta { grid-template-columns: 1fr; }
+  .tabs-nav { overflow-x: auto; }
+  .tab-btn { padding: 8px 12px; }
 }
 @media (max-width: 480px) {
   .meta-tag { font-size: 0.72em; padding: 1px 5px; }
@@ -521,9 +574,22 @@ ${AVATAR_HTML}
 
 ${WARNINGS_HTML}
 
-<div id="view-main" class="view active">
+<!-- Tab navigation -->
+<nav class="tabs-nav">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="tasks">Tasks <span class="tab-count" id="tab-count-tasks">0</span></button>
+  <button class="tab-btn" data-tab="log">Activity Log</button>
+</nav>
 
-<div id="kanban" class="kanban"></div>
+<!-- Tab 1: Overview -->
+<div id="tab-overview" class="tab-panel active">
+
+<div class="stat-pills">
+  <div class="stat-pill pill-inprogress"><span class="stat-val">${WQ_PROGRESS}</span><span class="stat-lbl">In Progress</span></div>
+  <div class="stat-pill pill-todo"><span class="stat-val">${WQ_TODO}</span><span class="stat-lbl">Todo</span></div>
+  <div class="stat-pill pill-triage"><span class="stat-val">${WQ_TRIAGE}</span><span class="stat-lbl">Triage</span></div>
+  <div class="stat-pill pill-done"><span class="stat-val">${WQ_DONE}</span><span class="stat-lbl">Done today</span></div>
+</div>
 
 <div class="grid">
 <div class="card">
@@ -542,8 +608,24 @@ TOKENEOF
 fi)
 </div>
 
-<div class="card" style="margin-bottom: 16px">
-<h2>Activity Timeline</h2>
+</div><!-- /tab-overview -->
+
+<!-- Tab 2: Tasks -->
+<div id="tab-tasks" class="tab-panel">
+
+<div id="view-tasks" class="view active">
+<div id="kanban" class="kanban"></div>
+</div>
+
+<div id="view-detail" class="view"></div>
+
+</div><!-- /tab-tasks -->
+
+<!-- Tab 3: Activity Log -->
+<div id="tab-log" class="tab-panel">
+
+<div class="card">
+<h2>Activity Timeline (today)</h2>
 $(if [[ -n "$TIMELINE_HTML" ]]; then cat << TABLEEOF
 <table>
 <thead><tr><th>Time</th><th>Agent</th><th>Action</th><th>Detail</th><th style="text-align:right">Tokens</th></tr></thead>
@@ -557,9 +639,7 @@ else
 fi)
 </div>
 
-</div><!-- /view-main -->
-
-<div id="view-detail" class="view"></div>
+</div><!-- /tab-log -->
 
 HTMLEOF
 
@@ -576,15 +656,39 @@ var STATUS_ORDER = ['in-progress','todo','triage','done','failed','cancelled'];
 var STATUS_LABELS = {'in-progress':'In Progress','todo':'Todo','triage':'Triage','done':'Done','failed':'Failed','cancelled':'Cancelled'};
 var PRIORITY_ORDER = {'urgent':0,'high':1,'medium':2,'low':3,'':4};
 
-function showView(name) {
-  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
-  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
-  var el = document.getElementById('view-' + name);
-  if (el) el.classList.add('active');
-  var tab = name === 'main' ? 'main' : 'tasks';
-  document.querySelectorAll('.nav-tab').forEach(function(t) {
-    if (t.getAttribute('data-view') === tab) t.classList.add('active');
+// Tab switching
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  var panel = document.getElementById('tab-' + name);
+  if (panel) panel.classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(function(b) {
+    if (b.getAttribute('data-tab') === name) b.classList.add('active');
   });
+  if (name !== 'tasks') {
+    // When switching away from tasks tab, restore the kanban view
+    showView('tasks');
+  }
+}
+
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var tab = btn.getAttribute('data-tab');
+    location.hash = tab === 'overview' ? '' : tab;
+    showTab(tab);
+  });
+});
+
+function showView(name) {
+  var tasksEl = document.getElementById('view-tasks');
+  var detailEl = document.getElementById('view-detail');
+  if (name === 'detail') {
+    if (tasksEl) tasksEl.classList.remove('active');
+    if (detailEl) detailEl.classList.add('active');
+  } else {
+    if (tasksEl) tasksEl.classList.add('active');
+    if (detailEl) detailEl.classList.remove('active');
+  }
 }
 
 function badgeClass(type, val) {
@@ -636,9 +740,14 @@ function md(text) {
 function renderKanban() {
   var el = document.getElementById('kanban');
   var html = '';
-  // Only show active columns: triage, todo, in-progress, done
-  var KANBAN_COLS = ['triage','todo','in-progress','done'];
-  KANBAN_COLS.forEach(function(status) {
+  // Active columns: in-progress, todo, triage (primary focus)
+  var ACTIVE_COLS = ['in-progress','todo','triage'];
+  var active = TASKS.filter(function(t) { return ACTIVE_COLS.indexOf(t.status) !== -1; });
+  // Update tab count badge
+  var countEl = document.getElementById('tab-count-tasks');
+  if (countEl) countEl.textContent = active.length;
+
+  ACTIVE_COLS.forEach(function(status) {
     var tasks = TASKS.filter(function(t) { return t.status === status; });
     tasks.sort(function(a, b) { return (PRIORITY_ORDER[a.priority] != null ? PRIORITY_ORDER[a.priority] : 4) - (PRIORITY_ORDER[b.priority] != null ? PRIORITY_ORDER[b.priority] : 4); });
 
@@ -662,14 +771,37 @@ function renderKanban() {
     html += '</div></div>';
   });
 
-  // Collapsed section for failed/cancelled if any exist
+  // Done column — collapsed by default to reduce clutter
+  var done = TASKS.filter(function(t) { return t.status === 'done'; });
+  if (done.length > 0) {
+    html += '<div class="kanban-col col-done-collapsed" id="col-done" data-status="done">';
+    html += '<div class="kanban-col-header" onclick="toggleDoneCol()" style="cursor:pointer">';
+    html += '<span class="col-title">Done</span>';
+    html += '<span class="col-count">' + done.length + '</span>';
+    html += '<span class="col-toggle" id="done-toggle">expand</span>';
+    html += '</div>';
+    html += '<div class="kanban-cards">';
+    done.forEach(function(t) {
+      html += '<div class="kanban-card" onclick="event.stopPropagation(); location.hash=\'task/' + t.slug + '\'">';
+      html += '<div class="kanban-card-title">' + esc(t.title) + '</div>';
+      html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + esc(t.slug) + '</span><span class="kanban-card-time">' + relTime(t.updated_at) + '</span></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  // Archived (failed/cancelled) — also collapsed
   var archived = TASKS.filter(function(t) { return t.status === 'failed' || t.status === 'cancelled'; });
   if (archived.length > 0) {
-    html += '<div class="kanban-col" data-status="cancelled">';
-    html += '<div class="kanban-col-header"><span class="col-title">Archived</span><span class="col-count">' + archived.length + '</span></div>';
+    html += '<div class="kanban-col col-done-collapsed" id="col-archived" data-status="cancelled">';
+    html += '<div class="kanban-col-header" onclick="toggleArchivedCol()" style="cursor:pointer">';
+    html += '<span class="col-title">Archived</span>';
+    html += '<span class="col-count">' + archived.length + '</span>';
+    html += '<span class="col-toggle" id="archived-toggle">expand</span>';
+    html += '</div>';
     html += '<div class="kanban-cards">';
     archived.forEach(function(t) {
-      html += '<div class="kanban-card" onclick="location.hash=\'task/' + t.slug + '\'">';
+      html += '<div class="kanban-card" onclick="event.stopPropagation(); location.hash=\'task/' + t.slug + '\'">';
       html += '<div class="kanban-card-title">' + esc(t.title) + '</div>';
       html += '<div class="kanban-card-meta"><span class="badge badge-' + t.status + '">' + esc(t.status) + '</span></div>';
       html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + esc(t.slug) + '</span></div>';
@@ -677,7 +809,24 @@ function renderKanban() {
     });
     html += '</div></div>';
   }
+
   el.innerHTML = html;
+}
+
+function toggleDoneCol() {
+  var col = document.getElementById('col-done');
+  var btn = document.getElementById('done-toggle');
+  if (!col) return;
+  col.classList.toggle('col-done-collapsed');
+  if (btn) btn.textContent = col.classList.contains('col-done-collapsed') ? 'expand' : 'collapse';
+}
+
+function toggleArchivedCol() {
+  var col = document.getElementById('col-archived');
+  var btn = document.getElementById('archived-toggle');
+  if (!col) return;
+  col.classList.toggle('col-done-collapsed');
+  if (btn) btn.textContent = col.classList.contains('col-done-collapsed') ? 'expand' : 'collapse';
 }
 
 function renderDetail(slug) {
@@ -701,7 +850,7 @@ function renderDetail(slug) {
     ['Triage Slack TS', t.triage_slack_ts]
   ];
 
-  var html = '<a class="back-btn" href="#">&larr; Dashboard</a>';
+  var html = '<a class="back-btn" href="#tasks">&larr; Tasks</a>';
   html += '<div class="detail-header"><h2>' + esc(t.title) + '</h2></div>';
   html += '<div class="detail-meta">';
   metaFields.forEach(function(f) {
@@ -723,9 +872,15 @@ function renderDetail(slug) {
 function route() {
   var hash = location.hash.slice(1);
   if (hash.indexOf('task/') === 0) {
+    showTab('tasks');
     renderDetail(hash.slice(5));
+  } else if (hash === 'tasks') {
+    showTab('tasks');
+    showView('tasks');
+  } else if (hash === 'log') {
+    showTab('log');
   } else {
-    showView('main');
+    showTab('overview');
   }
 }
 

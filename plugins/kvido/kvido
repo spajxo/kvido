@@ -211,7 +211,16 @@ WRAPPER
       echo "Run 'kvido heartbeat' to generate the dashboard." >&2
       exit 1
     fi
-    xdg-open "$_DASHBOARD"
+    case "$(uname -s)" in
+      Darwin) open "$_DASHBOARD" ;;
+      Linux)
+        if command -v wslview &>/dev/null; then
+          wslview "$_DASHBOARD"
+        else
+          xdg-open "$_DASHBOARD"
+        fi ;;
+      *) echo "ERROR: Unsupported platform. Open manually: $_DASHBOARD" >&2; exit 1 ;;
+    esac
     ;;
   skills/*|agents/*)
     # Script dispatch — resolve to plugin install path
