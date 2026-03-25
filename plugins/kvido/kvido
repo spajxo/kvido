@@ -90,8 +90,41 @@ _exec_claude_prompt() {
     args+=($KVIDO_EXTRA_ARGS)
   fi
 
-  # Assembly hook — generate session context (non-fatal)
-  KVIDO_PROJECT="$PWD" bash "$KVIDO_ROOT/hooks/build-context.sh" > "$KVIDO_HOME/state/session-context.md" 2>/dev/null || true
+  # Show animated owl banner while collecting context
+  local start_ts
+  start_ts=$(date +%s%N)
+
+  # Owl frames — eyes cycle through states
+  local -a eyes=( "o,o" "o,o" "o,o" "-,-" "o,o" "o,o" "^,^" "o,o" )
+  local frame=0
+
+  _draw_owl() {
+    printf '\033[?25l'        # hide cursor
+    printf '\033[H\033[2J'    # clear screen
+    printf '\n\n'
+    printf '        ^...^\n'
+    printf '       / %s \\\n' "$1"
+    printf '       |):::(|\n'
+    printf '     ====w=w====\n'
+    printf '        \033[2mkvido\033[0m\n'
+  }
+
+  # Collect context in background
+  KVIDO_PROJECT="$PWD" bash "$KVIDO_ROOT/hooks/build-context.sh" > "$KVIDO_HOME/state/session-context.md" 2>/dev/null &
+  local ctx_pid=$!
+
+  # Animate owl while waiting (minimum 2s)
+  while kill -0 "$ctx_pid" 2>/dev/null || (( ($(date +%s%N) - start_ts) / 1000000 < 2000 )); do
+    _draw_owl "${eyes[$frame]}"
+    frame=$(( (frame + 1) % ${#eyes[@]} ))
+    sleep 0.3
+  done
+  wait "$ctx_pid" 2>/dev/null || true
+
+  _draw_owl "o,o"
+  sleep 0.4
+  printf '\033[?25h'          # show cursor
+  printf '\033[H\033[2J'      # clear for claude
 
   export KVIDO_SESSION=1
   exec claude "${args[@]}" "$prompt"
