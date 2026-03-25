@@ -220,7 +220,11 @@ if [[ -d "$TASKS_DIR" ]]; then
     for f in "${local_files[@]}"; do
       local _base
       _base=$(basename "$f" .md)
-      SLUG="${_base#*-}"
+      if [[ "$_base" =~ ^[0-9]+-(.+)$ ]]; then
+        SLUG="${BASH_REMATCH[1]}"
+      else
+        SLUG="$_base"
+      fi
       TASK_ID=$(_read_fm "$f" "task_id")
       TITLE=$(_read_fm "$f" "title")
       PRIORITY=$(_read_fm "$f" "priority")

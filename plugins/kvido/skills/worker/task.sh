@@ -54,12 +54,15 @@ _find_task() {
   for status_dir in $STATUSES; do
     local dir="$TASKS_DIR/$status_dir"
     [[ -d "$dir" ]] || continue
+    # New format: <id>-<slug>.md
     for f in "$dir"/*-"$slug".md; do
-      if [[ -f "$f" ]]; then
-        echo "$status_dir"
-        return 0
-      fi
+      [[ -f "$f" ]] && { echo "$status_dir"; return 0; }
     done
+    # Legacy format: <slug>.md (pre-migration)
+    if [[ -f "$dir/$slug.md" ]]; then
+      echo "$status_dir"
+      return 0
+    fi
   done
   return 1
 }
@@ -70,11 +73,13 @@ _task_file() {
     local dir="$TASKS_DIR/$status_dir"
     [[ -d "$dir" ]] || continue
     for f in "$dir"/*-"$slug".md; do
-      if [[ -f "$f" ]]; then
-        echo "$f"
-        return 0
-      fi
+      [[ -f "$f" ]] && { echo "$f"; return 0; }
     done
+    # Legacy format
+    if [[ -f "$dir/$slug.md" ]]; then
+      echo "$dir/$slug.md"
+      return 0
+    fi
   done
   echo "Error: task '$slug' not found" >&2
   exit 1
@@ -115,6 +120,7 @@ _next_id() {
   local id=0
   [[ -f "$counter_file" ]] && id=$(cat "$counter_file")
   id=$((id + 1))
+  mkdir -p "$(dirname "$counter_file")"
   echo "$id" > "$counter_file.tmp" && mv "$counter_file.tmp" "$counter_file"
   echo "$id"
 }
@@ -146,19 +152,15 @@ _resolve_identifier() {
   return 1
 }
 
-_task_filename() {
-  local slug="$1"
-  for status_dir in $STATUSES; do
-    local dir="$TASKS_DIR/$status_dir"
-    [[ -d "$dir" ]] || continue
-    for f in "$dir"/*-"$slug".md; do
-      if [[ -f "$f" ]]; then
-        basename "$f" .md
-        return 0
-      fi
-    done
-  done
-  return 1
+_slug_from_filename() {
+  local base="$1"
+  # New format: <id>-<slug> → strip numeric prefix
+  if [[ "$base" =~ ^[0-9]+-(.+)$ ]]; then
+    echo "${BASH_REMATCH[1]}"
+  else
+    # Legacy format: bare slug
+    echo "$base"
+  fi
 }
 
 _priority_weight() {
@@ -361,7 +363,7 @@ cmd_list() {
         [[ "$src" != "$source_filter" ]] && continue
       fi
       base=$(basename "$f" .md)
-      slug="${base#*-}"
+      slug=$(_slug_from_filename "$base")
       priority=$(_read_frontmatter "$f" "priority")
       [[ -z "$priority" ]] && priority="medium"
       created_at=$(_read_frontmatter "$f" "created_at")
@@ -381,7 +383,7 @@ cmd_list() {
         [[ "$src" != "$source_filter" ]] && continue
       fi
       base=$(basename "$f" .md)
-      echo "${base#*-}"
+      _slug_from_filename "$base"
     done
   fi
 }
@@ -434,10 +436,8 @@ cmd_migrate() {
     [[ -d "$dir" ]] || continue
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
-      local base
-      base=$(basename "$f" .md)
-      # Skip already migrated files (start with digit followed by dash)
-      [[ "$base" =~ ^[0-9]+-. ]] && continue
+      # Skip already migrated files (have task_id in frontmatter)
+      [[ -n "$(_read_frontmatter "$f" "task_id")" ]] && continue
       local created_at
       created_at=$(_read_frontmatter "$f" "created_at")
       all_tasks+=("${created_at:-0} $f")
