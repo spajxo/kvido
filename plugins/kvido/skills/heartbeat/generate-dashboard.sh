@@ -318,6 +318,7 @@ cat > "$TMP_FILE" << 'HTMLEOF'
 HTMLEOF
 
 cat >> "$TMP_FILE" << HTMLEOF
+<meta http-equiv="refresh" content="${AUTO_REFRESH}">
 <title>Kvido Dashboard</title>
 HTMLEOF
 
@@ -972,15 +973,6 @@ document.querySelectorAll('.stat-val').forEach(function(el) {
 })();
 </script>
 JSEOF
-
-# Auto-refresh via JS (preserves hash, only refreshes on main view)
-cat >> "$TMP_FILE" << REFRESHEOF
-<script>
-setInterval(function() {
-  if (!location.hash || location.hash === '#') location.reload();
-}, ${AUTO_REFRESH}000);
-</script>
-REFRESHEOF
 
 cat >> "$TMP_FILE" << HTMLEOF
 <footer>auto-refresh ${AUTO_REFRESH}s</footer>
