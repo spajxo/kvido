@@ -65,7 +65,7 @@ Regenerate `memory/index.md` — a concise table of contents of everything in me
 2. Skim existing files (headers, first lines) to understand current state
 3. Write `memory/index.md`:
    - Max 80 lines, ~2KB. It's an **index**, not a dump.
-   - Each entry: one line under ~150 chars: `- [Title](file.md) — one-line hook`
+   - Each entry: one line under ~150 chars: `- [Title](relative/path.md) — one-line hook` (paths relative to memory/)
    - Group by category (Projects, Decisions, Learnings, People, Journal, Weekly)
    - Include counts and latest dates where useful
    - Remove pointers to files that no longer exist
