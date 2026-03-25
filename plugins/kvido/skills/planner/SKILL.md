@@ -210,7 +210,7 @@ For enricher, include the target project:
 Dispatch: project-enricher PROJECT=<project-slug>
 ```
 
-Safety: if `maintenance:<agent>` is already pending/in_progress (check via `kvido task list` or note in planner-state), skip the dispatch to avoid duplicates.
+Safety: if maintenance was already dispatched today (check via `kvido planner-state timestamp get last_<agent>_date`), skip. Heartbeat also dedup-checks via TaskList before creating the task.
 
 ---
 

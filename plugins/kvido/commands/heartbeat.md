@@ -1,5 +1,5 @@
 ---
-description: Heartbeat — orchestrator, chat check, worker dispatch, log, adaptive interval
+description: Heartbeat — orchestrator, chat check, unified agent dispatch, log, adaptive interval
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, TaskCreate, TaskList, TaskUpdate, TaskGet, TaskOutput, mcp__claude_ai_Slack__slack_read_channel
 ---
 
@@ -61,7 +61,7 @@ Read current state via `kvido current get`. Review recent activity via `kvido lo
 
 Use `TaskList` to list all existing tasks. Mark all `in_progress` tasks from a previous session as `completed` (agent process is gone from previous session). Pending tasks with unsatisfied `blockedBy` unblock automatically.
 
-Exception: for `worker:*` in_progress tasks, also run `kvido task move <slug> failed` to mark the local task file as failed (worker tracks state via local task files independently).
+Exception: for `worker:*` in_progress tasks, also run `kvido task move <slug> failed` to mark the **local** task file as failed (worker tracks state via local task files independently; the TaskList entry still goes to `completed` like all others).
 
 ---
 
@@ -208,7 +208,6 @@ If `NEXT_TASK` is not empty and no `worker:*` task pending/in_progress:
 - `kvido task move "$NEXT_TASK" in-progress`
 - `kvido task read "$NEXT_TASK"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION
 - `TaskCreate` subject `worker:<NEXT_TASK>`, description with task details
-- If another `worker:*` task is pending/in_progress, set `addBlockedBy`
 
 **c. Maintenance:**
 Handled in Step 3c when planner output contains `Dispatch:` lines (already created there).
