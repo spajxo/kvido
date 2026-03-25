@@ -12,7 +12,7 @@
 #   read-raw    <id|slug>           # full file contents
 #   update      <id|slug> <key> <value>  # update frontmatter field
 #   move        <id|slug> <status>  # move between folders
-#   list        <status> [--sort priority] [--source SRC]  # list slugs
+#   list        <status> [--sort priority] [--source SRC]  # list id + slug
 #   find        <id|slug>           # returns current status
 #   note        <id|slug> <message> # append to ## Worker Notes
 #   count       <status>            # number of tasks in folder
@@ -166,6 +166,16 @@ _slug_from_filename() {
   else
     # Legacy format: bare slug
     echo "$base"
+  fi
+}
+
+_id_from_filename() {
+  local base="$1"
+  # New format: <id>-<slug> → extract numeric prefix
+  if [[ "$base" =~ ^([0-9]+)- ]]; then
+    echo "${BASH_REMATCH[1]}"
+  else
+    echo "-"
   fi
 }
 
@@ -358,7 +368,7 @@ cmd_list() {
 
   if [[ "$sort_mode" == "priority" ]]; then
     # Read all tasks, sort by priority weight then created_at
-    local entries="" slug base priority created_at weight
+    local entries="" task_id slug base priority created_at weight
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
       if [[ -n "$source_filter" ]]; then
@@ -367,18 +377,19 @@ cmd_list() {
       fi
       base=$(basename "$f" .md)
       slug=$(_slug_from_filename "$base")
+      task_id=$(_id_from_filename "$base")
       priority=$(_read_frontmatter "$f" "priority")
       [[ -z "$priority" ]] && priority="medium"
       created_at=$(_read_frontmatter "$f" "created_at")
       weight=$(_priority_weight "$priority")
-      entries="${entries}${weight} ${created_at} ${slug}\n"
+      entries="${entries}${weight} ${created_at} ${task_id} ${slug}\n"
     done
     if [[ -n "$entries" ]]; then
-      printf '%b' "$entries" | sort -t' ' -k1,1n -k2,2 | awk '{print $3}'
+      printf '%b' "$entries" | sort -t' ' -k1,1n -k2,2 | awk '{print $3, $4}'
     fi
   else
     # Simple listing by filename
-    local base
+    local base task_id
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
       if [[ -n "$source_filter" ]]; then
@@ -386,7 +397,8 @@ cmd_list() {
         [[ "$src" != "$source_filter" ]] && continue
       fi
       base=$(basename "$f" .md)
-      _slug_from_filename "$base"
+      task_id=$(_id_from_filename "$base")
+      echo "${task_id} $(_slug_from_filename "$base")"
     done
   fi
 }
