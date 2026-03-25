@@ -24,7 +24,7 @@ TARGET_DATE="${1:-$(date -d 'yesterday' '+%Y-%m-%d')}"
 
 # Validate date format
 if ! date -d "$TARGET_DATE" &>/dev/null 2>&1; then
-  echo "ERROR: invalid date: $TARGET_DATE" >&2
+  echo "ERROR: sessions: invalid date: $TARGET_DATE" >&2
   exit 1
 fi
 

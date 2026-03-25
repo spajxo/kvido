@@ -38,7 +38,7 @@ for proj_key in $($CONFIG --keys 'sources.jira.projects'); do
 done
 
 if [[ ${#projects[@]} -eq 0 ]]; then
-  echo "ERROR: no projects found in config" >&2
+  echo "ERROR: jira: no projects found in config" >&2
   exit 1
 fi
 

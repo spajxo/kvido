@@ -22,7 +22,7 @@ PARAMS=$(printf '{"calendarId":"primary","timeMin":"%s","timeMax":"%s","singleEv
 EVENTS=$(gws calendar events list \
   --params "$PARAMS" \
   --format json 2>/dev/null) || {
-  echo "ERROR: gws calendar fetch failed" >&2
+  echo "ERROR: calendar: gws calendar fetch failed for $TARGET_DATE" >&2
   exit 1
 }
 
