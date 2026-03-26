@@ -159,7 +159,7 @@ Commands:
   slack <subcommand> [args]         Slack messaging (send, reply, edit, read, react, delete, upload...)
   dashboard                         Open the dashboard HTML in the default browser
   memory <subcommand>               Memory access (read, write, tree)
-  current <get|set>                 Read/write current focus (state/current.md)
+  current <get|dump|set|append|clear>  Read/write current focus sections (state/current.md)
   migrate                           Run lazy state migration (heartbeat-state/planner-state → state)
   context <phase>                   Assemble plugin context for a lifecycle phase
   scripts/<script>.sh [args]        Direct script dispatch (backward compat)
