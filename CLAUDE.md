@@ -36,6 +36,8 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 - **Prompts default to English**. Runtime language is configured in the user's `memory/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The SKILL.md for each source plugin documents the MCP fallback procedure.
 - **config.sh lives only in the core plugin** (`plugins/kvido/skills/config.sh`). Source plugins call `kvido config 'a.b.c'` instead of maintaining their own copy. The `kvido config` CLI delegates to `skills/config.sh`.
+- **Memory files** are accessed via `kvido memory read <name>` / `kvido memory write <name>` / `kvido memory tree` — never via hardcoded paths. This ensures subagents resolve `$KVIDO_HOME/memory/` correctly regardless of CWD.
+- **Skill files** in agent definitions are read via `cat "$(kvido --root)/skills/<name>/SKILL.md"` — never via relative paths.
 
 ## KVIDO_HOME
 

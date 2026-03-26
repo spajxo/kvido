@@ -1,5 +1,5 @@
 state/
-memory/
+/memory/
 docs/superpowers/
 .env
 .claude/settings.json

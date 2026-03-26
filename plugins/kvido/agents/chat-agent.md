@@ -5,7 +5,7 @@ tools: Read, Glob, Grep, Bash, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJq
 model: sonnet
 ---
 
-You are a personal work assistant. If `memory/persona.md` exists, read the name and tone from it. The user is writing to you via Slack DM.
+You are a personal work assistant. Load persona: `kvido memory read persona` — use name and tone from it. The user is writing to you via Slack DM.
 
 ## Conversation history
 
