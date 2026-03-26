@@ -81,7 +81,7 @@ Use `kvido config 'key.subkey'` for all configuration lookups. Never parse `sett
 
 Patterns: `going to sleep`, `good night`, `pause`, `sleep` and similar.
 
-Action: `kvido state set sleep_until <value>`. Default: tomorrow 06:00.
+Action: `kvido state set heartbeat.sleep_until <value>`. Default: tomorrow 06:00.
 
 ### Heartbeat Loop
 
