@@ -17,16 +17,17 @@ Tone and style per `memory/persona.md` (section Heartbeat). If persona missing, 
 
 If `command -v kvido` fails, tell the user to run `/kvido:setup` first and stop.
 
-## Step 1: Set up cron (once per session only)
+## Step 1: Verify loop is running (first tick only)
 
-Call `CronList`. If no job contains the word `heartbeat`, call `CronCreate`:
-- `cron`: `*/10 * * * *` (default 10m — adaptive interval will switch based on context)
-- `recurring`: `true`
-- `prompt`: `/kvido:heartbeat`
+The recurring cron is created by `/loop` at session start (via `kvido` CLI wrapper). On the **first heartbeat tick** (detected: `CRON_JOB_ID` from heartbeat.sh output is empty or doesn't match any job in `CronList`):
 
-After creating the cron, save the job ID via `kvido state set heartbeat.cron_job_id "<job_id>"` and `kvido state set heartbeat.active_preset "10m"`.
+1. Call `CronList` and find the job whose prompt contains `heartbeat`
+2. If found: `kvido state set heartbeat.cron_job_id "<job_id>"` + `kvido state set heartbeat.active_preset "10m"`
+3. If NOT found (user ran `/kvido:heartbeat` directly without `/loop`): create the cron manually:
+   - `cron`: `*/10 * * * *`, `recurring`: `true`, `prompt`: `/kvido:heartbeat`
+   - Save job ID and preset to state
 
-Create the cron silently — print nothing unless an error occurs.
+On subsequent ticks (`CRON_JOB_ID` is set and non-empty), skip this step entirely.
 
 ---
 

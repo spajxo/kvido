@@ -8,7 +8,7 @@
 # Designed to be symlinked to ~/.local/bin/kvido.
 #
 # Usage:
-#   kvido                                     # launch Claude with /kvido:heartbeat
+#   kvido                                     # launch Claude with /loop 10m /kvido:heartbeat
 #   kvido heartbeat                           # run heartbeat data gather
 #   kvido task list todo                      # shortcut for skills/worker/task.sh
 #   kvido state set heartbeat.key value        # shortcut for skills/state/state.sh
@@ -135,7 +135,7 @@ _exec_claude_prompt() {
 
 case "${1:-}" in
   "")
-    _exec_claude_prompt "/kvido:heartbeat"
+    _exec_claude_prompt "/loop 10m /kvido:heartbeat"
     ;;
   --help|-h)
     help_version="$(jq -r .version "$KVIDO_ROOT/.claude-plugin/plugin.json" 2>/dev/null || echo "?")"
@@ -149,7 +149,7 @@ case "${1:-}" in
 Usage: kvido [command] [args...]
 
 Commands:
-  (none)                            Launch Claude with /kvido:heartbeat
+  (none)                            Launch Claude with /loop 10m /kvido:heartbeat
   heartbeat                         Run heartbeat data gather
   task <subcommand> [args]          Manage tasks (list, find, move, note, update, create...)
   state <subcommand>                Read/write unified state store (get, set, increment, delete, list)
