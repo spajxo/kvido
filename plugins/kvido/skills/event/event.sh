@@ -154,7 +154,9 @@ case "$CMD" in
 
     # Snapshot total line count BEFORE reading — this is where ack will advance to.
     # Events emitted after this point will NOT be acked, ensuring next-tick pickup.
-    if [[ -n "$consumer" ]]; then
+    # When --limit is used, do NOT set pending_cursor — caller must use ack --through
+    # for the subset they actually processed (prevents skipping unread events).
+    if [[ -n "$consumer" && -z "$limit" ]]; then
       total=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
       bash "$STATE_SH" set "${consumer}.pending_cursor" "$total"
     fi
@@ -265,14 +267,14 @@ case "$CMD" in
       after_count=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
       removed=$((before_count - after_count))
 
-      # Adjust cursors by subtracting removed lines (floor at 0)
+      # Adjust all cursor-like keys by subtracting removed lines (floor at 0)
       if [[ "$removed" -gt 0 ]]; then
-        for cursor_key in $(bash "$STATE_SH" list 2>/dev/null | grep '\.cursor_offset$' || true); do
-          old_offset=$(bash "$STATE_SH" get "$cursor_key" 2>/dev/null || echo "0")
-          [[ -z "$old_offset" ]] && old_offset=0
-          new_offset=$((old_offset - removed))
-          (( new_offset < 0 )) && new_offset=0
-          bash "$STATE_SH" set "$cursor_key" "$new_offset"
+        for cursor_key in $(bash "$STATE_SH" list 2>/dev/null | grep -E '\.(cursor_offset|pending_cursor)$' || true); do
+          old_val=$(bash "$STATE_SH" get "$cursor_key" 2>/dev/null || echo "0")
+          [[ -z "$old_val" ]] && old_val=0
+          new_val=$((old_val - removed))
+          (( new_val < 0 )) && new_val=0
+          bash "$STATE_SH" set "$cursor_key" "$new_val"
         done
       fi
 
