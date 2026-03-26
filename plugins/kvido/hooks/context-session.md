@@ -27,7 +27,7 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
 
 ## Runtime Layout
 
-- `state/` — ephemeral runtime state; access via CLI: `kvido current`, `kvido state`, `kvido event`, `kvido task`, `kvido log`, `kvido source-health`
+- `state/` — ephemeral runtime state; access via CLI: `kvido current`, `kvido state`, `kvido event`, `kvido task`, `kvido log`
 - `memory/` — persistent context (`memory.md`, journals, weekly notes, projects, people, decisions, learnings)
 - `settings.json` — runtime configuration (use `kvido config 'key'` to read values; `"$ENV_VAR"` references are resolved from `.env` automatically)
 - `.env` — secrets only (referenced from `settings.json` via `"$ENV_VAR"` syntax)

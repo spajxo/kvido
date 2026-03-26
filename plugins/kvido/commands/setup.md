@@ -141,7 +141,7 @@ For each missing file, create with minimal content:
 - `$KVIDO_HOME/memory/decisions/_index.md` → `# Decisions`
 - Heartbeat state: `kvido state list heartbeat.` — if empty, initialize via `kvido state set heartbeat.iteration_count 0` etc.
 - Planner state: `kvido state get planner.last_run` — state initializes lazily if missing
-- Source health: `kvido source-health get` — auto-creates if missing
+- Source health: `kvido state list source-health.` — initializes lazily
 
 ## Step 3: Planning Bootstrap
 
@@ -228,7 +228,7 @@ command -v jq &>/dev/null || echo "WARNING: jq not found"
 Run `kvido config --validate` to check config format. Load `kvido context setup` for source-specific required keys. For each installed source plugin, verify required keys exist. Log warnings for missing keys.
 
 ### Source health
-Run `kvido discover-sources` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results to `state/source-health.json`.
+Run `kvido discover-sources` to get installed source plugins. For each installed source, read its SKILL.md. If the SKILL.md defines a `health` capability, run it and write results via `kvido state set source-health.<name>.status <ok|error>` + `kvido state set source-health.<name>.timestamp "$(date -Iseconds)"`.
 
 Skip sources that are not installed or do not define a health capability.
 

@@ -34,7 +34,7 @@ Event key pattern: `email:<message_id>` — for dedup via kvido event emit --ded
 ```bash
 gws gmail users getProfile me
 ```
-Result via `kvido source-health set gmail <status>`.
+Result via `kvido state set source-health.gmail.status <status>` + `kvido state set source-health.gmail.timestamp "$(date -Iseconds)"`.
 
 ## Schedule
 - morning: `fetch` (unread inbox)

@@ -155,7 +155,6 @@ Commands:
   dashboard                         Open the dashboard HTML in the default browser
   current <get|set>                 Read/write current focus (state/current.md)
   migrate                           Run lazy state migration (heartbeat-state/planner-state → state)
-  source-health <get|set> [args]    Source health status
   context <phase>                   Assemble plugin context for a lifecycle phase
   skills/<script>.sh [args]         Direct script dispatch (backward compat)
   agents/<script>.sh [args]         Direct agent dispatch (backward compat)
