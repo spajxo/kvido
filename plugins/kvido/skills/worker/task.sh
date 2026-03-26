@@ -351,7 +351,7 @@ cmd_move() {
 
 cmd_list() {
   local status="${1:-}" sort_mode="" source_filter=""
-  shift || true
+  shift || true  # shift may fail if no args; handled by empty check below
 
   [[ -z "$status" ]] && { echo "Usage: task.sh list <status> [--sort priority] [--source SRC]" >&2; exit 1; }
 
@@ -490,7 +490,7 @@ cmd_migrate() {
 # --- Main ---
 
 COMMAND="${1:-}"
-shift || true
+shift || true  # shift may fail if no args; handled by case fallback below
 
 case "$COMMAND" in
   create)   cmd_create "$@" ;;

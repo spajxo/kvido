@@ -74,6 +74,7 @@ for i in "${!projects[@]}"; do
   }
 
   # Skip header, count lines
+  # grep -c outputs "0" and exits 1 when no matches — that is normal, not an error
   count=$(echo "$output" | tail -n +2 | grep -c . || true)
 
   if [[ "$count" -eq 0 ]]; then

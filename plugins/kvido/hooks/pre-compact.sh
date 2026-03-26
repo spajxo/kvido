@@ -14,7 +14,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
 
-CONTEXT=$(KVIDO_PROJECT="$PROJECT_DIR" bash "$SCRIPT_DIR/build-context.sh" 2>/dev/null || true)
+CONTEXT=$(KVIDO_PROJECT="$PROJECT_DIR" bash "$SCRIPT_DIR/build-context.sh" 2>/dev/null || echo "ERROR: build-context.sh failed (exit $?)" >&2)
 
 if [[ -n "$CONTEXT" ]]; then
   jq -n --arg msg "$CONTEXT" \

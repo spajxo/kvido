@@ -37,11 +37,11 @@ for i in $(seq 0 $((COUNT - 1))); do
   REJECTED=$(echo "$REACTIONS" | jq -r '.x // .thumbsdown // "false"')
 
   if [[ "$APPROVED" == "true" ]]; then
-    "$TASK_SH" move "$SLUG" todo >/dev/null 2>&1 || true
+    "$TASK_SH" move "$SLUG" todo >/dev/null 2>&1 || echo "ERROR: task move $SLUG to todo failed (exit $?)" >&2
     RESULTS=$(echo "$RESULTS" | jq --arg slug "$SLUG" '. + [{"slug": $slug, "result": "approved"}]')
   elif [[ "$REJECTED" == "true" ]]; then
-    "$TASK_SH" note "$SLUG" "## Cancelled\n\nRejected via triage reaction" >/dev/null 2>&1 || true
-    "$TASK_SH" move "$SLUG" cancelled >/dev/null 2>&1 || true
+    "$TASK_SH" note "$SLUG" "## Cancelled\n\nRejected via triage reaction" >/dev/null 2>&1 || echo "ERROR: task note $SLUG failed (exit $?)" >&2
+    "$TASK_SH" move "$SLUG" cancelled >/dev/null 2>&1 || echo "ERROR: task move $SLUG to cancelled failed (exit $?)" >&2
     RESULTS=$(echo "$RESULTS" | jq --arg slug "$SLUG" '. + [{"slug": $slug, "result": "rejected"}]')
   else
     RESULTS=$(echo "$RESULTS" | jq --arg slug "$SLUG" '. + [{"slug": $slug, "result": "pending"}]')

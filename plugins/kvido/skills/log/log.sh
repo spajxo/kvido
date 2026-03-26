@@ -222,7 +222,7 @@ case "$ACTION" in
 
     # Clean old archives (older than 7 days)
     if [[ "$ARCHIVE" == "true" ]]; then
-      find "${KVIDO_HOME}/state/archive" -name "log-*.jsonl" -mtime +7 -delete 2>/dev/null || true
+      find "${KVIDO_HOME}/state/archive" -name "log-*.jsonl" -mtime +7 -delete 2>/dev/null || echo "ERROR: failed to clean old log archives (exit $?)" >&2
     fi
     ;;
 

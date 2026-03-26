@@ -19,7 +19,7 @@ OUTPUT="$KVIDO_HOME/state/session-context.md"
 
 mkdir -p "$KVIDO_HOME/state"
 
-KVIDO_PROJECT="$PROJECT_DIR" bash "$SCRIPT_DIR/build-context.sh" > "$OUTPUT" 2>/dev/null || true
+KVIDO_PROJECT="$PROJECT_DIR" bash "$SCRIPT_DIR/build-context.sh" > "$OUTPUT" 2>/dev/null || echo "ERROR: build-context.sh failed (exit $?)" >&2
 
 if [[ ! -s "$OUTPUT" ]]; then
   jq -n '{"continue": true}'
