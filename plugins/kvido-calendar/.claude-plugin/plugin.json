@@ -1,6 +1,6 @@
 {
   "name": "kvido-calendar",
-  "version": "0.22.3",
+  "version": "0.23.0",
   "description": "Kvido source plugin for Google Calendar — schedule tracking, meeting alerts",
   "keywords": [
     "kvido",
