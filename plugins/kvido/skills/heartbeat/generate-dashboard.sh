@@ -318,6 +318,7 @@ HTMLEOF
 cat >> "$TMP_FILE" << HTMLEOF
 <meta http-equiv="refresh" content="${AUTO_REFRESH}">
 <title>Kvido Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦉</text></svg>">
 HTMLEOF
 
 cat >> "$TMP_FILE" << 'HTMLEOF'
