@@ -40,7 +40,7 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 ## KVIDO_HOME
 
 All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
-- `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, heartbeat-state.json, tasks/, dashboard.html)
+- `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, state.json, events.jsonl, tasks/, dashboard.html)
 - `memory/` — persistent (memory.md, journals, projects, weekly, learnings)
 - `settings.json` — configuration (JSON, parsed via `skills/config.sh`)
 - `.env` — secrets (Slack tokens, channel IDs)
@@ -64,17 +64,17 @@ Plugins contribute instructions via `hooks/context-<phase>.md` files. Assembled 
 ```
 heartbeat (cron, every 10 min) — plugins/kvido/skills/heartbeat/
 ├── reads Slack DM (via core slack.sh)
-├── checks worker queue (state/tasks/)
-├── dispatches planner every Nth tick → plugins/kvido/agents/planner.md
-│   └── discover-sources.sh → finds kvido-* source plugins via installed_plugins.json
-│       ├── reads each source's SKILL.md from its installPath
-│       ├── runs fetch.sh (exit 0 = success, exit 10 = use MCP fallback)
-│       └── detects changes vs planner-state.md → Slack notifications
-├── dispatches worker if task pending → plugins/kvido/agents/worker.md
+├── reads dispatch events from event bus (state/events.jsonl)
+├── dispatches agents based on dispatch.* events:
+│   ├── dispatch.planner → planner (pure scheduler, emits further dispatch events)
+│   ├── dispatch.gather → gatherer (fetches sources, emits change.detected events)
+│   ├── dispatch.notify → notifier (reads changes, delivers to Slack directly)
+│   ├── dispatch.worker → worker (executes tasks)
+│   └── dispatch.agent → maintenance/custom agents
 └── dispatches chat-agent on non-trivial Slack DM
 ```
 
-Source plugins are never invoked standalone. The planner agent runs in the core plugin context, reads source SKILL.md files, and executes their fetch scripts. This is why source plugins can reference core scripts (`skills/slack/slack.sh`, `skills/worker/task.sh`) via relative paths.
+Agents communicate via event bus (`kvido event emit/read/ack`). State is managed via unified store (`kvido state get/set`). Source plugins are never invoked standalone — the gatherer agent runs in the core plugin context, reads source SKILL.md files, and executes their fetch scripts. This is why source plugins can reference core scripts (`skills/slack/slack.sh`, `skills/worker/task.sh`) via relative paths.
 
 ## Task system
 

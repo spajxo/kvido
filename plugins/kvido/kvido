@@ -11,7 +11,7 @@
 #   kvido                                     # launch Claude with /kvido:heartbeat
 #   kvido heartbeat                           # run heartbeat data gather
 #   kvido task list todo                      # shortcut for skills/worker/task.sh
-#   kvido heartbeat-state set key value       # shortcut for skills/heartbeat/heartbeat-state.sh
+#   kvido state set heartbeat.key value        # shortcut for skills/state/state.sh
 #   kvido config 'sources.gitlab.repos'       # shortcut for skills/config.sh
 #   kvido --root                              # print plugin root path
 #   kvido --install                           # install wrapper to ~/.local/bin/kvido
