@@ -23,7 +23,7 @@ if [[ -f "$CORE_HOOK" ]]; then
 fi
 
 # Plugin contributions via discover-sources
-DISCOVER="$PLUGIN_ROOT/skills/discover-sources.sh"
+DISCOVER="$PLUGIN_ROOT/scripts/discover-sources.sh"
 if [[ -x "$DISCOVER" ]]; then
   while IFS=$'\t' read -r name install_path; do
     HOOK_FILE="$install_path/hooks/context-${PHASE}.md"

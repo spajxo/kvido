@@ -149,7 +149,7 @@ For patterns identified in Step 2b with 3+ repetitions generate skill drafts.
 
 3. Limits:
    - Max 2 skill drafts per run (in addition to standard proposals)
-   - Scope: new skills and modifications of existing ones (skills/*/SKILL.md, agents/*.md)
+   - Scope: new skills and modifications of existing ones (skills/*/SKILL.md, scripts/*/*.sh, agents/*.md)
    - Dedup: check against existing `[SELF-IMPROVE/SKILL]` tasks
 
 ### 4. Dedup and write

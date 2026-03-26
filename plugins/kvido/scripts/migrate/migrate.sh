@@ -11,7 +11,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-STATE_SH="$(cd "$SCRIPT_DIR/.." && pwd)/state/state.sh"
+STATE_SH="$(cd "$SCRIPT_DIR/../.." && pwd)/scripts/state/state.sh"
 
 OLD_HEARTBEAT="${KVIDO_HOME}/state/heartbeat-state.json"
 OLD_PLANNER="${KVIDO_HOME}/state/planner-state.json"

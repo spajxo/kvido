@@ -16,7 +16,8 @@ plugins/
 │   ├── agents/                    ← subagent definitions (YAML frontmatter + markdown)
 │   ├── commands/                  ← slash commands (thin wrappers → SKILL.md)
 │   ├── hooks/                     ← context-<phase>.md hook files
-│   └── skills/                    ← SKILL.md + bash helpers
+│   ├── scripts/                   ← bash helper scripts (CLI, state, config, heartbeat data)
+│   └── skills/                    ← SKILL.md files (agent-facing instructions)
 ├── kvido-gitlab/                  ← source plugin (requires glab)
 ├── kvido-jira/                    ← source plugin (requires acli or Atlassian MCP)
 ├── kvido-slack/                   ← source plugin
@@ -25,17 +26,17 @@ plugins/
 └── kvido-sessions/                ← source plugin (no external deps)
 ```
 
-Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. They are discovered at runtime by `plugins/kvido/skills/discover-sources.sh` which reads `~/.claude/plugins/installed_plugins.json` (source plugin discovery always uses the registry — `CLAUDE_PLUGIN_ROOT` is only relevant for the core `kvido` plugin path).
+Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. They are discovered at runtime by `plugins/kvido/scripts/discover-sources.sh` which reads `~/.claude/plugins/installed_plugins.json` (source plugin discovery always uses the registry — `CLAUDE_PLUGIN_ROOT` is only relevant for the core `kvido` plugin path).
 
 ## Key design decisions
 
-- **Source plugins reference core scripts** (`skills/slack/slack.sh`, `skills/worker/task.sh`) via relative paths. This works because they are always invoked by agents running in the core plugin's context — never standalone.
-- **Config** is always read via `kvido config 'dot.key'` in source plugin scripts, or via `skills/config.sh 'dot.key'` in core plugin scripts — never parse `$KVIDO_HOME/settings.json` directly with jq.
+- **Source plugins reference core scripts** (`scripts/slack/slack.sh`, `scripts/worker/task.sh`) via relative paths. This works because they are always invoked by agents running in the core plugin's context — never standalone.
+- **Config** is always read via `kvido config 'dot.key'` in source plugin scripts, or via `scripts/config.sh 'dot.key'` in core plugin scripts — never parse `$KVIDO_HOME/settings.json` directly with jq.
 - **All bash scripts** use `set -euo pipefail`.
 - **Agents never send Slack messages directly** — they return NL output. Heartbeat delivers via `slack.sh`.
 - **Prompts default to English**. Runtime language is configured in the user's `memory/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The SKILL.md for each source plugin documents the MCP fallback procedure.
-- **config.sh lives only in the core plugin** (`plugins/kvido/skills/config.sh`). Source plugins call `kvido config 'a.b.c'` instead of maintaining their own copy. The `kvido config` CLI delegates to `skills/config.sh`.
+- **config.sh lives only in the core plugin** (`plugins/kvido/scripts/config.sh`). Source plugins call `kvido config 'a.b.c'` instead of maintaining their own copy. The `kvido config` CLI delegates to `scripts/config.sh`.
 - **Memory files** are accessed via `kvido memory read <name>` / `kvido memory write <name>` / `kvido memory tree` — never via hardcoded paths. This ensures subagents resolve `$KVIDO_HOME/memory/` correctly regardless of CWD.
 - **Skill files** in agent definitions are read via `cat "$(kvido --root)/skills/<name>/SKILL.md"` — never via relative paths.
 
@@ -44,7 +45,7 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
 - `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, state.json, events.jsonl, tasks/, dashboard.html)
 - `memory/` — persistent (memory.md, journals, projects, weekly, learnings)
-- `settings.json` — configuration (JSON, parsed via `skills/config.sh`)
+- `settings.json` — configuration (JSON, parsed via `scripts/config.sh`)
 - `.env` — secrets (Slack tokens, channel IDs)
 
 The `kvido` CLI exports `$KVIDO_HOME` and all scripts resolve state/memory paths from there. PWD stays as the project directory. Config is at `$KVIDO_HOME/settings.json`.
@@ -64,7 +65,7 @@ Plugins contribute instructions via `hooks/context-<phase>.md` files. Assembled 
 ## Runtime architecture
 
 ```
-heartbeat (cron, every 10 min) — plugins/kvido/skills/heartbeat/
+heartbeat (cron, every 10 min) — plugins/kvido/scripts/heartbeat/
 ├── reads Slack DM (via core slack.sh)
 ├── reads dispatch events from event bus (state/events.jsonl)
 ├── dispatches agents based on dispatch.* events:
@@ -76,11 +77,11 @@ heartbeat (cron, every 10 min) — plugins/kvido/skills/heartbeat/
 └── dispatches chat-agent on non-trivial Slack DM
 ```
 
-Agents communicate via event bus (`kvido event emit/read/ack`). State is managed via unified store (`kvido state get/set`). Source plugins are never invoked standalone — the gatherer agent runs in the core plugin context, reads source SKILL.md files, and executes their fetch scripts. This is why source plugins can reference core scripts (`skills/slack/slack.sh`, `skills/worker/task.sh`) via relative paths.
+Agents communicate via event bus (`kvido event emit/read/ack`). State is managed via unified store (`kvido state get/set`). Source plugins are never invoked standalone — the gatherer agent runs in the core plugin context, reads source SKILL.md files, and executes their fetch scripts. This is why source plugins can reference core scripts (`scripts/slack/slack.sh`, `scripts/worker/task.sh`) via relative paths.
 
 ## Task system
 
-Tasks live in `$KVIDO_HOME/state/tasks/<status>/` as markdown files with YAML frontmatter. Canonical statuses (defined in `plugins/kvido/skills/worker/task.sh`):
+Tasks live in `$KVIDO_HOME/state/tasks/<status>/` as markdown files with YAML frontmatter. Canonical statuses (defined in `plugins/kvido/scripts/worker/task.sh`):
 
 ```
 triage → todo → in-progress → done
@@ -88,16 +89,16 @@ triage → todo → in-progress → done
                              → cancelled
 ```
 
-CLI: `kvido task <create|read|move|list|count|find|note> [args]` (delegates to `skills/worker/task.sh`).
+CLI: `kvido task <create|read|move|list|count|find|note> [args]` (delegates to `scripts/worker/task.sh`).
 
 ## Working on this codebase
 
 - Edit SKILL.md and agent .md files directly — no build step
-- Slack message templates are JSON files in `plugins/kvido/skills/slack/templates/`
+- Slack message templates are JSON files in `plugins/kvido/scripts/slack/templates/`
 - Plugin manifests: each plugin has `.claude-plugin/plugin.json` with name, version, description
 - Marketplace manifest: `.claude-plugin/marketplace.json` lists all plugins with `./plugins/<name>` local source paths
 - Validate changes by reading plugin conventions and running `/kvido:setup` health check in a workspace
 - Runtime instructions for installed Kvido sessions now live in `plugins/kvido/hooks/context-session.md` and are injected via the plugin `SessionStart` hook.
 - User-facing template: `plugins/kvido/settings.json.example` (config reference — copy to `$KVIDO_HOME/settings.json`)
-- Dashboard: `kvido dashboard` opens `state/dashboard.html` (generated by `skills/heartbeat/generate-dashboard.sh`)
+- Dashboard: `kvido dashboard` opens `state/dashboard.html` (generated by `scripts/heartbeat/generate-dashboard.sh`)
 - Releasing: bump version in `plugins/kvido/.claude-plugin/plugin.json`, commit, push, `gh release create v<version>`, then `claude plugin marketplace update` to refresh local installs

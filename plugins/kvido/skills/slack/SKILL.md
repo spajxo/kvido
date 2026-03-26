@@ -102,7 +102,7 @@ Flat messages as default. Threading applies in these cases:
 
 ## Focus Mode
 
-Read `kvido config 'focus_mode'`. Unchanged — suppress, batching, after_focus_summary work identically.
+Read `kvido config 'skills.planner.focus_mode.enabled'`. Unchanged — suppress, batching, after_focus_summary work identically.
 
 ## Batching
 

@@ -19,7 +19,7 @@ Urgency is now the notifier's responsibility when consuming events:
 Decide based on: current focus (`kvido current get`), time, sender, event type, whether action is required.
 
 ### Focus mode
-Read settings.json focus_mode. Check calendar — focus event running → suppress immediate to batch.
+Read `skills.planner.focus_mode.enabled` via `kvido config`. Check calendar — focus event running → suppress immediate to batch.
 
 ### Proactive alerts
 Watch for stale MR reviews, WIP tickets with no activity, status changes. Decide level based on context.
