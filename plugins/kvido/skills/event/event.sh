@@ -77,23 +77,10 @@ case "$CMD" in
 
     _ensure_file
 
-    # Dedup check
-    if [[ -n "$dedup_key" && -n "$dedup_window" ]]; then
-      window_secs=$(_duration_to_seconds "$dedup_window")
-      cutoff_epoch=$(( $(date +%s) - window_secs ))
-      cutoff_ts="$(date -Iseconds -d "@$cutoff_epoch")"
-      existing=$(jq -r --arg dk "$dedup_key" --arg ct "$cutoff_ts" \
-        'select(.data.dedup_key == $dk and .ts >= $ct) | .id' \
-        "$EVENTS_FILE" 2>/dev/null | head -1 || true)
-      if [[ -n "$existing" ]]; then
-        exit 0
-      fi
-    fi
-
     id="$(_gen_id)"
     ts="$(date -Iseconds)"
 
-    # Append with lock
+    # Append with lock (dedup check inside lock to prevent races)
     (
       mkdir -p "$(dirname "$LOCK_FILE")"
       exec 200>"$LOCK_FILE"
@@ -101,6 +88,20 @@ case "$CMD" in
         echo "event.sh: timeout acquiring lock" >&2
         exit 1
       fi
+
+      # Dedup check (inside lock to prevent race between check and append)
+      if [[ -n "$dedup_key" && -n "$dedup_window" ]]; then
+        window_secs=$(_duration_to_seconds "$dedup_window")
+        cutoff_epoch=$(( $(date +%s) - window_secs ))
+        cutoff_ts="$(date -Iseconds -d "@$cutoff_epoch")"
+        existing=$(jq -r --arg dk "$dedup_key" --arg ct "$cutoff_ts" \
+          'select(.data.dedup_key == $dk and .ts >= $ct) | .id' \
+          "$EVENTS_FILE" 2>/dev/null | head -1 || true)
+        if [[ -n "$existing" ]]; then
+          exit 0
+        fi
+      fi
+
       jq -c -n \
         --arg id "$id" \
         --arg ts "$ts" \
@@ -163,7 +164,7 @@ case "$CMD" in
         cat "$EVENTS_FILE"
       fi
     } | {
-      jq -c "${jq_args[@]}" "$jq_filter"
+      jq -c ${jq_args[@]+"${jq_args[@]}"} "$jq_filter"
     } | {
       if [[ -n "$limit" ]]; then
         head -n "$limit"
@@ -218,22 +219,37 @@ case "$CMD" in
     cutoff_epoch=$(( $(date +%s) - window_secs ))
     cutoff_ts="$(date -Iseconds -d "@$cutoff_epoch")"
 
-    before_count=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
+    # GC under lock to prevent concurrent emit from losing events
+    (
+      mkdir -p "$(dirname "$LOCK_FILE")"
+      exec 200>"$LOCK_FILE"
+      if ! flock -w "$LOCK_TIMEOUT" 200; then
+        echo "event.sh: timeout acquiring lock for gc" >&2
+        exit 1
+      fi
 
-    tmp="$(mktemp "${EVENTS_FILE}.tmp.XXXXXX")"
-    jq -c --arg ct "$cutoff_ts" 'select(.ts >= $ct)' "$EVENTS_FILE" > "$tmp" 2>/dev/null || true
-    mv "$tmp" "$EVENTS_FILE"
+      before_count=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
 
-    after_count=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
-    removed=$((before_count - after_count))
+      tmp="$(mktemp "${EVENTS_FILE}.tmp.XXXXXX")"
+      jq -c --arg ct "$cutoff_ts" 'select(.ts >= $ct)' "$EVENTS_FILE" > "$tmp" 2>/dev/null || true
+      mv "$tmp" "$EVENTS_FILE"
 
-    if [[ "$removed" -gt 0 ]]; then
-      for cursor_key in $(bash "$STATE_SH" list 2>/dev/null | grep '\.cursor_offset$' || true); do
-        bash "$STATE_SH" set "$cursor_key" "0"
-      done
-    fi
+      after_count=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
+      removed=$((before_count - after_count))
 
-    echo "gc: removed $removed events (kept $after_count)"
+      # Adjust cursors by subtracting removed lines (floor at 0)
+      if [[ "$removed" -gt 0 ]]; then
+        for cursor_key in $(bash "$STATE_SH" list 2>/dev/null | grep '\.cursor_offset$' || true); do
+          old_offset=$(bash "$STATE_SH" get "$cursor_key" 2>/dev/null || echo "0")
+          [[ -z "$old_offset" ]] && old_offset=0
+          new_offset=$((old_offset - removed))
+          (( new_offset < 0 )) && new_offset=0
+          bash "$STATE_SH" set "$cursor_key" "$new_offset"
+        done
+      fi
+
+      echo "gc: removed $removed events (kept $after_count)"
+    )
     ;;
 
   count)
@@ -257,7 +273,7 @@ case "$CMD" in
     [[ -n "$consumer" && "$unread" == "true" ]] && args+=(--consumer "$consumer")
     [[ -n "$type_glob" ]] && args+=(--type "$type_glob")
 
-    bash "$SCRIPT_DIR/event.sh" read "${args[@]}" 2>/dev/null | wc -l | tr -d ' '
+    bash "$SCRIPT_DIR/event.sh" read ${args[@]+"${args[@]}"} 2>/dev/null | wc -l | tr -d ' '
     ;;
 
   *)
