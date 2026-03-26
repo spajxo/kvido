@@ -21,18 +21,18 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
   - `memory/memory.md`
   - `memory/index.md` (if present) — overview of what's stored in memory; use it to decide which files to read for the current task — don't load everything
   - `kvido current get`
-  - `kvido heartbeat-state get-json`
+  - `kvido state get` (unified state store; replaces heartbeat-state and planner-state)
 - Review recent activity with `kvido log list --today --format human`.
 - Use `kvido config 'key.subkey'` for configuration lookups instead of parsing files directly.
 
 ## Runtime Layout
 
-- `state/` — ephemeral runtime state; access via CLI: `kvido current`, `kvido planner-state`, `kvido heartbeat-state`, `kvido task`, `kvido log`, `kvido source-health`
+- `state/` — ephemeral runtime state; access via CLI: `kvido current`, `kvido state`, `kvido event`, `kvido task`, `kvido log`, `kvido source-health`
 - `memory/` — persistent context (`memory.md`, journals, weekly notes, projects, people, decisions, learnings)
 - `settings.json` — runtime configuration (use `kvido config 'key'` to read values; `"$ENV_VAR"` references are resolved from `.env` automatically)
 - `.env` — secrets only (referenced from `settings.json` via `"$ENV_VAR"` syntax)
 
-All state operations use `kvido` CLI wrappers. Memory paths resolve to `$KVIDO_HOME/memory/`.
+All state operations use `kvido` CLI wrappers. Memory paths resolve to `$KVIDO_HOME/memory/`. Event bus access via `kvido event` (append-only JSONL log at `state/events.jsonl`).
 
 ## Orchestration Contract
 
@@ -40,20 +40,26 @@ These rules apply to all agents, skills, and hooks. Do not restate them — refe
 
 ### Slack Delivery Ownership
 
-Heartbeat is the single owner of Slack message delivery. No agent, source plugin, or worker may call `kvido slack send|reply|edit` directly. Agents return structured NL output; heartbeat parses it and delivers.
+The **notifier agent** is the single owner of Slack message delivery. No other agent, source plugin, or worker may call `kvido slack send|reply|edit` directly. Notifier reads from the event bus and delivers all user-facing communication. Agents communicate via event bus (`kvido event emit`).
 
-### Agent Output Grammar
+### Agent Communication via Event Bus
 
-Agents return NL output with prefixed lines. Heartbeat parses these prefixes to determine template, delivery level, and routing:
+Agents communicate through the event bus (`kvido event emit`), not via natural language output parsing. The old NL prefix format (`Event:`, `Triage:`, `Dispatch:`, etc.) is **deprecated**.
 
-- `Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: <high|normal|low>. Severity: <:red_circle:|:large_yellow_circle:|:large_green_circle:>.`
-- `Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal. Severity: :large_yellow_circle:.`
-- `Triage: <slug> '<title>' — <description>. Priority: <p>. Size: <s>. Assignee: <a>.`
-- `Reminder: <text>. Urgency: normal.`
-- `Dispatch: <agent-name> KEY1=value1 KEY2=value2 ...`
-- `Reply: <text>` (chat-agent only)
+**Architecture:**
+- **Planner** — scheduler agent; emits `dispatch.*` events (gather, notify, triage, briefing, worker, custom agents)
+- **Gatherer** — data fetching agent; emits `source.*` and `change.*` events
+- **Notifier** — user communication gateway; reads from bus and delivers to Slack (no external agent calls `kvido slack send`)
+- **Worker** — task execution; runs on `dispatch.worker` events
+- **Custom agents** — user-defined, dispatched via `dispatch.agent` events
 
-If no output is needed: `No notifications.`
+**For agents:**
+- Emit structured events: `kvido event emit <type> --data '{}' --producer <agent-name>`
+- Event types include: `dispatch.*`, `source.*`, `change.*`, `notification.*`, `scheduled.executed`
+- Use `--dedup-key` and `--dedup-window` for deduplication (prevents duplicate change detection)
+- Log brief status to stdout if needed, but return minimal output for logging only
+
+**Notifier handles all user-facing communication** — agents never call `kvido slack send` directly.
 
 ### Task Lifecycle
 
@@ -75,7 +81,7 @@ Use `kvido config 'key.subkey'` for all configuration lookups. Never parse `sett
 
 Patterns: `going to sleep`, `good night`, `pause`, `sleep` and similar.
 
-Action: `kvido heartbeat-state set sleep_until <value>`. Default: tomorrow 06:00.
+Action: `kvido state set sleep_until <value>`. Default: tomorrow 06:00.
 
 ### Heartbeat Loop
 
