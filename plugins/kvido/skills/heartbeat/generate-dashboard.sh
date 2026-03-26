@@ -310,7 +310,6 @@ cat > "$TMP_FILE" << 'HTMLEOF'
 HTMLEOF
 
 cat >> "$TMP_FILE" << HTMLEOF
-<meta http-equiv="refresh" content="${AUTO_REFRESH}">
 <title>Kvido Dashboard</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦉</text></svg>">
 HTMLEOF
@@ -964,6 +963,15 @@ document.querySelectorAll('.stat-val').forEach(function(el) {
     btn.textContent = theme === 'dark' ? '\u2600' : '\u263E';
   });
 })();
+</script>
+JSEOF
+
+# Auto-refresh: use JS location.reload() so the URL hash (active tab) is preserved.
+# <meta http-equiv="refresh"> would strip the hash fragment on every reload.
+cat >> "$TMP_FILE" << JSEOF
+<script>
+// Auto-refresh every ${AUTO_REFRESH}s, preserving URL hash for active tab.
+setInterval(function() { location.reload(); }, ${AUTO_REFRESH} * 1000);
 </script>
 JSEOF
 
