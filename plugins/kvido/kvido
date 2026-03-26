@@ -109,7 +109,7 @@ _exec_claude_prompt() {
     printf '       / %s \\\n' "$1"
     printf '       |):::(|\n'
     printf '     ====w=w====\n'
-    printf '      \033[2mkvido v%s\033[0m\n' "$kvido_version"
+    printf '    \033[2mkvido v%s\033[0m\n' "$kvido_version"
   }
 
   # Collect context in background
@@ -144,7 +144,7 @@ case "${1:-}" in
        / o,o \\
        |):::(|
      ====w=w====
-      kvido v${help_version}
+    kvido v${help_version}
 
 Usage: kvido [command] [args...]
 
