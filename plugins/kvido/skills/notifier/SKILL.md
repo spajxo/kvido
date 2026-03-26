@@ -20,13 +20,21 @@ Single gateway for all user-facing communication. Reads events from the bus, dec
 
 ---
 
-## Step 2: Process Change Events
+## Step 1b: Read All Unprocessed Events
 
-Read unprocessed change events from the bus:
+Read ALL unprocessed events in a single call (no `--type` filter). This ensures the cursor advances past all event types consistently — filtering by type would leave unread events behind the cursor.
 
 ```bash
-kvido event read --consumer notifier --type 'change.*'
+kvido event read --consumer notifier
 ```
+
+Parse the output and group events by type for processing in Steps 2-5. Event types to handle: `change.*`, `source.error`, `dispatch.triage`, `dispatch.briefing`. Ignore other types (e.g., `source.fetched`, `scheduled.executed` — informational only).
+
+---
+
+## Step 2: Process Change Events
+
+From the events loaded in Step 1b, filter `change.detected` events.
 
 For each `change.detected` event, decide:
 
@@ -60,11 +68,7 @@ For each `change.detected` event, decide:
 
 ## Step 3: Process Source Errors
 
-Read source error events:
-
-```bash
-kvido event read --consumer notifier --type 'source.error'
-```
+From the events loaded in Step 1b, filter `source.error` events.
 
 For each `source.error`, emit:
 
@@ -120,11 +124,7 @@ kvido event emit notification.briefing \
 
 ## Step 6: Deliver to Slack
 
-Read all notification events emitted in this run:
-
-```bash
-kvido event read --consumer notifier --type 'notification.*'
-```
+Collect all `notification.*` events emitted in Steps 2-5 above (these are in-memory from this run, no need to re-read from bus).
 
 For each notification event, deliver via `kvido slack`:
 

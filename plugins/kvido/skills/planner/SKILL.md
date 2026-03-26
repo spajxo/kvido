@@ -48,10 +48,13 @@ kvido event emit dispatch.gather --producer planner
 
 ## Step 4: Dispatch Notifications
 
-Always emit notify dispatch so notifier processes any pending change events:
+**Do NOT emit `dispatch.notify` here.** The gatherer emits `dispatch.notify` after it finishes fetching, ensuring the notifier only runs when change data is available. Emitting notify in the same tick as gather would cause a race — notifier might run before gatherer has produced any events.
+
+Planner may emit `dispatch.notify` only when there is no gather (e.g., no sources installed but triage/briefing still needed):
 
 ```bash
-kvido event emit dispatch.notify --data '{"reason":"post-gather"}' --producer planner
+# Only if no sources were dispatched in Step 3:
+kvido event emit dispatch.notify --data '{"reason":"no-sources"}' --producer planner
 ```
 
 ---
