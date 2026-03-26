@@ -147,13 +147,14 @@ Commands:
   (none)                            Launch Claude with /kvido:heartbeat
   heartbeat                         Run heartbeat data gather
   task <subcommand> [args]          Manage tasks (list, find, move, note, update, create...)
-  heartbeat-state <subcommand>      Read/write heartbeat state (get, set, increment...)
+  state <subcommand>                Read/write unified state store (get, set, increment, delete, list)
+  event <subcommand>                Event bus (emit, read, ack, gc, count)
   config <key> [default]            Read kvido config values from settings.json
   log <subcommand> [args]           Activity log (add, list, purge)
   slack <subcommand> [args]         Slack messaging (send, reply, edit, read, react, delete, upload...)
   dashboard                         Open the dashboard HTML in the default browser
   current <get|set>                 Read/write current focus (state/current.md)
-  planner-state <subcommand>        Planner state (events, timestamps, reminders, schedule, interests)
+  migrate                           Run lazy state migration (heartbeat-state/planner-state → state)
   source-health <get|set> [args]    Source health status
   context <phase>                   Assemble plugin context for a lifecycle phase
   skills/<script>.sh [args]         Direct script dispatch (backward compat)
@@ -192,23 +193,21 @@ Slack subcommands:
   download <url_private> [output_dir]
   upload [channel] <file_path> [--title '...'] [--thread <ts>]
 
-Planner-state subcommands:
-  event check <key>               Check if event was reported (exit 0/1)
-  event report <key>              Report event (upsert first_seen/last_reported)
-  event list                      List all events as JSON
-  event cleanup [--max-age 72h]   Remove events older than threshold
-  timestamp get <key>             Get timestamp value
-  timestamp set <key> <value>     Set timestamp value
-  reminder get <slug>             Get last_reminded date
-  reminder set <slug>             Set last_reminded to today
-  schedule get                    Print today's schedule
-  schedule set                    Read schedule from stdin
-  interests get <topic>           Get last_checked for topic
-  interests set <topic>           Set last_checked to now
-  interests list                  List all interest topics as JSON
-  last-run get                    Print last run metadata as JSON
-  last-run set                    Read last run JSON from stdin
-  reset                           Reset to empty skeleton
+State subcommands:
+  get <key>                         Get value (exit 1 if missing)
+  get-json <key>                    Get JSON value
+  set <key> <value>                 Set string value
+  set-json <key> <json>             Set JSON value
+  increment <key>                   Atomic increment
+  delete <key>                      Delete key
+  list [prefix]                     List keys
+
+Event subcommands:
+  emit <type> [--data '{}'] [--producer <name>] [--dedup-key <key> --dedup-window <dur>]
+  read [--consumer <name>] [--type <glob>] [--since <ts>] [--limit N]
+  ack --consumer <name> [--through <event-id>]
+  gc [--older-than 72h]
+  count [--consumer <name>] [--type <glob>] [--unread]
 HELP
     ;;
   --root)

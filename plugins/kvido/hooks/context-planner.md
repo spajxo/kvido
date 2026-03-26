@@ -2,16 +2,19 @@
 
 ## Change Detection
 
-Compare collected data against reported events via `kvido planner-state event check <key>`.
-Already reported → skip (dedup). New → notify and record with `kvido planner-state event add <key>`.
+Gatherers detect changes and emit events via the event bus using deduplication:
+```
+kvido event emit change.detected --dedup-key "source:key" --dedup-window 1h --data '{"title":"...","desc":"...","source":"...","reference":"..."}'
+```
+
+The dedup mechanism prevents redundant notifications for the same source within the window. Consumers (notifiers) subscribe to change.detected events and decide notification level.
 
 ### Notification levels
 
-| Level | Output format |
-|-------|--------------|
-| silent | Log via kvido log add only |
-| batch | Output: Event (batch): <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: normal. |
-| immediate | Output: Event: <emoji> <title> — <desc>. Source: <src>. Reference: <ref>. Urgency: high. |
+Urgency is now the notifier's responsibility when consuming events:
+- `silent`: Log only (consumed but not notified)
+- `batch`: Consume and queue, send in digests
+- `immediate`: Consume and notify promptly
 
 Decide based on: current focus (`kvido current get`), time, sender, event type, whether action is required.
 
@@ -33,13 +36,13 @@ Write note on task: kvido task note <slug> "Triage: sent for approval."
 
 ## Maintenance Tasks
 
-Recurring (max 1 per day each, check last_*_date via `kvido planner-state last-run get <task>`):
+Recurring (max 1 per day each, check last run timestamp via `kvido state get planner.maintenance.last_librarian`):
 
-| Task | Trigger | Instruction |
-|------|---------|-------------|
-| Librarian | Not yet run today (check `last_librarian_date`, max 1/day) | `Dispatch: librarian` |
-| Enricher | Oldest project in memory/projects/ > 7 days | `Dispatch: project-enricher PROJECT=<project>` |
-| Self-improver | Not yet run today | `Dispatch: self-improver` |
+| Task | Trigger | Action |
+|------|---------|--------|
+| Librarian | Not yet run today | `kvido event emit dispatch.agent --data '{"agent":"librarian"}'` |
+| Enricher | Oldest project in memory/projects/ > 7 days | `kvido event emit dispatch.agent --data '{"agent":"project-enricher","params":{"PROJECT":"<project>"}}'` |
+| Self-improver | Not yet run today | `kvido event emit dispatch.agent --data '{"agent":"self-improver"}'` |
 
 ### Checks (output as Event:)
 
@@ -90,6 +93,19 @@ When creating weekly summary (triggered by scheduled rules):
 
 Write to memory/weekly/YYYY-Www.md.
 
-## Output Format
+## Event Emission
 
-See **Agent Output Grammar** in the Orchestration Contract (session context) for the canonical prefix format. The planner SKILL.md Output Format section defines the full specification.
+The planner communicates via the event bus. All significant outputs (change detection, triage decisions, maintenance tasks, checks) are emitted as events:
+
+```
+kvido event emit <type> --data '{}' [--producer planner] [--dedup-key <key> --dedup-window <duration>]
+```
+
+Standard event types:
+- `change.detected` — Source change notification
+- `dispatch.agent` — Dispatch instruction for an agent
+- `triage.decision` — Triage classification result
+- `planner.check.stale-worker` — Maintenance check output
+- `planner.check.overflow` — Maintenance check output
+
+Consumers subscribe to specific event types and handle delivery/notification as needed.
