@@ -19,12 +19,19 @@ fi
 
 # Fetch events
 PARAMS=$(printf '{"calendarId":"primary","timeMin":"%s","timeMax":"%s","singleEvents":true,"orderBy":"startTime"}' "$TIME_MIN" "$TIME_MAX")
+GWS_ERR=$(mktemp)
 EVENTS=$(gws calendar events list \
   --params "$PARAMS" \
-  --format json 2>/dev/null) || {
-  echo "ERROR: calendar: gws calendar fetch failed for $TARGET_DATE" >&2
+  --format json 2>"$GWS_ERR") || {
+  ERR=$(cat "$GWS_ERR"); rm -f "$GWS_ERR"
+  if echo "$ERR" | grep -qiE 'no such host|connection refused|network is unreachable|dial tcp|EOF|timeout|i/o timeout'; then
+    echo "FALLBACK: gws network/auth error, use MCP" >&2
+    exit 10
+  fi
+  echo "ERROR: calendar: gws calendar fetch failed for $TARGET_DATE: $ERR" >&2
   exit 1
 }
+rm -f "$GWS_ERR"
 
 EVENT_COUNT=$(echo "$EVENTS" | jq -r '.items | length')
 
