@@ -43,6 +43,7 @@ Recurring (max 1 per day each, check last run timestamp via `kvido state get pla
 | Librarian | Not yet run today | `kvido event emit dispatch.agent --data '{"agent":"librarian"}'` |
 | Enricher | Oldest project in memory/projects/ > 7 days | `kvido event emit dispatch.agent --data '{"agent":"project-enricher","params":{"PROJECT":"<project>"}}'` |
 | Self-improver | Not yet run today | `kvido event emit dispatch.agent --data '{"agent":"self-improver"}'` |
+| Scout | Not yet run today + interest topics configured | `kvido event emit dispatch.agent --data '{"agent":"scout"}'` |
 
 ### Checks (output as Event:)
 

@@ -249,6 +249,25 @@ If `gh` not available or `GITHUB_ISSUES_ENABLED` is not `true`: write proposal t
 
   Confidence is used during triage for prioritization (planner sorts high > medium > low).
 
+## Step 5: Daily Questions (optional)
+
+After proposals, optionally generate reflective questions for the user's journal.
+
+1. Check if enabled: `kvido config 'skills.daily_questions.enabled'` — if `false`, skip entirely.
+2. Check `frequency` via `kvido config 'skills.daily_questions.frequency'`:
+   - `weekdays` → skip Saturday and Sunday
+   - `friday_only` → skip if not Friday
+   - `daily` → always
+3. Select 1-2 questions contextually (max per `kvido config 'skills.daily_questions.max_questions'`):
+   - Compare Active Focus from `kvido current get` vs actual git activity → "Did you manage to stay focused on the plan?"
+   - Check Jira deadlines for tomorrow → "Is there anything tomorrow that requires preparation?"
+   - If it was a frustrating day (many error entries in `kvido log list --today --agent heartbeat`) → "What slowed you down the most today?"
+   - Random reflective: "What would you do differently today?"
+4. Write questions to the journal (`kvido memory read journal/$(date +%Y-%m-%d)` / `kvido memory write journal/$(date +%Y-%m-%d)`), appending a `## Reflection` section.
+5. After 20+ responses (count `## Reflection` sections across journal files): analyze patterns and update `kvido memory write learnings`.
+
+---
+
 ## Constraints
 
 - Don't read source code files — only conversational patterns and Slack DMs

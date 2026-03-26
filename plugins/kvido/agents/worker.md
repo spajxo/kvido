@@ -68,7 +68,14 @@ source_ref: "1773933088.437"
 
 ## Process
 
-1. Verify the task has not been cancelled/completed:
+1. Check WIP limit before starting:
+   ```bash
+   WIP=$(kvido task count in-progress)
+   WIP_LIMIT=$(kvido config 'skills.triage.wip_limit' '3')
+   ```
+   If WIP >= WIP_LIMIT: fail with "WIP limit reached ($WIP/$WIP_LIMIT in-progress tasks)". Tasks with non-empty `WAITING_ON` field (from `kvido task read`) do not count toward the limit.
+
+2. Verify the task has not been cancelled/completed:
    ```bash
    STATUS=$(kvido task find {{TASK_SLUG}})
    [[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0
@@ -98,7 +105,7 @@ source_ref: "1773933088.437"
 - Call source skills and tool skills (glab, acli, kvido slack, gws)
 - Call MCP tools (Atlassian, Slack, Calendar)
 - Log via `kvido log add`
-- Dispatch sub-agents (researcher, reviewer) for in-depth analysis
+- Research: read codebase, git history, Confluence (Atlassian MCP), web search
 
 ## What Worker must not do
 - Push to remote repositories without an explicit instruction in the task

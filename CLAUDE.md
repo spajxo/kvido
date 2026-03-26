@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is this
 
-A **Claude Code plugin marketplace** — not a traditional application. No compilation, no tests, no package manager. The "code" is markdown (SKILL.md, agent definitions, commands) + bash scripts.
+A **Claude Code plugin marketplace** — not a traditional application. No compilation, no tests, no package manager. The "code" is markdown (agent definitions, commands) + bash scripts.
 
 ## Marketplace layout
 
@@ -16,8 +16,7 @@ plugins/
 │   ├── agents/                    ← subagent definitions (YAML frontmatter + markdown)
 │   ├── commands/                  ← slash commands (thin wrappers → SKILL.md)
 │   ├── hooks/                     ← context-<phase>.md hook files
-│   ├── scripts/                   ← bash helper scripts (CLI, state, config, heartbeat data)
-│   └── skills/                    ← SKILL.md files (agent-facing instructions)
+│   └── scripts/                   ← bash helper scripts (CLI, state, config, heartbeat data)
 ├── kvido-gitlab/                  ← source plugin (requires glab)
 ├── kvido-jira/                    ← source plugin (requires acli or Atlassian MCP)
 ├── kvido-slack/                   ← source plugin
@@ -38,7 +37,7 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The SKILL.md for each source plugin documents the MCP fallback procedure.
 - **config.sh lives only in the core plugin** (`plugins/kvido/scripts/config.sh`). Source plugins call `kvido config 'a.b.c'` instead of maintaining their own copy. The `kvido config` CLI delegates to `scripts/config.sh`.
 - **Memory files** are accessed via `kvido memory read <name>` / `kvido memory write <name>` / `kvido memory tree` — never via hardcoded paths. This ensures subagents resolve `$KVIDO_HOME/memory/` correctly regardless of CWD.
-- **Skill files** in agent definitions are read via `cat "$(kvido --root)/skills/<name>/SKILL.md"` — never via relative paths.
+- **Agent instructions** are self-contained in `agents/*.md` files. Source plugin SKILL.md files are read by the gatherer agent at runtime.
 
 ## KVIDO_HOME
 
@@ -93,7 +92,7 @@ CLI: `kvido task <create|read|move|list|count|find|note> [args]` (delegates to `
 
 ## Working on this codebase
 
-- Edit SKILL.md and agent .md files directly — no build step
+- Edit agent .md files and commands directly — no build step
 - Slack message templates are JSON files in `plugins/kvido/scripts/slack/templates/`
 - Plugin manifests: each plugin has `.claude-plugin/plugin.json` with name, version, description
 - Marketplace manifest: `.claude-plugin/marketplace.json` lists all plugins with `./plugins/<name>` local source paths

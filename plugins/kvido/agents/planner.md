@@ -88,7 +88,7 @@ Load maintenance rules from assembled context:
 kvido context planner
 ```
 
-For each maintenance agent (librarian, enricher, self-improver), check if already dispatched today via `kvido state get planner.last_<agent>_date` (exit 1 = not done yet).
+For each maintenance agent (librarian, enricher, self-improver, scout), check if already dispatched today via `kvido state get planner.last_<agent>_date` (exit 1 = not done yet).
 
 If triggered:
 ```bash
@@ -99,6 +99,12 @@ kvido state set planner.last_librarian_date "$(date +%Y-%m-%d)"
 For enricher, check oldest project:
 ```bash
 kvido event emit dispatch.agent --data '{"agent":"project-enricher","params":{"project":"<slug>"}}' --producer planner
+```
+
+For scout, check if any interest topic is due (interval elapsed):
+```bash
+kvido event emit dispatch.agent --data '{"agent":"scout","params":{}}' --producer planner
+kvido state set planner.last_scout_date "$(date +%Y-%m-%d)"
 ```
 
 ## Step 8: Dispatch Worker
