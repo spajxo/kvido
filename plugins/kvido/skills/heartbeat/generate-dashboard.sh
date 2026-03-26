@@ -218,7 +218,6 @@ if [[ -d "$TASKS_DIR" ]]; then
       done
     fi
     for f in "${local_files[@]}"; do
-      local _base
       _base=$(basename "$f" .md)
       if [[ "$_base" =~ ^[0-9]+-(.+)$ ]]; then
         SLUG="${BASH_REMATCH[1]}"
