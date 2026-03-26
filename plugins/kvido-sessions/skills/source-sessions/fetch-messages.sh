@@ -73,7 +73,7 @@ while IFS= read -r jsonl_file; do
       end
     else empty
     end
-  ' "$jsonl_file" 2>/dev/null || true)
+  ' "$jsonl_file" 2>/dev/null || echo "ERROR: session message extraction failed for $jsonl_file (exit $?)" >&2)
 
   if [[ -n "$messages" ]]; then
     session_id=$(basename "$jsonl_file" .jsonl)

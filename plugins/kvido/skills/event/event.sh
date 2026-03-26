@@ -102,7 +102,7 @@ case "$CMD" in
         cutoff_ts="$(date -Iseconds -d "@$cutoff_epoch")"
         existing=$(jq -r --arg dk "$dedup_key" --arg ct "$cutoff_ts" \
           'select(.data.dedup_key == $dk and .ts >= $ct) | .id' \
-          "$EVENTS_FILE" 2>/dev/null | head -1 || true)
+          "$EVENTS_FILE" 2>/dev/null | head -1 || echo "ERROR: event dedup check failed (exit $?)" >&2)
         if [[ -n "$existing" ]]; then
           exit 2
         fi
@@ -213,6 +213,7 @@ case "$CMD" in
     _ensure_file
 
     if [[ -n "$through" ]]; then
+      # grep returns exit 1 when event ID not found — handled by empty check below
       line_num=$(grep -n "\"$through\"" "$EVENTS_FILE" | head -1 | cut -d: -f1 || true)
       if [[ -n "$line_num" ]]; then
         bash "$STATE_SH" set "${consumer}.cursor_offset" "$line_num"
@@ -261,7 +262,7 @@ case "$CMD" in
       before_count=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
 
       tmp="$(mktemp "${EVENTS_FILE}.tmp.XXXXXX")"
-      jq -c --arg ct "$cutoff_ts" 'select(.ts >= $ct)' "$EVENTS_FILE" > "$tmp" 2>/dev/null || true
+      jq -c --arg ct "$cutoff_ts" 'select(.ts >= $ct)' "$EVENTS_FILE" > "$tmp" 2>/dev/null || echo "ERROR: event gc jq filter failed (exit $?)" >&2
       mv "$tmp" "$EVENTS_FILE"
 
       after_count=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
@@ -269,6 +270,7 @@ case "$CMD" in
 
       # Adjust all cursor-like keys by subtracting removed lines (floor at 0)
       if [[ "$removed" -gt 0 ]]; then
+        # grep returns exit 1 when no cursor keys exist — valid for fresh installs
         for cursor_key in $(bash "$STATE_SH" list 2>/dev/null | grep -E '\.(cursor_offset|pending_cursor)$' || true); do
           old_val=$(bash "$STATE_SH" get "$cursor_key" 2>/dev/null || echo "0")
           [[ -z "$old_val" ]] && old_val=0

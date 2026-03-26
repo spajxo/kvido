@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # generate-dashboard.sh — Generates state/dashboard.html from assistant state files.
-# Called from heartbeat.sh. Must never fail fatally (heartbeat calls with || true).
+# Called from heartbeat.sh. Must never fail fatally (heartbeat logs errors to stderr).
 #
 # Data sources:
 #   1. kvido log list (unified activity log)
@@ -155,7 +155,7 @@ fi
 # Source 4: Human-readable timeline from kvido log
 # ---------------------------------------------------------------------------
 TODAY_LOG_LINES=""
-TODAY_LOG_LINES=$(bash "$LOG_SH" list --today --format human --limit 50 2>/dev/null || true)
+TODAY_LOG_LINES=$(bash "$LOG_SH" list --today --format human --limit 50 2>/dev/null || echo "ERROR: log list failed (exit $?)" >&2)
 
 # ---------------------------------------------------------------------------
 # Source 5: Local task files (work queue counts)

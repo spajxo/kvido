@@ -85,11 +85,13 @@ file_may_contain_date() {
   # First timestamp in file (skip lines without timestamp field)
   first_date=$(grep -m1 '"timestamp":"' "$file" 2>/dev/null \
     | grep -o '"timestamp":"[0-9-]*' | cut -c14- || true)
+    # grep returns exit 1 when no timestamps found — handled by empty check below
 
   # Last timestamp in file (scan last 20 lines — timestamp is usually at end of line)
   last_date=$(tail -20 "$file" 2>/dev/null \
     | grep '"timestamp":"' | tail -1 \
     | grep -o '"timestamp":"[0-9-]*' | cut -c14- || true)
+    # grep returns exit 1 when no timestamps found — handled by empty check below
 
   # No timestamps found — skip
   [[ -z "$first_date" && -z "$last_date" ]] && return 1
@@ -128,7 +130,7 @@ while IFS= read -r jsonl_file; do
     else
       "EP:" + $ep
     end
-  ' "$jsonl_file" 2>/dev/null || true)
+  ' "$jsonl_file" 2>/dev/null || echo "ERROR: session jq parsing failed for $jsonl_file (exit $?)" >&2)
 
   [[ -z "$jq_output" ]] && continue
 
@@ -164,7 +166,7 @@ while IFS= read -r jsonl_file; do
     echo "$jq_output" | grep '^TX:' | cut -c4- \
     | grep -oE '[A-Z]{2,10}-[0-9]{3,6}' \
     | sort -u | tr '\n' ',' | sed 's/,$//' \
-    || true
+    || true  # grep returns exit 1 when no tickets found — valid for non-Jira sessions
   )
 
   # Accumulate per project

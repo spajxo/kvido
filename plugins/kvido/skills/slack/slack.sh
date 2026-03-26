@@ -21,7 +21,7 @@ KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 TEMPLATES_DIR="$SCRIPT_DIR/templates"
 
 SLACK_API="https://slack.com/api"
-TOKEN=$(kvido config 'slack.bot_token' '' 2>/dev/null || true)
+TOKEN=$(kvido config 'slack.bot_token' '' 2>/dev/null || echo "ERROR: failed to read slack.bot_token config (exit $?)" >&2)
 
 if [[ -z "$TOKEN" ]]; then
   echo "Error: slack.bot_token not set in settings.json (use \"\$SLACK_BOT_TOKEN\" to reference .env)" >&2
@@ -29,7 +29,7 @@ if [[ -z "$TOKEN" ]]; then
 fi
 
 ACTION="${1:-}"
-shift || true
+shift || true  # shift may fail if no args; handled by case fallback below
 
 # If next arg looks like a Slack channel/DM ID (C.../D.../G...), consume it.
 # Otherwise fall back to slack.dm_channel_id from settings.json.
@@ -47,7 +47,7 @@ resolve_channel() {
   # 'dm' is a shorthand alias for the configured DM channel
   if [[ "${1:-}" == "dm" ]]; then
     if [[ -z "$_DEFAULT_CHANNEL" ]]; then
-      _DEFAULT_CHANNEL=$(kvido config 'slack.dm_channel_id' '' 2>/dev/null || true)
+      _DEFAULT_CHANNEL=$(kvido config 'slack.dm_channel_id' '' 2>/dev/null || echo "ERROR: failed to read slack.dm_channel_id config (exit $?)" >&2)
     fi
     if [[ -z "$_DEFAULT_CHANNEL" ]]; then
       echo "Error: channel not provided and slack.dm_channel_id not set in settings.json" >&2
@@ -58,7 +58,7 @@ resolve_channel() {
     return 0
   fi
   if [[ -z "$_DEFAULT_CHANNEL" ]]; then
-    _DEFAULT_CHANNEL=$(kvido config 'slack.dm_channel_id' '' 2>/dev/null || true)
+    _DEFAULT_CHANNEL=$(kvido config 'slack.dm_channel_id' '' 2>/dev/null || echo "ERROR: failed to read slack.dm_channel_id config (exit $?)" >&2)
   fi
   if [[ -z "$_DEFAULT_CHANNEL" ]]; then
     echo "Error: channel not provided and slack.dm_channel_id not set in settings.json" >&2
@@ -94,7 +94,9 @@ slack_message() {
     echo "Error: $(echo "$result" | jq -r '.error')" >&2
     exit 1
   fi
-  [[ "$return_ts" == "true" ]] && echo "$result" | jq -r '.ts' || true
+  if [[ "$return_ts" == "true" ]]; then
+    echo "$result" | jq -r '.ts' || echo "ERROR: failed to parse message ts from Slack response (exit $?)" >&2
+  fi
 }
 
 # Parse --var arguments and render template through jq
@@ -148,7 +150,7 @@ build_blocks() {
     unresolved=$(echo "$rendered" | jq -r '
       [.. | strings | [capture("\\{\\{(?<var>[^}]+)\\}\\}"; "g")] | .[].var]
       | unique | .[]
-    ' 2>/dev/null || true)
+    ' 2>/dev/null || echo "ERROR: failed to check unresolved template variables (exit $?)" >&2)
     if [[ -n "$unresolved" ]]; then
       echo "Error: template '$template_name' has unresolved variables: $(echo "$unresolved" | tr '\n' ', ' | sed 's/,$//')" >&2
       echo "Hint: pass --var <name>=<value> for each variable" >&2
@@ -236,17 +238,17 @@ case "$ACTION" in
       # Thread replies fetched for qualifying threads (reply_count>0), indented with ┗ prefix
       # Reactions from conversations.history natively — no extra API calls
       LAST_CHAT_TS="${LAST_CHAT_TS_ARG:-}"
-      MESSAGES_JSON=$(echo "$RAW" | jq -c '(.messages // []) | reverse | .[]' || true)
+      MESSAGES_JSON=$(echo "$RAW" | jq -c '(.messages // []) | reverse | .[]' || echo "ERROR: failed to parse Slack messages JSON (exit $?)" >&2)
       THREAD_COUNT=0
       while IFS= read -r MSG; do
         [[ -z "$MSG" ]] && continue
-        TS=$(echo "$MSG" | jq -r '.ts' || true)
-        USER=$(echo "$MSG" | jq -r '.user // "unknown"' || true)
-        TEXT=$(echo "$MSG" | jq -r '(.text // "") | gsub("\n"; " ") | gsub("\""; "\\\"")' || true)
-        REACTIONS=$(echo "$MSG" | jq -r 'if (.reactions // []) | length > 0 then " reactions=" + ([.reactions[].name] | join(",")) else "" end' || true)
+        TS=$(echo "$MSG" | jq -r '.ts' || echo "ERROR: failed to parse message ts (exit $?)" >&2)
+        USER=$(echo "$MSG" | jq -r '.user // "unknown"' || echo "ERROR: failed to parse message user (exit $?)" >&2)
+        TEXT=$(echo "$MSG" | jq -r '(.text // "") | gsub("\n"; " ") | gsub("\""; "\\\"")' || echo "ERROR: failed to parse message text (exit $?)" >&2)
+        REACTIONS=$(echo "$MSG" | jq -r 'if (.reactions // []) | length > 0 then " reactions=" + ([.reactions[].name] | join(",")) else "" end' || echo "ERROR: failed to parse message reactions (exit $?)" >&2)
         REPLY_COUNT=$(echo "$MSG" | jq -r '.reply_count // 0' || echo 0)
-        LATEST_REPLY=$(echo "$MSG" | jq -r '.latest_reply // ""' || true)
-        THREAD_TS_VAL=$(echo "$MSG" | jq -r 'if .thread_ts != null and .thread_ts != .ts then .thread_ts else "" end' || true)
+        LATEST_REPLY=$(echo "$MSG" | jq -r '.latest_reply // ""' || echo "ERROR: failed to parse latest_reply (exit $?)" >&2)
+        THREAD_TS_VAL=$(echo "$MSG" | jq -r 'if .thread_ts != null and .thread_ts != .ts then .thread_ts else "" end' || echo "ERROR: failed to parse thread_ts (exit $?)" >&2)
 
         LINE="ts=$TS user=$USER text=\"$TEXT\"$REACTIONS"
         [[ -n "$THREAD_TS_VAL" ]] && LINE="$LINE thread_ts=$THREAD_TS_VAL"
@@ -378,7 +380,7 @@ case "$ACTION" in
   download)
     [[ $# -lt 1 ]] && { echo "Usage: slack.sh download <url_private> [output_dir]" >&2; exit 1; }
     URL_PRIVATE="$1"; shift
-    OUTPUT_DIR="${1:-/tmp}"; shift 2>/dev/null || true
+    OUTPUT_DIR="${1:-/tmp}"; shift 2>/dev/null || true  # shift may fail if no output_dir arg; default already captured
     FILENAME=$(basename "$URL_PRIVATE" | cut -d'?' -f1)
     [[ -z "$FILENAME" ]] && FILENAME="slack-file-$(date +%s)"
     OUTPUT_PATH="$OUTPUT_DIR/$FILENAME"

@@ -32,5 +32,5 @@ if [[ -x "$DISCOVER" ]]; then
       cat "$HOOK_FILE"
       echo ""
     fi
-  done < <(bash "$DISCOVER" 2>/dev/null || true)
+  done < <(bash "$DISCOVER" 2>/dev/null || echo "ERROR: discover-sources.sh failed (exit $?)" >&2)
 fi

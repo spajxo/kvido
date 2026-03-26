@@ -117,6 +117,7 @@ _list_keys() {
         echo "ERROR: Failed to list keys from config file: $CONFIG_FILE" >&2
         return 2
     }
+    # grep returns exit 1 when no matches — valid when all keys start with '_'
     echo "$raw" | grep -v '^_' || true
 }
 

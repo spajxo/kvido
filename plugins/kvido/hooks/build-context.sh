@@ -25,6 +25,7 @@ fi
 # State summary
 if [[ -f "$KVIDO_HOME/state/current.md" ]]; then
   FOCUS=$(grep -A1 "## Active Focus" "$KVIDO_HOME/state/current.md" 2>/dev/null | tail -1 || echo "")
+  # grep -c outputs "0" and exits 1 when no matches — valid for empty WIP section
   WIP_COUNT=$(sed -n '/## Work in Progress/,/## /p' "$KVIDO_HOME/state/current.md" 2>/dev/null | grep -c "^\- " 2>/dev/null || true)
   echo "## State"
   echo "- Focus: ${FOCUS:-none}"
@@ -44,4 +45,4 @@ fi
 echo ""
 
 # Plugin session context contributions
-bash "$PLUGIN_ROOT/skills/context/context.sh" session 2>/dev/null || true
+bash "$PLUGIN_ROOT/skills/context/context.sh" session 2>/dev/null || echo "ERROR: context.sh session failed (exit $?)" >&2

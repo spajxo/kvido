@@ -10,7 +10,7 @@ PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 
 # Lazy migration — runs once if old state files exist
-kvido migrate 2>/dev/null || true
+kvido migrate 2>/dev/null || echo "ERROR: kvido migrate failed (exit $?)" >&2
 
 TIMESTAMP="$(date -Iseconds)"
 HOUR=$(date +%-H)
@@ -130,7 +130,7 @@ fi
 # 1. Try kvido config 'slack.user_id' (resolves $SLACK_USER_ID from .env)
 # 2. Fall back to $SLACK_USER_ID env var directly
 # 3. Fall back to cached value in state (heartbeat.owner_user_id)
-OWNER_USER_ID=$($CONFIG 'slack.user_id' '' 2>/dev/null || true)
+OWNER_USER_ID=$($CONFIG 'slack.user_id' '' 2>/dev/null || echo "ERROR: failed to read slack.user_id config (exit $?)" >&2)
 if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
   OWNER_USER_ID="${SLACK_USER_ID:-}"
 fi
@@ -185,10 +185,10 @@ fi
 kvido state increment heartbeat.iteration_count
 kvido state set heartbeat.last_heartbeat "$TIMESTAMP"
 
-# Dashboard generation (never fails heartbeat — || true)
+# Dashboard generation (non-fatal — log errors to stderr)
 DASH_ENABLED=$($CONFIG 'skills.dashboard.enabled' 'true')
 if [[ "$DASH_ENABLED" != "false" ]]; then
-  "$SCRIPT_DIR/generate-dashboard.sh" 2>/dev/null || true
+  "$SCRIPT_DIR/generate-dashboard.sh" 2>/dev/null || echo "ERROR: generate-dashboard.sh failed (exit $?)" >&2
 fi
 
 # Read pending dispatch events for heartbeat to process
