@@ -11,7 +11,7 @@ user-invocable: false
 
 # Source: Jira
 
-> **Note:** This source plugin is always invoked by the core kvido planner agent. All `skills/worker/` paths refer to scripts in the core kvido plugin (resolved from the agent's working context).
+> **Note:** This source plugin is always invoked by the core kvido planner agent. All `scripts/worker/` paths refer to scripts in the core kvido plugin (resolved from the agent's working context).
 
 ## Capabilities
 

@@ -66,7 +66,7 @@ if [[ -n "$SLEEP_UNTIL" && "$SLEEP_UNTIL" != "null" ]]; then
 fi
 
 # Load adaptive rules from central settings.json via config.sh
-CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
+CONFIG="$PLUGIN_ROOT/scripts/config.sh"
 
 WH_START=$($CONFIG 'skills.heartbeat.wh_start')
 WH_END=$($CONFIG 'skills.heartbeat.wh_end')
@@ -147,7 +147,7 @@ fi
 # Format per top-level msg: ts=... user=... text="..." [reactions=emoji1,emoji2] [reply_count=N] [latest_reply=...]
 # Thread replies (qualifying threads): indented with "  ┗ ts=... user=... text="..." [reactions=...]"
 # Pass --oldest with last_chat_ts so slack.sh knows which threads qualify for reply fetching
-SLACK_SH="$PLUGIN_ROOT/skills/slack/slack.sh"
+SLACK_SH="$PLUGIN_ROOT/scripts/slack/slack.sh"
 LAST_CHAT_TS=$(kvido state get heartbeat.last_chat_ts 2>/dev/null || echo "")
 # Pass last_chat_ts via --last-chat-ts so slack.sh can qualify threads with new replies
 # (threads where latest_reply > last_chat_ts get their replies fetched inline)

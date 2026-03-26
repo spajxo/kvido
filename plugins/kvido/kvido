@@ -10,9 +10,9 @@
 # Usage:
 #   kvido                                     # launch Claude with /loop 10m /kvido:heartbeat
 #   kvido heartbeat                           # run heartbeat data gather
-#   kvido task list todo                      # shortcut for skills/worker/task.sh
-#   kvido state set heartbeat.key value        # shortcut for skills/state/state.sh
-#   kvido config 'sources.gitlab.repos'       # shortcut for skills/config.sh
+#   kvido task list todo                      # shortcut for scripts/worker/task.sh
+#   kvido state set heartbeat.key value        # shortcut for scripts/state/state.sh
+#   kvido config 'sources.gitlab.repos'       # shortcut for scripts/config.sh
 #   kvido --root                              # print plugin root path
 #   kvido --install                           # install wrapper to ~/.local/bin/kvido
 #   kvido --help|-h                           # show this help
@@ -20,8 +20,8 @@
 # Routing:
 #   --root / --install / --help|-h  → built-in commands
 #   <empty>                → default Claude command (/kvido:heartbeat)
-#   skills/* / agents/*   → direct dispatch (backward compat)
-#   <name> [args]         → auto-resolve script by name from skills/
+#   scripts/* / agents/*  → direct dispatch (backward compat)
+#   <name> [args]         → auto-resolve script by name from scripts/
 #   everything else       → error
 # =============================================================================
 
@@ -162,7 +162,7 @@ Commands:
   current <get|set>                 Read/write current focus (state/current.md)
   migrate                           Run lazy state migration (heartbeat-state/planner-state → state)
   context <phase>                   Assemble plugin context for a lifecycle phase
-  skills/<script>.sh [args]         Direct script dispatch (backward compat)
+  scripts/<script>.sh [args]        Direct script dispatch (backward compat)
   agents/<script>.sh [args]         Direct agent dispatch (backward compat)
 
 Flags:
@@ -260,7 +260,7 @@ WRAPPER
       *) echo "ERROR: Unsupported platform. Open manually: $_DASHBOARD" >&2; exit 1 ;;
     esac
     ;;
-  skills/*|agents/*)
+  scripts/*|agents/*)
     # Script dispatch — resolve to plugin install path
     TARGET="$KVIDO_ROOT/$1"
     shift
@@ -271,16 +271,16 @@ WRAPPER
     exec bash "$TARGET" "$@"
     ;;
   *)
-    # Try auto-resolve as short command name → skills/*.sh
+    # Try auto-resolve as short command name → scripts/*.sh
     if [[ $# -gt 0 ]]; then
       _RESOLVED=""
       _NAME="${1%.sh}"
-      if [[ -f "$KVIDO_ROOT/skills/$_NAME.sh" ]]; then
-        _RESOLVED="$KVIDO_ROOT/skills/$_NAME.sh"
-      elif [[ -f "$KVIDO_ROOT/skills/$_NAME/$_NAME.sh" ]]; then
-        _RESOLVED="$KVIDO_ROOT/skills/$_NAME/$_NAME.sh"
+      if [[ -f "$KVIDO_ROOT/scripts/$_NAME.sh" ]]; then
+        _RESOLVED="$KVIDO_ROOT/scripts/$_NAME.sh"
+      elif [[ -f "$KVIDO_ROOT/scripts/$_NAME/$_NAME.sh" ]]; then
+        _RESOLVED="$KVIDO_ROOT/scripts/$_NAME/$_NAME.sh"
       else
-        _MATCH=$(find "$KVIDO_ROOT/skills" -name "$_NAME.sh" -type f 2>/dev/null | head -1)
+        _MATCH=$(find "$KVIDO_ROOT/scripts" -name "$_NAME.sh" -type f 2>/dev/null | head -1)
         [[ -n "$_MATCH" ]] && _RESOLVED="$_MATCH"
       fi
 

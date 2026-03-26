@@ -13,7 +13,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CONFIG="$(cd "$SCRIPT_DIR/.." && pwd)/config.sh"
+CONFIG="$PLUGIN_ROOT/scripts/config.sh"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 STATE_DIR="${KVIDO_HOME}/state"
 OUTPUT="$STATE_DIR/dashboard.html"
@@ -32,7 +32,7 @@ WARNINGS=()
 # ---------------------------------------------------------------------------
 # Source 1: kvido log (unified activity log)
 # ---------------------------------------------------------------------------
-LOG_SH="$PLUGIN_ROOT/skills/log/log.sh"
+LOG_SH="$PLUGIN_ROOT/scripts/log/log.sh"
 TIMELINE_JSON="[]"
 TOKEN_STATS_JSON="[]"
 TOTAL_TOKENS=0
@@ -160,7 +160,7 @@ TODAY_LOG_LINES=$(bash "$LOG_SH" list --today --format human --limit 50 2>/dev/n
 # ---------------------------------------------------------------------------
 # Source 5: Local task files (work queue counts)
 # ---------------------------------------------------------------------------
-TASK_SH="$PLUGIN_ROOT/skills/worker/task.sh"
+TASK_SH="$PLUGIN_ROOT/scripts/worker/task.sh"
 WQ_PROGRESS=0
 WQ_TODO=0
 WQ_TRIAGE=0

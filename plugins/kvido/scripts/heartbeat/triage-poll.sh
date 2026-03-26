@@ -8,8 +8,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SLACK_SH="$PLUGIN_ROOT/skills/slack/slack.sh"
-TASK_SH="$PLUGIN_ROOT/skills/worker/task.sh"
+SLACK_SH="$PLUGIN_ROOT/scripts/slack/slack.sh"
+TASK_SH="$PLUGIN_ROOT/scripts/worker/task.sh"
 
 # Read input from stdin
 INPUT=$(cat)

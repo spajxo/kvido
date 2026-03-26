@@ -1,13 +1,4 @@
----
-name: slack
-description: Use when sending Slack messages, formatting Block Kit payloads, or managing thread delivery.
-tool-type: interactive
-cli: kvido slack
-allowed-tools: Read, Bash
-user-invocable: false
----
-
-# Slack
+# Slack CLI Reference
 
 Slack is the primary communication channel. All messages go through `kvido slack` (wraps `slack.sh` over the Slack Web API with curl + jq and a bot token).
 Delivery ownership is defined in the Orchestration Contract (session context). `kvido slack` is the LLM-facing Slack interface.
@@ -102,7 +93,7 @@ Flat messages as default. Threading applies in these cases:
 
 ## Focus Mode
 
-Read `kvido config 'focus_mode'`. Unchanged — suppress, batching, after_focus_summary work identically.
+Read `kvido config 'skills.planner.focus_mode.enabled'`. Unchanged — suppress, batching, after_focus_summary work identically.
 
 ## Batching
 

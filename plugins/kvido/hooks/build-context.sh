@@ -45,4 +45,4 @@ fi
 echo ""
 
 # Plugin session context contributions
-bash "$PLUGIN_ROOT/skills/context/context.sh" session 2>/dev/null || echo "ERROR: context.sh session failed (exit $?)" >&2
+bash "$PLUGIN_ROOT/scripts/context/context.sh" session 2>/dev/null || echo "ERROR: context.sh session failed (exit $?)" >&2

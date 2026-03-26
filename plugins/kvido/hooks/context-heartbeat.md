@@ -26,7 +26,7 @@ When heartbeat detects a new chat message:
 
 - chat-reply → always immediate
 - event, reminder, worker-report, triage-item, maintenance → use template mapping
-- normal + focus_mode=on → batch
+- normal + `skills.planner.focus_mode.enabled`=true → batch
 - low → silent
 - everything else → immediate
 - shell failure → log error, mark notify TODO completed

@@ -19,7 +19,7 @@ You are the notifier — the single gateway for all user-facing communication. D
 2. Read dispatch events that triggered this run (passed as context by heartbeat)
 3. Load notification rules: `kvido context planner`
 4. Read current focus: `kvido current get`
-5. Check focus mode: `kvido config 'focus_mode'` and check calendar for active focus events
+5. Check focus mode: `kvido config 'skills.planner.focus_mode.enabled'` and check calendar for active focus events
 
 ## Step 1b: Read All Unprocessed Events
 

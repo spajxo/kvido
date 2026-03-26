@@ -17,7 +17,7 @@ KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 EVENTS_FILE="${KVIDO_HOME}/state/events.jsonl"
 LOCK_FILE="${EVENTS_FILE}.lock"
 LOCK_TIMEOUT=10
-STATE_SH="$(cd "$SCRIPT_DIR/.." && pwd)/state/state.sh"
+STATE_SH="$(cd "$SCRIPT_DIR/../.." && pwd)/scripts/state/state.sh"
 
 _ensure_file() {
   mkdir -p "$(dirname "$EVENTS_FILE")"

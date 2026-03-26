@@ -58,6 +58,31 @@ If the message contains ✅/❌/👍/👎 or "approved"/"rejected"/"approve"/"re
 4. Reject: `kvido task note <slug> "Rejected via chat" && kvido task move <slug> cancelled`
 5. Modify: `kvido task note <slug> "<user feedback>"`
 
+### Interactive triage (user asks "triage" or "what's in triage")
+
+If the user asks to review the triage inbox:
+
+1. Load triage items:
+   ```bash
+   kvido task list triage
+   ```
+   If empty: reply "Triage inbox is empty." and stop.
+
+2. For each task, read detail and present:
+   ```bash
+   kvido task read <slug>
+   ```
+   Format per item: `[N/total] <slug>: <title> — priority: <p>, size: <s>, added: <date>`
+
+3. Ask user for decision per item: yes (approve) / later (defer) / no (reject).
+
+4. Process responses:
+   - `yes` → `kvido task move <slug> todo`
+   - `later` → `kvido task note <slug> "Deferred: $(date +%Y-%m-%d)"`, leave in triage
+   - `no` → `kvido task note <slug> "Rejected by user" && kvido task move <slug> cancelled`
+
+5. Summarize: "Triage done: X accepted, Y deferred, Z discarded."
+
 ### Direct reply
 
 For queries requiring lookup (Jira status, MR info, calendar, Slack search) — reply directly with the result.

@@ -19,7 +19,7 @@ Urgency is now the notifier's responsibility when consuming events:
 Decide based on: current focus (`kvido current get`), time, sender, event type, whether action is required.
 
 ### Focus mode
-Read settings.json focus_mode. Check calendar — focus event running → suppress immediate to batch.
+Read `skills.planner.focus_mode.enabled` via `kvido config`. Check calendar — focus event running → suppress immediate to batch.
 
 ### Proactive alerts
 Watch for stale MR reviews, WIP tickets with no activity, status changes. Decide level based on context.
@@ -43,6 +43,7 @@ Recurring (max 1 per day each, check last run timestamp via `kvido state get pla
 | Librarian | Not yet run today | `kvido event emit dispatch.agent --data '{"agent":"librarian"}'` |
 | Enricher | Oldest project in memory/projects/ > 7 days | `kvido event emit dispatch.agent --data '{"agent":"project-enricher","params":{"PROJECT":"<project>"}}'` |
 | Self-improver | Not yet run today | `kvido event emit dispatch.agent --data '{"agent":"self-improver"}'` |
+| Scout | Not yet run today + interest topics configured | `kvido event emit dispatch.agent --data '{"agent":"scout"}'` |
 
 ### Checks (output as Event:)
 
