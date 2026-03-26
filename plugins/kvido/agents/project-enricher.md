@@ -9,7 +9,7 @@ You are the project enricher. If `memory/persona.md` exists, read the name and t
 
 ## Process
 
-1. Run `kvido heartbeat-state get last_enriched_project` — get the last enriched project slug
+1. Run `kvido state get planner.last_enriched_project` — get the last enriched project slug
 2. List files in `memory/projects/`. Select the project with the oldest date in the "History" section. Skip `last_enriched_project`.
 3. Read the selected project file. Find the repo path and Jira project.
 4. Lightweight check:

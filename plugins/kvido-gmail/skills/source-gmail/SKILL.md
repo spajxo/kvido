@@ -28,13 +28,13 @@ Output: human-readable summary — from, subject, date, snippet. Max `max_result
 Quick check of unread count from priority senders since last check.
 If `gws` not available, use the MCP fallback from the fetch section above with a narrower query.
 If new important email (from priority_senders) → emit event for heartbeat.
-Event key pattern: `email:<message_id>` — for dedup in heartbeat-state.json.
+Event key pattern: `email:<message_id>` — for dedup via kvido event emit --dedup-key.
 
 ### health
 ```bash
 gws gmail users getProfile me
 ```
-Result via `kvido source-health set gmail <status>`.
+Result via `kvido state set source-health.gmail.status <status>` + `kvido state set source-health.gmail.timestamp "$(date -Iseconds)"`.
 
 ## Schedule
 - morning: `fetch` (unread inbox)

@@ -49,7 +49,7 @@ Decide based on context — who's writing, what they need, how urgent it is.
 
 Always update timestamp after processing:
 ```bash
-kvido heartbeat-state set last_dm_ts "<newest ts>"
+kvido state set heartbeat.last_dm_ts "<newest ts>"
 ```
 
 ### watch-channels

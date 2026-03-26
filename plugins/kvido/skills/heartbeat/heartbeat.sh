@@ -1,27 +1,21 @@
 #!/usr/bin/env bash
-# heartbeat.sh — Pure data gathering: time, zone, adaptive interval, Slack DM read, worker queue check, state update.
+# heartbeat.sh — Pure data gathering: time, zone, adaptive interval, Slack DM read, state update.
 # Orchestration logic (dispatch tracking, dependencies) is in heartbeat.md via TaskCreate/TaskUpdate.
-# Output: key=value lines + CHAT_MESSAGES block for LLM consumption.
+# Output: key=value lines + CHAT_MESSAGES block + DISPATCH_EVENTS block for LLM consumption.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-STATE_FILE="${KVIDO_HOME}/state/heartbeat-state.json"
+
+# Lazy migration — runs once if old state files exist
+kvido migrate 2>/dev/null || true
 
 TIMESTAMP="$(date -Iseconds)"
 HOUR=$(date +%-H)
 
-# Fix 3: JSON guard — validate STATE_FILE before parsing, reset to {} if invalid
-if [[ -f "$STATE_FILE" ]]; then
-  if ! jq empty "$STATE_FILE" 2>/dev/null; then
-    echo '{}' > "$STATE_FILE"
-  fi
-  ITERATION=$(jq -r '.iteration_count // 0' "$STATE_FILE" 2>/dev/null || echo 0)
-else
-  ITERATION=0
-fi
+ITERATION=$(kvido state get heartbeat.iteration_count 2>/dev/null || echo 0)
 
 # Night detection (informational only — no tier logic)
 if (( HOUR >= 16 || HOUR < 6 )); then
@@ -31,11 +25,11 @@ else
 fi
 
 # Adaptive interval — calculate TARGET_PRESET
-ACTIVE_PRESET=$(jq -r '.active_preset // "10m"' "$STATE_FILE" 2>/dev/null || echo "10m")
-LAST_INTERACTION_TS=$(jq -r '.last_interaction_ts // ""' "$STATE_FILE" 2>/dev/null || echo "")
-CRON_JOB_ID=$(jq -r '.cron_job_id // ""' "$STATE_FILE" 2>/dev/null || echo "")
-TURBO_UNTIL=$(jq -r '.turbo_until // ""' "$STATE_FILE" 2>/dev/null || echo "")
-SLEEP_UNTIL=$(jq -r '.sleep_until // ""' "$STATE_FILE" 2>/dev/null || echo "")
+ACTIVE_PRESET=$(kvido state get heartbeat.active_preset 2>/dev/null || echo "10m")
+LAST_INTERACTION_TS=$(kvido state get heartbeat.last_interaction_ts 2>/dev/null || echo "")
+CRON_JOB_ID=$(kvido state get heartbeat.cron_job_id 2>/dev/null || echo "")
+TURBO_UNTIL=$(kvido state get heartbeat.turbo_until 2>/dev/null || echo "")
+SLEEP_UNTIL=$(kvido state get heartbeat.sleep_until 2>/dev/null || echo "")
 
 NOW_S=$(date +%s)
 
@@ -54,7 +48,7 @@ if [[ -n "$TURBO_UNTIL" && "$TURBO_UNTIL" != "null" ]]; then
     TURBO_ACTIVE="true"
   else
     # Turbo expired — clear it
-    "$SCRIPT_DIR/heartbeat-state.sh" set turbo_until ""
+    kvido state set heartbeat.turbo_until ""
   fi
 fi
 
@@ -66,7 +60,7 @@ if [[ -n "$SLEEP_UNTIL" && "$SLEEP_UNTIL" != "null" ]]; then
     SLEEP_ACTIVE="true"
   else
     # Sleep expired — clear it
-    "$SCRIPT_DIR/heartbeat-state.sh" set sleep_until ""
+    kvido state set heartbeat.sleep_until ""
     SLEEP_UNTIL=""
   fi
 fi
@@ -126,37 +120,35 @@ else
   fi
 fi
 
-# Planner dispatch check — planner iterations are "full" heartbeats
+# Planner dispatch — emit event instead of setting PLANNER_DUE flag
 PLANNING_INTERVAL=$($CONFIG 'skills.planner.planning_interval')
 if (( ITERATION % PLANNING_INTERVAL == 0 )); then
-  PLANNER_DUE="true"
-else
-  PLANNER_DUE="false"
+  kvido event emit dispatch.planner --producer heartbeat >/dev/null
 fi
 
 # --- Resolve owner user ID ---
 # 1. Try kvido config 'slack.user_id' (resolves $SLACK_USER_ID from .env)
 # 2. Fall back to $SLACK_USER_ID env var directly
-# 3. Fall back to cached value in heartbeat-state (owner_user_id)
+# 3. Fall back to cached value in state (heartbeat.owner_user_id)
 OWNER_USER_ID=$($CONFIG 'slack.user_id' '' 2>/dev/null || true)
 if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
   OWNER_USER_ID="${SLACK_USER_ID:-}"
 fi
 if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
-  OWNER_USER_ID=$(jq -r '.owner_user_id // ""' "$STATE_FILE" 2>/dev/null || echo "")
+  OWNER_USER_ID=$(kvido state get heartbeat.owner_user_id 2>/dev/null || echo "")
 fi
 if [[ -z "$OWNER_USER_ID" || "$OWNER_USER_ID" == "null" ]]; then
   echo "WARNING: slack.user_id not configured — message annotation disabled. Set SLACK_USER_ID in .env or slack.user_id in settings.json." >&2
 fi
 
-# --- Extended: Chat messages, worker check, state update ---
+# --- Extended: Chat messages, state update ---
 
 # Read last 15 Slack DM messages in heartbeat format (compact key=value lines)
 # Format per top-level msg: ts=... user=... text="..." [reactions=emoji1,emoji2] [reply_count=N] [latest_reply=...]
 # Thread replies (qualifying threads): indented with "  ┗ ts=... user=... text="..." [reactions=...]"
 # Pass --oldest with last_chat_ts so slack.sh knows which threads qualify for reply fetching
 SLACK_SH="$PLUGIN_ROOT/skills/slack/slack.sh"
-LAST_CHAT_TS=$(jq -r '.last_chat_ts // ""' "$STATE_FILE" 2>/dev/null || echo "")
+LAST_CHAT_TS=$(kvido state get heartbeat.last_chat_ts 2>/dev/null || echo "")
 # Pass last_chat_ts via --last-chat-ts so slack.sh can qualify threads with new replies
 # (threads where latest_reply > last_chat_ts get their replies fetched inline)
 # Note: --last-chat-ts does NOT filter history API — all 15 messages are returned,
@@ -189,19 +181,18 @@ if [[ -n "$OWNER_USER_ID" && -n "$CHAT_MESSAGES" ]]; then
   CHAT_MESSAGES="${ANNOTATED%$'\n'}"
 fi
 
-# Check next worker task (returns slug or empty)
-TASK_SH="$PLUGIN_ROOT/skills/worker/task.sh"
-NEXT_TASK=$("$TASK_SH" list todo --sort priority 2>/dev/null | head -1 || echo "")
-
 # Update state — increment iteration and set last_heartbeat
-"$SCRIPT_DIR/heartbeat-state.sh" increment iteration_count
-"$SCRIPT_DIR/heartbeat-state.sh" set last_heartbeat "$TIMESTAMP"
+kvido state increment heartbeat.iteration_count
+kvido state set heartbeat.last_heartbeat "$TIMESTAMP"
 
 # Dashboard generation (never fails heartbeat — || true)
 DASH_ENABLED=$($CONFIG 'skills.dashboard.enabled' 'true')
 if [[ "$DASH_ENABLED" != "false" ]]; then
   "$SCRIPT_DIR/generate-dashboard.sh" 2>/dev/null || true
 fi
+
+# Read pending dispatch events for heartbeat to process
+DISPATCH_EVENTS=$(kvido event read --consumer heartbeat --type 'dispatch.*' 2>/dev/null || echo "")
 
 # --- Output ---
 
@@ -217,8 +208,6 @@ echo "TARGET_PRESET=$TARGET_PRESET"
 echo "ACTIVE_PRESET=$ACTIVE_PRESET"
 echo "CRON_JOB_ID=$CRON_JOB_ID"
 echo "INTERACTION_AGO_MIN=$INTERACTION_AGO_MIN"
-echo "PLANNER_DUE=$PLANNER_DUE"
-echo "NEXT_TASK=$NEXT_TASK"
 echo "OWNER_USER_ID=$OWNER_USER_ID"
 # CHAT_MESSAGES is compact key=value lines (--heartbeat format), output last
 # Top-level: ts=... user:|bot: text="..." [reactions=...] [reply_count=N] [latest_reply=...]
@@ -228,3 +217,6 @@ echo "OWNER_USER_ID=$OWNER_USER_ID"
 echo "CHAT_MESSAGES_START"
 echo "$CHAT_MESSAGES"
 echo "CHAT_MESSAGES_END"
+echo "DISPATCH_EVENTS_START"
+echo "$DISPATCH_EVENTS"
+echo "DISPATCH_EVENTS_END"

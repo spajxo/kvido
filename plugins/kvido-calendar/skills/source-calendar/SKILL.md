@@ -24,13 +24,13 @@ Returns pre-categorized data per settings.json `categories` + total meeting time
 3. Format output: `- HH:MM–HH:MM — Summary [category]` per event, then total count
 
 ### watch
-If `kvido planner-state schedule get` returns a `## Today's Schedule` section (written by morning run), use existing data.
+If `kvido state get planner.schedule` returns a `## Today's Schedule` section (written by morning run), use existing data.
 Otherwise run `fetch.sh`. If it returns exit code 10, follow the MCP fallback from the fetch section above.
 Filter meetings starting in the next 60 min → reminder event.
 
 ## Schedule
-- morning: fetch (today), write schedule via `echo "<schedule text>" | kvido planner-state schedule set`
+- morning: fetch (today), write schedule via `kvido state set planner.schedule "<text>"`
 - heartbeat-quick: skip
 - heartbeat-full: watch (meetings in next 60 min)
 - heartbeat-maintenance: skip
-- eod: skip (schedule data already stored via kvido planner-state schedule)
+- eod: skip (schedule data already stored via kvido state)

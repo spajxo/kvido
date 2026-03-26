@@ -4,7 +4,7 @@
 #
 # Data sources:
 #   1. kvido log list (unified activity log)
-#   2. state/heartbeat-state.json
+#   2. kvido state (heartbeat.* keys)
 #   3. state/current.md
 #   4. state/tasks/ (local task files)
 #   5. state/tasks/*/*.md (full task data for task list/detail view)
@@ -45,9 +45,8 @@ TOTAL_TOKENS=$(echo "$TOKEN_STATS_JSON" | jq '[.[].tokens] | add // 0' 2>/dev/nu
 TOTAL_RUNS=$(echo "$TOKEN_STATS_JSON" | jq '[.[].runs] | add // 0' 2>/dev/null || echo 0)
 
 # ---------------------------------------------------------------------------
-# Source 2: heartbeat-state.json
+# Source 2: heartbeat state (via kvido state CLI)
 # ---------------------------------------------------------------------------
-HB_FILE="$STATE_DIR/heartbeat-state.json"
 ITERATION=0
 ACTIVE_PRESET="?"
 LAST_HEARTBEAT=""
@@ -55,21 +54,17 @@ SLEEP_UNTIL=""
 TURBO_UNTIL=""
 INTERACTION_AGO="?"
 
-if [[ -f "$HB_FILE" ]] && jq empty "$HB_FILE" 2>/dev/null; then
-  ITERATION=$(jq -r '.iteration_count // 0' "$HB_FILE")
-  ACTIVE_PRESET=$(jq -r '.active_preset // "?"' "$HB_FILE")
-  LAST_HEARTBEAT=$(jq -r '.last_heartbeat // .last_quick // ""' "$HB_FILE")
-  SLEEP_UNTIL=$(jq -r '.sleep_until // ""' "$HB_FILE")
-  TURBO_UNTIL=$(jq -r '.turbo_until // ""' "$HB_FILE")
+ITERATION=$(kvido state get heartbeat.iteration_count 2>/dev/null || echo 0)
+ACTIVE_PRESET=$(kvido state get heartbeat.active_preset 2>/dev/null || echo "?")
+LAST_HEARTBEAT=$(kvido state get heartbeat.last_heartbeat 2>/dev/null || kvido state get heartbeat.last_quick 2>/dev/null || echo "")
+SLEEP_UNTIL=$(kvido state get heartbeat.sleep_until 2>/dev/null || echo "")
+TURBO_UNTIL=$(kvido state get heartbeat.turbo_until 2>/dev/null || echo "")
 
-  LAST_INTERACTION_TS=$(jq -r '.last_interaction_ts // ""' "$HB_FILE")
-  if [[ -n "$LAST_INTERACTION_TS" && "$LAST_INTERACTION_TS" != "null" ]]; then
-    INTERACTION_S=$(date -d "$LAST_INTERACTION_TS" +%s 2>/dev/null || echo 0)
-    NOW_S=$(date +%s)
-    INTERACTION_AGO="$(( (NOW_S - INTERACTION_S) / 60 ))m"
-  fi
-else
-  WARNINGS+=("heartbeat-state.json missing or invalid")
+LAST_INTERACTION_TS=$(kvido state get heartbeat.last_interaction_ts 2>/dev/null || echo "")
+if [[ -n "$LAST_INTERACTION_TS" && "$LAST_INTERACTION_TS" != "null" ]]; then
+  INTERACTION_S=$(date -d "$LAST_INTERACTION_TS" +%s 2>/dev/null || echo 0)
+  NOW_S=$(date +%s)
+  INTERACTION_AGO="$(( (NOW_S - INTERACTION_S) / 60 ))m"
 fi
 
 # Determine zone
