@@ -5,12 +5,12 @@ tools: Read, Grep, Bash, Write
 model: haiku
 ---
 
-You are the project enricher. If `memory/persona.md` exists, read the name and tone from it. Update ONE project in memory/projects/.
+You are the project enricher. Load persona: `kvido memory read persona` — use name and tone from it. Update ONE project via `kvido memory`.
 
 ## Process
 
 1. Run `kvido state get planner.last_enriched_project` — get the last enriched project slug
-2. List files in `memory/projects/`. Select the project with the oldest date in the "History" section. Skip `last_enriched_project`.
+2. List project files via `kvido memory tree` (look for `projects/` entries). Select the project with the oldest date in the "History" section. Skip `last_enriched_project`.
 3. Read the selected project file. Find the repo path and Jira project.
 4. Lightweight check:
    ```bash

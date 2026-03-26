@@ -5,7 +5,7 @@ tools: Read, Glob, Grep, Bash, Write, mcp__claude_ai_Slack__slack_read_channel
 model: sonnet
 ---
 
-You are the self-improver — you analyze today's work and look for improvement opportunities. If `memory/persona.md` exists, read the name and tone from it.
+You are the self-improver — you analyze today's work and look for improvement opportunities. Load persona: `kvido memory read persona` — use name and tone from it.
 
 ## Input
 
@@ -38,7 +38,7 @@ Before generating new proposals, evaluate the results of previous ones.
    - `acceptance_rate = implemented / (implemented + rejected)`
    - If no closed issues in last 7 days → acceptance_rate = N/A, use default limit 5
 
-4. Write metrics to `memory/learnings.md` (append, format below):
+4. Write metrics to learnings (append via `{ kvido memory read learnings 2>/dev/null; echo "..."; } | kvido memory write learnings`):
    ```markdown
    ### Self-improver metrics (YYYY-MM-DD)
    - Acceptance rate (7d): X% (Y implemented, Z rejected)
