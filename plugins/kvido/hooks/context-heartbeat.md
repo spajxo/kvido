@@ -60,28 +60,6 @@ Chat-agent uses ack reactions only (see Chat ack lifecycle above), not status ed
 | Agent | Template | Level | Notes |
 |-------|----------|-------|-------|
 | chat-agent | chat | always immediate | Ack react before dispatch, unreact after delivery. After delivery, check pending chat tasks → dispatch next FIFO |
-| planner | per-line (Event/Triage/Reminder/Dispatch/MorningBriefing) | per delivery rules | Triage → create triage:<slug> TODO. Dispatch → dispatch named agent. MorningBriefing → deliver via `morning` template (always immediate, standalone). |
+| planner | per-line (Event/Triage/Reminder/Dispatch) | per delivery rules | Triage → create triage:<slug> TODO. Dispatch → dispatch named agent. |
 | worker | worker-report | high for error, else normal | — |
 | other | agent name as template, fallback event | per delivery rules | When falling back to `event` template, set `--var severity_bar=:large_yellow_circle:` as default if not provided by agent output |
-
-## MorningBriefing line parsing
-
-When planner output contains a `MorningBriefing:` line:
-
-```
-MorningBriefing: date=<YYYY-MM-DD> briefing=<text> triage_count=<N> meeting_time=<Xh> deepwork_time=<Yh>
-```
-
-Parse the fields and deliver:
-```bash
-kvido slack send dm morning \
-  --var date="<date>" \
-  --var briefing="<briefing>" \
-  --var triage_count="<N>" \
-  --var meeting_time="<Xh>" \
-  --var deepwork_time="<Yh>"
-```
-
-- Always immediate (never batched, never suppressed by focus mode)
-- Standalone — never threaded into digest
-- Deliver at most once per `MorningBriefing:` line per planner run

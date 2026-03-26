@@ -35,33 +35,6 @@ If `memory/planner.md` does not exist → skip silently.
 
 ---
 
-## Step 2b: Autonomous Morning Briefing Check
-
-**Built-in behavior — does not require `memory/planner.md`.** Runs on every planner invocation.
-
-### Trigger conditions (ALL must be true)
-
-1. Current day is Mon–Fri (`date +%u` returns 1–5)
-2. Local hour is ≥ 6 and local hour < 12 (`date +%-H`)
-3. Local minute ≥ 30 when hour == 6 (`date +%-M`)
-4. `last_morning_date` not set today:
-   ```bash
-   kvido planner-state timestamp get last_morning_date
-   ```
-   Exit 1 = not yet sent today → proceed. Exit 0 with today's date → skip.
-
-### If triggered
-
-Set `MORNING_BRIEFING_DUE=true` — carry this flag through Steps 3–5.
-
-Proceed immediately to Step 3 (full data gather, all sources). The briefing is composed and delivered in Step 5.
-
-### If not triggered
-
-Set `MORNING_BRIEFING_DUE=false` — skip morning briefing in Step 5.
-
----
-
 ## Step 3: Data Gathering
 
 ### Source discovery
@@ -137,50 +110,14 @@ Watch for stale MR reviews, WIP tickets with no activity, status changes. Decide
 
 ## Step 5: Scheduled Rules
 
-### 5a: Built-in morning briefing
-
-**If `MORNING_BRIEFING_DUE=true` (set in Step 2b):**
-
-Compose the morning briefing using data gathered in Step 3:
-
-1. Yesterday's summary — scan `memory/journal/` for yesterday's journal if available
-2. Overnight changes — highlight new events from sources (GitLab MRs, Jira tickets, Gmail, Slack threads)
-3. Today's calendar — list events from calendar source (start time, title)
-4. Triage count — `kvido task count triage`
-5. Focus recommendation — suggest what to focus on first based on priorities
-6. Deep work time estimate — estimate available focus blocks from calendar gaps
-
-Output the briefing as:
-```
-MorningBriefing: date=<YYYY-MM-DD> briefing=<full briefing text> triage_count=<N> meeting_time=<Xh> deepwork_time=<Yh>
-```
-
-Heartbeat parses `MorningBriefing:` and delivers it via `kvido slack send ... morning`.
-
-Track execution:
-```bash
-kvido planner-state timestamp set last_morning_date "$(date -Iseconds)"
-```
-
-Log:
-```bash
-kvido log add planner notify --message "Morning briefing sent"
-```
-
-**If `MORNING_BRIEFING_DUE=false`:** skip this section.
-
-### 5b: User-defined scheduled rules
-
 Read `memory/planner.md` section "## Scheduled Rules". For each rule:
 
 1. Evaluate trigger condition (time, day, "not yet today" via `kvido planner-state timestamp get <key>` — exit 1 means not done yet)
 2. If triggered:
    - Execute actions inline (gather data, create journal, dispatch librarian, etc.)
    - Compose output following the rule's delivery template
-   - Track execution: `kvido planner-state timestamp set <key> <value>` (e.g. key=last_eod_date)
+   - Track execution: `kvido planner-state timestamp set <key> <value>` (e.g. key=last_morning_date, key=last_eod_date)
 3. If not triggered: skip
-
-**Note:** `last_morning_date` is managed by Step 5a above — do not re-trigger a morning briefing from user-defined rules if `MORNING_BRIEFING_DUE=false`.
 
 Rules are user-defined natural language with structured triggers and actions. Interpret them flexibly. Default scheduled rules are provided by setup.
 
