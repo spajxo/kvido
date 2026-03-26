@@ -52,7 +52,7 @@ Recurring (max 1 per day each, check last run timestamp via `kvido state get pla
 | Triage overflow | triage >= 10 | Event: Triage overflow — <N> items. Urgency: normal. |
 | Backlog stale | todo low priority > 30 days | Event: suggestion |
 
-### Periodic (check timestamps via `kvido planner-state timestamp get <key>`)
+### Periodic (check timestamps via `kvido state get planner.<key>`)
 - State hygiene: current.md WIP sync with Jira
 - Git sync (> 2h): commit + push
 - Archive rotation (> 7d): journals > 14d, weekly > 8w, decisions > 90d

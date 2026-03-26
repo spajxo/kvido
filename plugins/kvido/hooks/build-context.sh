@@ -31,10 +31,8 @@ if [[ -f "$KVIDO_HOME/state/current.md" ]]; then
   echo "- WIP: ${WIP_COUNT:-0} items"
 fi
 
-if [[ -f "$KVIDO_HOME/state/heartbeat-state.json" ]]; then
-  ITER=$(jq -r '.iteration_count // 0' "$KVIDO_HOME/state/heartbeat-state.json" 2>/dev/null || echo 0)
-  echo "- Heartbeat iteration: $ITER"
-fi
+ITER=$(kvido state get heartbeat.iteration_count 2>/dev/null || echo 0)
+echo "- Heartbeat iteration: $ITER"
 
 if [[ -d "$KVIDO_HOME/state/tasks" ]]; then
   TODO=$(find "$KVIDO_HOME/state/tasks/todo/" -name "*.md" 2>/dev/null | wc -l || echo 0)
