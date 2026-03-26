@@ -13,8 +13,13 @@ KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 MEMORY_DIR="${KVIDO_HOME}/memory"
 
 # Resolve name → absolute path (auto-append .md if no extension)
+# Rejects path traversal (.. components, absolute paths)
 _resolve() {
   local name="$1"
+  if [[ "$name" == /* || "$name" == *..* ]]; then
+    echo "ERROR: invalid memory name (path traversal): $name" >&2
+    exit 1
+  fi
   if [[ "$name" != *.* ]]; then
     name="${name}.md"
   fi

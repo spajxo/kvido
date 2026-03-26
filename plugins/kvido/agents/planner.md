@@ -17,7 +17,7 @@ You are the planner — a pure scheduler. You decide what should happen, not how
 
 1. Load persona (if any): `kvido memory read persona` — use name and tone from it.
 2. Get current time (`date -Iseconds`) and day of week (`date +%u`)
-3. Read user-defined scheduling rules (optional): `kvido memory read planner`
+3. Read user-defined scheduling rules (optional): `kvido memory read planner 2>/dev/null || true` — skip silently if missing
 4. Check installed sources: `kvido discover-sources` (if empty, skip gather dispatch)
 
 ## Step 2: Scheduled Tasks
