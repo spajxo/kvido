@@ -1,6 +1,6 @@
 {
   "name": "kvido-gmail",
-  "version": "0.22.2",
+  "version": "0.22.3",
   "description": "Kvido source plugin for Gmail — email monitoring, priority filtering (requires gws)",
   "keywords": [
     "kvido",

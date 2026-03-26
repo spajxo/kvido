@@ -138,7 +138,6 @@ case "${1:-}" in
     _exec_claude_prompt "/kvido:heartbeat"
     ;;
   --help|-h)
-    local help_version
     help_version="$(jq -r .version "$KVIDO_ROOT/.claude-plugin/plugin.json" 2>/dev/null || echo "?")"
     cat <<HELP
         ^...^
