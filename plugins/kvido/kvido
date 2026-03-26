@@ -98,6 +98,9 @@ _exec_claude_prompt() {
   local -a eyes=( "o,o" "o,o" "o,o" "-,-" "o,o" "o,o" "^,^" "o,o" )
   local frame=0
 
+  local kvido_version
+  kvido_version="$(jq -r .version "$KVIDO_ROOT/.claude-plugin/plugin.json" 2>/dev/null || echo "?")"
+
   _draw_owl() {
     printf '\033[?25l'        # hide cursor
     printf '\033[H\033[2J'    # clear screen
@@ -106,7 +109,7 @@ _exec_claude_prompt() {
     printf '       / %s \\\n' "$1"
     printf '       |):::(|\n'
     printf '     ====w=w====\n'
-    printf '        \033[2mkvido\033[0m\n'
+    printf '      \033[2mkvido v%s\033[0m\n' "$kvido_version"
   }
 
   # Collect context in background
@@ -135,11 +138,14 @@ case "${1:-}" in
     _exec_claude_prompt "/kvido:heartbeat"
     ;;
   --help|-h)
-    cat <<'HELP'
+    local help_version
+    help_version="$(jq -r .version "$KVIDO_ROOT/.claude-plugin/plugin.json" 2>/dev/null || echo "?")"
+    cat <<HELP
         ^...^
-       / o,o \
+       / o,o \\
        |):::(|
      ====w=w====
+      kvido v${help_version}
 
 Usage: kvido [command] [args...]
 
