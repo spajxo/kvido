@@ -179,7 +179,16 @@ Flush `notify:*` tasks with `pending` status (via `TaskList`) when: planner iter
 
 Parse `DISPATCH_EVENTS` block from heartbeat.sh output. Each line is a JSON event with `type` and `data` fields.
 
-For each dispatch event (single pass — new events emitted during this tick are picked up on the NEXT tick):
+### Dependency handling
+
+Dispatch events may contain `blocked_by` in their `data` field (e.g., `dispatch.notify` with `"blocked_by":"dispatch.gather"`). When processing:
+
+1. First pass: dispatch all events WITHOUT `blocked_by` (or whose blocker has already completed)
+2. For events WITH `blocked_by`: create a `TaskCreate` with `addBlockedBy` pointing to the blocker task. The dispatch loop skips blocked tasks — they will be dispatched once the blocker completes (detected via `TaskList` in next iteration).
+
+This allows the planner to define execution order without heartbeat needing agent-specific logic.
+
+### Processing (single pass — new events emitted during this tick are picked up on the NEXT tick):
 
 ### dispatch.planner
 If no `planner` task pending/in_progress:
@@ -194,7 +203,12 @@ If no `gatherer` task pending/in_progress:
 - Log: `kvido log add heartbeat dispatch --message "gatherer"`
 
 ### dispatch.notify, dispatch.triage, dispatch.briefing
-If no `notifier` task pending/in_progress:
+Check `blocked_by` in event data. If `blocked_by` references a dispatch type (e.g., `dispatch.gather`):
+- Find or create the blocker task (e.g., `gatherer`)
+- `TaskCreate` subject `notifier` with `addBlockedBy` pointing to the blocker task
+- The dispatch loop will skip this task until the blocker completes
+
+If no `blocked_by` (or blocker already completed) and no `notifier` task pending/in_progress:
 - `TaskCreate` subject `notifier`
 - Dispatch notifier agent (`run_in_background: true`)
 - Pass dispatch event types as context (so notifier knows whether to process triage, briefing, etc.)

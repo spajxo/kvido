@@ -85,17 +85,7 @@ The `--dedup-key` + `--dedup-window 72h` ensures the same change is not reported
 
 ---
 
-## Step 4: Dispatch Notifier
-
-After all sources are fetched and change events emitted, dispatch the notifier so it can process the new data:
-
-```bash
-kvido event emit dispatch.notify --data '{"reason":"post-gather"}' --producer gatherer
-```
-
----
-
-## Step 5: Save State
+## Step 4: Save State
 
 ```bash
 kvido state set gatherer.last_run "$(date -Iseconds)"
