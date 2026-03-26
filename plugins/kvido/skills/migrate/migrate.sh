@@ -46,6 +46,21 @@ if [[ -f "$OLD_PLANNER" ]]; then
     fi
   done
 
+  # Migrate schedule (string)
+  schedule="$(jq -r '.schedule // empty' "$OLD_PLANNER" 2>/dev/null || true)"
+  if [[ -n "$schedule" ]]; then
+    bash "$STATE_SH" set "planner.schedule" "$schedule"
+  fi
+
+  # Migrate last_run (JSON object → store as ISO timestamp if available)
+  last_run_ts="$(jq -r '.last_run.ts // .last_run.timestamp // empty' "$OLD_PLANNER" 2>/dev/null || true)"
+  if [[ -n "$last_run_ts" ]]; then
+    bash "$STATE_SH" set "planner.last_run" "$last_run_ts"
+  fi
+
+  # Discard events (will be created fresh via event bus)
+  # Discard reminders (derived from notification events)
+
   rm "$OLD_PLANNER"
   rm -f "${OLD_PLANNER}.lock"
   migrated=1

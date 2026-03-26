@@ -80,7 +80,13 @@ case "$CMD" in
     id="$(_gen_id)"
     ts="$(date -Iseconds)"
 
+    # Inject dedup_key into data before lock (so it's stored in the event)
+    if [[ -n "$dedup_key" ]]; then
+      data=$(jq -c --arg dk "$dedup_key" '. + {dedup_key: $dk}' <<< "$data")
+    fi
+
     # Append with lock (dedup check inside lock to prevent races)
+    # Exit code 2 = dedup skip (distinguishes from lock failure = 1)
     (
       mkdir -p "$(dirname "$LOCK_FILE")"
       exec 200>"$LOCK_FILE"
@@ -98,7 +104,7 @@ case "$CMD" in
           'select(.data.dedup_key == $dk and .ts >= $ct) | .id' \
           "$EVENTS_FILE" 2>/dev/null | head -1 || true)
         if [[ -n "$existing" ]]; then
-          exit 0
+          exit 2
         fi
       fi
 
@@ -110,7 +116,13 @@ case "$CMD" in
         --argjson data "$data" \
         '{id: $id, ts: $ts, type: $type, producer: $producer, data: $data}' \
         >> "$EVENTS_FILE"
-    )
+    ) && rc=0 || rc=$?
+    if [[ $rc -eq 2 ]]; then
+      # Dedup: silently skip
+      exit 0
+    elif [[ $rc -ne 0 ]]; then
+      exit $rc
+    fi
     echo "$id"
     ;;
 
@@ -138,6 +150,13 @@ case "$CMD" in
     if [[ -n "$consumer" ]]; then
       offset=$(bash "$STATE_SH" get "${consumer}.cursor_offset" 2>/dev/null || echo "0")
       [[ -z "$offset" ]] && offset=0
+    fi
+
+    # Snapshot total line count BEFORE reading — this is where ack will advance to.
+    # Events emitted after this point will NOT be acked, ensuring next-tick pickup.
+    if [[ -n "$consumer" ]]; then
+      total=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
+      bash "$STATE_SH" set "${consumer}.pending_cursor" "$total"
     fi
 
     # Build jq filter combining type and since
@@ -197,8 +216,17 @@ case "$CMD" in
         bash "$STATE_SH" set "${consumer}.cursor_offset" "$line_num"
       fi
     else
-      total=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
-      bash "$STATE_SH" set "${consumer}.cursor_offset" "$total"
+      # Use pending_cursor from last read (not current file end) to avoid
+      # skipping events emitted between read and ack
+      pending=$(bash "$STATE_SH" get "${consumer}.pending_cursor" 2>/dev/null || echo "")
+      if [[ -n "$pending" ]]; then
+        bash "$STATE_SH" set "${consumer}.cursor_offset" "$pending"
+        bash "$STATE_SH" delete "${consumer}.pending_cursor"
+      else
+        # Fallback: no pending cursor (read was not called), use current end
+        total=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
+        bash "$STATE_SH" set "${consumer}.cursor_offset" "$total"
+      fi
     fi
     ;;
 
