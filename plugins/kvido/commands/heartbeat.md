@@ -50,13 +50,6 @@ The script automatically: increments iteration_count, sets last_heartbeat, reads
 
 Read current state via `kvido current get`. Review recent activity via `kvido log list --today --format human --limit 20`.
 
-### Cron reconciliation
-
-`CRON_JOB_ID` from heartbeat-state.json may be stale (from a previous session — cron jobs are session-only). Call `CronList` and compare:
-- If `CRON_JOB_ID` is not in the current cron list, find the actual heartbeat cron job (prompt contains "heartbeat")
-- If found: update state with the actual job ID via `kvido heartbeat-state set cron_job_id "<actual_id>"`
-- If no heartbeat cron exists: this is an orphaned run — log and skip adaptive interval logic
-
 ### Recovery check
 
 Use `TaskList` to list all existing tasks. Mark all `in_progress` tasks from a previous session as `completed` (agent process is gone from previous session). Pending tasks with unsatisfied `blockedBy` unblock automatically.
@@ -242,9 +235,13 @@ For each `pending` task from `TaskList` (excluding `triage:*` and `notify:*`):
 | Normal | — | decay-based | Based on interaction age (config `skills.heartbeat.decay.*`). |
 
 If `TARGET_PRESET != ACTIVE_PRESET`:
-1. `CronDelete` old job → `CronCreate` new with matching expression
-2. `kvido heartbeat-state set cron_job_id` + `active_preset`
-3. `kvido log add heartbeat adaptive --message "interval {ACTIVE} -> {TARGET}"`
+1. **Lazy cron reconciliation:** `CronList` → verify `CRON_JOB_ID` is valid in the current session
+   - If `CRON_JOB_ID` not in list: find actual heartbeat cron job (prompt contains "heartbeat")
+   - If found: use actual ID, update state via `kvido heartbeat-state set cron_job_id "<actual_id>"`
+   - If no heartbeat cron exists: log orphaned run, skip interval change
+2. `CronDelete` old job → `CronCreate` new with matching expression
+3. `kvido heartbeat-state set cron_job_id` + `active_preset`
+4. `kvido log add heartbeat adaptive --message "interval {ACTIVE} -> {TARGET}"`
 
 ---
 
