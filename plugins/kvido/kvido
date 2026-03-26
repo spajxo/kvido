@@ -260,7 +260,7 @@ WRAPPER
       *) echo "ERROR: Unsupported platform. Open manually: $_DASHBOARD" >&2; exit 1 ;;
     esac
     ;;
-  scripts/*|skills/*|agents/*)
+  scripts/*|agents/*)
     # Script dispatch — resolve to plugin install path
     TARGET="$KVIDO_ROOT/$1"
     shift

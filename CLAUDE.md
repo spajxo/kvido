@@ -14,7 +14,7 @@ plugins/
 ├── kvido/                         ← core plugin (heartbeat, planner, worker, chat, slack delivery)
 │   ├── .claude-plugin/plugin.json
 │   ├── agents/                    ← subagent definitions (YAML frontmatter + markdown)
-│   ├── commands/                  ← slash commands (thin wrappers → SKILL.md)
+│   ├── commands/                  ← slash commands (heartbeat, setup)
 │   ├── hooks/                     ← context-<phase>.md hook files
 │   └── scripts/                   ← bash helper scripts (CLI, state, config, heartbeat data)
 ├── kvido-gitlab/                  ← source plugin (requires glab)

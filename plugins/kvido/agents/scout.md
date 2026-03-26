@@ -51,6 +51,7 @@ After checking each topic (regardless of findings):
 
 ```bash
 kvido state set planner.interests.<topic> "$(date -Iseconds)"
+kvido state set planner.interests.<topic>.last_summary "<brief one-line summary of findings or 'no changes'>"
 ```
 
 ## Dedup
