@@ -1,7 +1,7 @@
 ---
 name: gatherer
 description: Discovers source plugins and fetches data, emitting change events to the event bus.
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash, mcp__claude_ai_Google_Calendar__gcal_list_events, mcp__claude_ai_Gmail__gmail_search_messages, mcp__claude_ai_Gmail__gmail_read_message
 model: sonnet
 ---
 

@@ -22,13 +22,20 @@ if [[ "${1:-}" == "--watch" ]]; then
 fi
 
 # Fetch messages list
+GWS_ERR=$(mktemp)
 MESSAGES=$(gws gmail users messages list --params "$(jq -n \
   --arg q "$WATCH_QUERY" \
   --argjson max "$MAX_RESULTS" \
-  '{userId: "me", q: $q, maxResults: $max}')" 2>/dev/null) || {
-  echo "ERROR: gmail: gws gmail messages list failed" >&2
+  '{userId: "me", q: $q, maxResults: $max}')" 2>"$GWS_ERR") || {
+  ERR=$(cat "$GWS_ERR"); rm -f "$GWS_ERR"
+  if echo "$ERR" | grep -qiE 'no such host|connection refused|network is unreachable|dial tcp|EOF|timeout|i/o timeout'; then
+    echo "FALLBACK: gws network/auth error, use MCP" >&2
+    exit 10
+  fi
+  echo "ERROR: gmail: gws gmail messages list failed: $ERR" >&2
   exit 1
 }
+rm -f "$GWS_ERR"
 
 MSG_COUNT=$(echo "$MESSAGES" | jq -r '.messages | length')
 HAS_MORE=$(echo "$MESSAGES" | jq -r '.nextPageToken != null')
