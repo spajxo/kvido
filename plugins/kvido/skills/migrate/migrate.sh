@@ -5,6 +5,7 @@
 # Migrates:
 #   state/heartbeat-state.json → state/state.json (heartbeat.* keys)
 #   state/planner-state.json → state/state.json (planner.* keys) + discards events
+#   state/source-health.json → state/state.json (source-health.* keys)
 
 set -euo pipefail
 
@@ -63,6 +64,20 @@ if [[ -f "$OLD_PLANNER" ]]; then
 
   rm "$OLD_PLANNER"
   rm -f "${OLD_PLANNER}.lock"
+  migrated=1
+fi
+
+# Migrate source-health.json
+OLD_SOURCE_HEALTH="${KVIDO_HOME}/state/source-health.json"
+if [[ -f "$OLD_SOURCE_HEALTH" ]]; then
+  for source in $(jq -r 'keys[]' "$OLD_SOURCE_HEALTH" 2>/dev/null); do
+    status="$(jq -r --arg k "$source" '.[$k].status // empty' "$OLD_SOURCE_HEALTH")"
+    ts="$(jq -r --arg k "$source" '.[$k].timestamp // empty' "$OLD_SOURCE_HEALTH")"
+    [[ -n "$status" ]] && bash "$STATE_SH" set "source-health.${source}.status" "$status"
+    [[ -n "$ts" ]] && bash "$STATE_SH" set "source-health.${source}.timestamp" "$ts"
+  done
+  rm "$OLD_SOURCE_HEALTH"
+  rm -f "${OLD_SOURCE_HEALTH}.lock"
   migrated=1
 fi
 

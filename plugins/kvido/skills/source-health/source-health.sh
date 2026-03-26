@@ -1,54 +1,35 @@
 #!/usr/bin/env bash
-# source-health.sh — read/write state/source-health.json
+# source-health.sh — thin wrapper over kvido state for source health tracking
+# Data lives in state/state.json under source-health.* keys
 set -euo pipefail
 
-KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-STATE_FILE="${KVIDO_HOME}/state/source-health.json"
-LOCK_FILE="${STATE_FILE}.lock"
-LOCK_TIMEOUT=10
-
-_ensure_file() {
-  if [[ ! -f "$STATE_FILE" ]]; then
-    mkdir -p "$(dirname "$STATE_FILE")"
-    echo '{}' > "$STATE_FILE"
-  fi
-}
-
-_atomic_write() {
-  local content="$1"
-  local tmp
-  tmp="$(mktemp "${STATE_FILE}.tmp.XXXXXX")"
-  echo "$content" > "$tmp"
-  mv "$tmp" "$STATE_FILE"
-}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STATE_SH="$(cd "$SCRIPT_DIR/.." && pwd)/state/state.sh"
 
 case "${1:-}" in
   get)
-    _ensure_file
     source="${2:-}"
     if [[ -z "$source" ]]; then
-      cat "$STATE_FILE"
+      # List all source health entries
+      for key in $(bash "$STATE_SH" list "source-health." 2>/dev/null); do
+        # Strip prefix, extract source name (source-health.<name>.status → <name>)
+        name="${key#source-health.}"
+        name="${name%.status}"
+        [[ "$key" == *".status" ]] || continue
+        status=$(bash "$STATE_SH" get "$key" 2>/dev/null || echo "unknown")
+        ts=$(bash "$STATE_SH" get "source-health.${name}.timestamp" 2>/dev/null || echo "")
+        echo "${name}: ${status} (${ts})"
+      done
     else
-      jq -r --arg k "$source" '.[$k].status // empty' "$STATE_FILE"
+      bash "$STATE_SH" get "source-health.${source}.status" 2>/dev/null
     fi
     ;;
   set)
     source="${2:?Usage: source-health.sh set <source> <status>}"
     status="${3:?Usage: source-health.sh set <source> <status>}"
     now=$(date -Iseconds)
-    _ensure_file
-    mkdir -p "$(dirname "$LOCK_FILE")"
-    (
-      exec 200>"$LOCK_FILE"
-      if ! flock -w "$LOCK_TIMEOUT" 200; then
-        echo "source-health.sh: timeout acquiring lock" >&2
-        exit 1
-      fi
-      _ensure_file
-      updated=$(jq --arg k "$source" --arg s "$status" --arg t "$now" \
-        '.[$k] = {status: $s, timestamp: $t}' "$STATE_FILE")
-      _atomic_write "$updated"
-    )
+    bash "$STATE_SH" set "source-health.${source}.status" "$status"
+    bash "$STATE_SH" set "source-health.${source}.timestamp" "$now"
     ;;
   *)
     echo "Usage: source-health.sh <get|set> [args...]" >&2
