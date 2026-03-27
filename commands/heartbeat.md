@@ -135,14 +135,14 @@ The planner output uses structured lines:
 ```
 DISPATCH gatherer
 DISPATCH triager
-DISPATCH worker deploy-hotfix
+DISPATCH worker deploy-hotfix model=sonnet
 DISPATCH librarian
 DISPATCH_AFTER triager gatherer
 NOTIFY stale-worker fix-auth-bug
 ```
 
 - `DISPATCH <agent>` — dispatch agent (parallel by default)
-- `DISPATCH worker <slug>` — dispatch worker for specific task
+- `DISPATCH worker <slug> [model=<model>]` — dispatch worker for specific task; optional `model=` token selects model (haiku/sonnet/opus, default sonnet)
 - `DISPATCH_AFTER <agent> <after-agent>` — sequential ordering
 - `NOTIFY <type> [detail]` — heartbeat handles notification directly
 - `No dispatches needed.` — skip Steps 5 and 6
@@ -164,7 +164,7 @@ For each `DISPATCH` line, dispatch the agent with `run_in_background: true`:
 3. Dispatch agent (`run_in_background: true`)
 4. Log: `kvido log add heartbeat dispatch --message "<agent>"`
 
-**Worker specifics:** `DISPATCH worker <slug>` — read task first (`kvido task read "$slug"`), if SOURCE_REF is set send ack via `kvido slack reply`, then `kvido task move "$slug" in-progress`.
+**Worker specifics:** `DISPATCH worker <slug> [model=<model>]` — parse the optional `model=` token from the DISPATCH line (default: `sonnet` if absent). Read task first (`kvido task read "$slug"`), if SOURCE_REF is set send ack via `kvido slack reply`, then `kvido task move "$slug" in-progress`. Pass the resolved model name as the `model` parameter to the Agent tool when dispatching the worker.
 
 **Maintenance specifics:** If another `maintenance:*` task is pending/in_progress, set `addBlockedBy`.
 
