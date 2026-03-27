@@ -2,6 +2,8 @@
 
 This document formally specifies what heartbeat expects from each agent, how it parses agent output, and what fallback behavior applies. All agents must conform to this contract.
 
+**Reference:** [Orchestration Contract Design](superpowers/specs/2026-03-24-orchestration-contract-design.md)
+
 ---
 
 ## Core Principle
@@ -132,9 +134,7 @@ Pending triage — please react in Slack to approve or reject:
 Triager: no triage items pending
 ```
 
-**Delivery:** Heartbeat uses `triage-item` template, `immediate` level. After delivery, heartbeat saves the returned Slack `ts` to the task frontmatter via `kvido task update <slug> triage_ts <ts>`.
-
-> **Note:** `heartbeat.md` currently references `triage_slack_ts` instead of `triage_ts`. These need to be aligned — triager reads `triage_ts`.
+**Delivery:** Heartbeat uses `triage-item` template, `immediate` level. After delivery, heartbeat saves the returned Slack `ts` to the task frontmatter via `kvido task update <slug> triage_slack_ts <ts>`.
 
 **Fallback:** `Triager: no triage items pending` → heartbeat skips delivery.
 
@@ -159,7 +159,7 @@ Source: <source_ref>
 ```
 Task <slug> failed. Reason: <reason>.
 Task: <slug>
-Type: worker-report
+Type: worker-error
 ```
 
 **Parsed fields:**
@@ -167,11 +167,11 @@ Type: worker-report
 | Field | Required | Description |
 |-------|----------|-------------|
 | `Task:` | yes | Task slug — used for routing and logging |
-| `Type:` | yes | Always `worker-report` — error vs. success is determined by template variables (e.g. presence of `Result:` field), not a separate template |
+| `Type:` | yes | `worker-report` (success) or `worker-error` (failure) |
 | `Source:` | if non-empty | Original source ref (Slack `ts`, Jira key, etc.) — used for thread routing |
-| `Result:` | for success | Summary of what was done — absent on failure |
+| `Result:` | for success | Summary of what was done |
 
-**Delivery:** Heartbeat always uses `worker-report` template. Level is `normal` on success, `high` on failure (detected by absence of `Result:`). If `Source:` contains a Slack `ts`, heartbeat replies in that thread.
+**Delivery:** Heartbeat uses `worker-report` template, `normal` level (or `high` on error). If `Source:` contains a Slack `ts`, heartbeat replies in that thread.
 
 **Slack appearance** (what heartbeat renders):
 
@@ -219,7 +219,7 @@ Type: chat-reply
 
 ### 2.5 Maintenance agents (librarian, project-enricher, self-improver, scout)
 
-Maintenance agents return a brief summary line. Heartbeat delivers via the `maintenance` template, falling back to `event` template if `maintenance` is not found.
+Maintenance agents return a brief summary line. Heartbeat delivers via the agent name as template, falling back to `event` template.
 
 #### Librarian
 
@@ -269,7 +269,7 @@ Or:
 Scout: no topics due for checking.
 ```
 
-**Delivery:** Heartbeat uses `maintenance` template. If the template does not exist, falls back to `event` with `--var severity_bar=:large_yellow_circle:`.
+**Delivery:** Heartbeat uses agent name as template. If the template does not exist, falls back to `event` with `--var severity_bar=:large_yellow_circle:`.
 
 **Fallback:** Any non-empty output from a maintenance agent triggers delivery. Empty output → no delivery.
 
@@ -335,9 +335,9 @@ These invariants hold across all agents:
 |-------|----------|--------------|----------------|
 | gatherer | `event` | per urgency suggestion | standalone or digest |
 | triager | `triage-item` | `immediate` | standalone |
-| worker | `worker-report` | `normal` (success) / `high` (failure) | source thread if `Source:` is set |
+| worker | `worker-report` / `worker-error` | `normal` / `high` | source thread if `Source:` is set |
 | chat-agent | `chat` | `immediate` | `Thread:` field |
-| librarian | `maintenance` → fallback `event` | per delivery rules | standalone |
-| project-enricher | `maintenance` → fallback `event` | per delivery rules | standalone |
-| self-improver | `maintenance` → fallback `event` | per delivery rules | standalone |
-| scout | `maintenance` → fallback `event` | per delivery rules | standalone |
+| librarian | `librarian` → fallback `event` | per delivery rules | standalone |
+| project-enricher | `project-enricher` → fallback `event` | per delivery rules | standalone |
+| self-improver | `self-improver` → fallback `event` | per delivery rules | standalone |
+| scout | `scout` → fallback `event` | per delivery rules | standalone |
