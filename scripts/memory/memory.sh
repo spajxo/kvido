@@ -140,8 +140,8 @@ HELP
     while IFS= read -r filepath; do
       relpath="${filepath#"${MEMORY_DIR}/"}"
       if [[ -n "$FILTER_TYPE" ]]; then
-        # Extract type from YAML frontmatter (look for "type: <value>" in first 20 lines)
-        file_type=$(head -20 "$filepath" | awk '/^---$/{found++; next} found>=2{exit} found==1 && /^type:/{gsub(/^type:[[:space:]]*/, ""); gsub(/[[:space:]]*$/, ""); gsub(/^["'"'"']|["'"'"']$/, ""); print; exit}')
+        # Extract type from YAML frontmatter (read until closing ---)
+        file_type=$(awk '/^---$/{found++; next} found>=2{exit} found==1 && /^type:/{gsub(/^type:[[:space:]]*/, ""); gsub(/[[:space:]]*$/, ""); gsub(/^["'"'"']|["'"'"']$/, ""); print; exit}' "$filepath")
         [[ "$file_type" == "$FILTER_TYPE" ]] || continue
       fi
       echo "$relpath"
