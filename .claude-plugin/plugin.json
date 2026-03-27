@@ -1,0 +1,19 @@
+{
+  "name": "kvido",
+  "version": "0.27.0",
+  "description": "Personal AI workflow assistant — heartbeat, planner, worker, sources",
+  "license": "MIT",
+  "keywords": [
+    "assistant",
+    "workflow",
+    "heartbeat",
+    "planner",
+    "monitoring",
+    "sources"
+  ],
+  "author": {
+    "name": "Pavel Stejskal"
+  },
+  "homepage": "https://github.com/spajxo/kvido",
+  "repository": "https://github.com/spajxo/kvido"
+}
