@@ -208,9 +208,16 @@ case "$cmd" in
     _parse_section_flag "$@"
     if [[ -z "$SECTION" ]]; then
       # Backwards compatible: dump full file
-      [[ -f "$STATE_FILE" ]] && cat "$STATE_FILE"
+      if [[ ! -f "$STATE_FILE" ]]; then
+        echo "Error: state not initialized. Run: kvido setup" >&2
+        exit 1
+      fi
+      cat "$STATE_FILE"
     else
-      [[ -f "$STATE_FILE" ]] || exit 1
+      if [[ ! -f "$STATE_FILE" ]]; then
+        echo "Error: state not initialized. Run: kvido setup" >&2
+        exit 1
+      fi
       line=$(_find_section "$SECTION") || { echo "Error: section '$SECTION' not found" >&2; exit 1; }
       _get_section "$line"
     fi
