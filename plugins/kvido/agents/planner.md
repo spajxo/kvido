@@ -24,9 +24,9 @@ Go through planner memory. For each rule:
 1. Check trigger condition (time, day, interval, state)
 2. Check if already executed: `kvido state get planner.<key>` — compare with today's date or current time
 3. If triggered and not yet done:
-   - Mark as done: `kvido state set planner.<key> "$(date +%Y-%m-%d)"`
    - If the rule creates a task: `kvido task create --instruction "<instruction>" --size s --priority high --source planner`
    - If the rule dispatches an agent: include in output
+   - Mark as done **after** side effects succeed: `kvido state set planner.<key> "$(date +%Y-%m-%d)"`
 
 ## Step 3: Check Worker Queue
 

@@ -147,7 +147,7 @@ NOTIFY stale-worker fix-auth-bug
 - `NOTIFY <type> [detail]` — heartbeat handles notification directly
 - `No dispatches needed.` — skip Steps 5 and 6
 
-If the planner returns nothing or "No dispatches needed.", skip Steps 5 and 6.
+If the planner returns nothing or "No dispatches needed.", skip planner-originated dispatches in Step 5. Still proceed to Step 5 for pending `chat:*` tasks and to Step 6 for completed background agents.
 
 ---
 
@@ -233,7 +233,7 @@ Heartbeat is responsible for parsing agent output into structured fields, decidi
 | chat-agent | `chat` | always immediate | Extract `ORIGINAL_TS` from task subject `chat:<ts>`. If agent returns `Thread` non-empty: `kvido slack reply dm <Thread> chat --var message="<Reply>"`. If `Thread` empty: `kvido slack reply dm <ORIGINAL_TS> chat --var message="<Reply>"`. After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
 | worker | `worker-report` | `high` for error, else `normal` | — |
 | gatherer | `event` | per urgency rules | Parse findings, each as separate notification |
-| triager | `triage-item` | `immediate` | For triage items needing user attention, save returned `ts` to task note |
+| triager | `triage-item` | `immediate` | For triage items needing user attention, save returned `ts` to task frontmatter: `kvido task update <slug> triage_slack_ts <ts>` |
 | maintenance | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
 
 ### Digest threading
