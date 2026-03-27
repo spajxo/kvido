@@ -207,6 +207,27 @@ cmd="${1:-}"
 [[ -n "$cmd" ]] && shift
 
 case "$cmd" in
+  --help|-h)
+    cat <<'HELP'
+kvido current — read/write current focus state (state/current.md)
+
+Usage: kvido current <subcommand> [--section <name>] [args...]
+
+Subcommands:
+  get [--section <name>]             Read full file or a specific section
+  dump                               Read full file (alias for get)
+  set [--section <name>] [content]   Write full file (stdin) or a section
+  append --section <name> <text>     Append a line to a section
+  clear --section <name>             Clear a section's content (keep header)
+
+Section slugs: wip, resolved-today, active-focus, pinned-today, triage
+
+Examples:
+  kvido current get --section wip
+  kvido current append --section wip "- Task: fix login"
+  kvido current clear --section resolved-today
+HELP
+    ;;
   get)
     _parse_section_flag "$@"
     if [[ -z "$SECTION" ]]; then

@@ -162,6 +162,33 @@ build_blocks() {
 }
 
 case "$ACTION" in
+  --help|-h)
+    cat <<'HELP'
+kvido slack — Slack Web API wrapper
+
+Usage: kvido slack <subcommand> [channel] [args...]
+
+Channel is optional and defaults to slack.dm_channel_id from settings.json.
+Use 'dm' as shorthand for the configured DM channel.
+
+Subcommands:
+  send [channel] <template> [--var key=value]...
+  reply [channel] <thread_ts> <template> [--var key=value]...
+  edit [channel] <message_ts> <template> [--var key=value]...
+  read [channel] [--limit N] [--oldest ts] [--thread ts] [--text]
+  react <ts> <emoji> [channel]
+  unreact <ts> <emoji> [channel]
+  reactions <message_ts> [channel]
+  delete [channel] <message_ts>
+  download <url_private> [output_dir]
+  upload [channel] <file_path> [--title "..."] [--thread <ts>]
+
+Examples:
+  kvido slack send dm morning-briefing --var date="$(date +%F)"
+  kvido slack read --limit 5
+  kvido slack react 1234567890.123456 thumbsup
+HELP
+    ;;
   send)
     [[ $# -lt 1 ]] && { echo "Usage: slack.sh send [channel] <template> [--var ...]" >&2; exit 1; }
     resolve_channel "$1"
@@ -470,6 +497,7 @@ case "$ACTION" in
     ;;
   *)
     echo "Usage: slack.sh {send|reply|edit|read|react|unreact|reactions|delete|download|upload} ..." >&2
+    echo "Run 'kvido slack --help' for details." >&2
     exit 1
     ;;
 esac

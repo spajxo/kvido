@@ -66,6 +66,9 @@ for i in "${!projects[@]}"; do
     fi
   fi
 
+  # acli escapes '!' making '!=' an illegal JQL sequence — rewrite to 'NOT IN (...)'
+  jql=$(echo "$jql" | sed -E 's/!=\s*([^[:space:]]+)/NOT IN (\1)/g')
+
   output=$(acli jira workitem search --jql "$jql" --fields "key,summary,status,priority" --limit 20 --csv 2>&1) || {
     echo "=== $key ==="
     echo "  ERROR: acli failed — $output"

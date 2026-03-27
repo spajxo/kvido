@@ -149,6 +149,28 @@ fi
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 case "${1:-}" in
+    --help|-h)
+        cat <<'HELP'
+kvido config — read values from settings.json
+
+Usage: kvido config '<key>' [default]
+       kvido config --keys '<prefix>'
+       kvido config --validate
+
+Arguments:
+  <key>       Dot-notation path into settings.json (e.g. sources.gitlab.enabled)
+  default     Value to return when key is missing (optional)
+  --keys      List immediate child keys under a given prefix
+  --validate  Check that settings.json exists and is valid JSON
+
+Exit codes: 0 success, 1 file not found, 2 invalid JSON, 3 key not found
+
+Examples:
+  kvido config 'slack.dm_channel_id'
+  kvido config 'skills.worker.task_timeout_minutes' '30'
+  kvido config --keys 'sources'
+HELP
+        ;;
     --validate)
         _validate
         ;;
@@ -160,6 +182,7 @@ case "${1:-}" in
         echo "Usage: config.sh 'key' [default]" >&2
         echo "       config.sh --keys 'prefix'" >&2
         echo "       config.sh --validate" >&2
+        echo "Run 'kvido config --help' for details." >&2
         exit 3
         ;;
     *)
