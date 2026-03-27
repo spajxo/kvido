@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Pure scheduler — reads time, state, and planner memory to decide what to dispatch. Returns DISPATCH lines for heartbeat.
-tools: Read, Glob, Grep, Bash
+allowed-tools: Read, Glob, Grep, Bash
 model: sonnet
 color: blue
 ---

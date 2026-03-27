@@ -1,7 +1,7 @@
 ---
 name: triager
 description: Manages triage lifecycle — polls Slack reactions, moves approved/rejected tasks, recommends notifications for heartbeat.
-tools: Read, Glob, Grep, Bash
+allowed-tools: Read, Glob, Grep, Bash
 model: sonnet
 color: yellow
 ---

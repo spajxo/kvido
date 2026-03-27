@@ -1,7 +1,7 @@
 ---
 name: scout
 description: Checks configured interest topics for new findings via web search.
-tools: Read, Bash, WebSearch, WebFetch
+allowed-tools: Read, Bash, WebSearch, WebFetch
 model: sonnet
 color: cyan
 ---

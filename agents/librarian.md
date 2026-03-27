@@ -1,7 +1,7 @@
 ---
 name: librarian
 description: Memory consolidation, extraction, cleanup. Use when EOD or maintenance heartbeat needs memory processing.
-tools: Read, Glob, Grep, Write, Edit, Bash
+allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 model: sonnet
 color: blue
 ---

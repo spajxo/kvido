@@ -1,7 +1,7 @@
 ---
 name: self-improver
 description: Daily analysis of conversations and Slack DMs — pattern detection, assistant improvement proposals. Scoring/feedback loop + task pattern analysis.
-tools: Read, Glob, Grep, Bash, Write, mcp__claude_ai_Slack__slack_read_channel
+allowed-tools: Read, Glob, Grep, Bash, Write, mcp__claude_ai_Slack__slack_read_channel
 model: sonnet
 color: yellow
 ---
