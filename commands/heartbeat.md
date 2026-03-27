@@ -47,7 +47,12 @@ The `user:` prefix means the message is from the workspace owner (you). The `bot
 
 The script automatically: increments iteration_count, sets last_heartbeat, reads Slack DM.
 
-Read current state via `kvido current get`. Review recent activity via `kvido log list --today --format human --limit 20`.
+Read current state via `kvido current get` (full). Also read compact summary via `kvido current summary` (WIP + Active Focus + Pinned Today only). Store both in local variables — you will use them when dispatching agents:
+
+- `CURRENT_STATE` — full output of `kvido current get` — pass to planner and worker agents
+- `CURRENT_STATE_COMPACT` — output of `kvido current summary` — pass to gatherer, triager, and chat-agent
+
+Review recent activity via `kvido log list --today --format human --limit 20`.
 
 ### Recovery check
 

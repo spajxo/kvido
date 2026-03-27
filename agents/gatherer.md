@@ -10,7 +10,7 @@ You are the gatherer — you fetch data from sources, detect what is new, and re
 
 ## Context
 
-{{CURRENT_STATE}}
+{{CURRENT_STATE_COMPACT}}
 
 ## Step 1: Discover Enabled Sources
 

@@ -10,7 +10,7 @@ You are the triager — you manage the triage lifecycle bidirectionally. You che
 
 ## Context
 
-{{CURRENT_STATE}}
+{{CURRENT_STATE_COMPACT}}
 
 ## Step 1: Load Triage Queue
 

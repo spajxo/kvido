@@ -216,6 +216,7 @@ Usage: kvido current <subcommand> [--section <name>] [args...]
 Subcommands:
   get [--section <name>]             Read full file or a specific section
   dump                               Read full file (alias for get)
+  summary                            Compact summary: WIP, Active Focus, Pinned Today only
   set [--section <name>] [content]   Write full file (stdin) or a section
   append --section <name> <text>     Append a line to a section
   clear --section <name>             Clear a section's content (keep header)
@@ -245,6 +246,27 @@ HELP
       line=$(_find_section "$SECTION") || { echo "Error: section '$SECTION' not found" >&2; exit 1; }
       _get_section "$line"
     fi
+    ;;
+
+  summary)
+    # Compact summary: WIP, Active Focus, Pinned Today only — no triage table, no resolved-today log
+    if [[ ! -f "$STATE_FILE" ]]; then
+      echo "Error: state not initialized. Run: kvido setup" >&2
+      exit 1
+    fi
+    echo "# Current State (summary)"
+    echo ""
+    for section in wip active-focus pinned-today; do
+      if line=$(_find_section "$section" 2>/dev/null); then
+        header="$(_slug_to_header "$section")"
+        content="$(_get_section "$line")"
+        if [[ -n "$(echo "$content" | tr -d '[:space:]')" ]]; then
+          echo "## $header"
+          echo "$content"
+          echo ""
+        fi
+      fi
+    done
     ;;
 
   dump)
@@ -305,6 +327,7 @@ Usage: current.sh <command> [options]
 Commands:
   get [--section <name>]             Read full file or a specific section
   dump                               Read full file (alias for get)
+  summary                            Compact summary: WIP, Active Focus, Pinned Today only
   set [--section <name>] [content]   Write full file (stdin) or a section
   append --section <name> <text>     Append a line to a section
   clear --section <name>             Clear a section's content (keep header)

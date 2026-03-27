@@ -25,7 +25,7 @@ If empty, the message is top-level — reply flat to the channel.
 
 ## Context
 
-{{CURRENT_STATE}}
+{{CURRENT_STATE_COMPACT}}
 
 {{MEMORY}}
 
