@@ -54,6 +54,7 @@ Examples:
   kvido memory list
   kvido memory list --type feedback
 HELP
+    exit 0
     ;;
   read)
     [[ -z "${2:-}" ]] && { echo "Usage: memory.sh read <name>" >&2; exit 1; }
@@ -103,9 +104,9 @@ HELP
     fi
     # grep -r: recursive, -i: case-insensitive, -n: line numbers, --include: only .md files
     # Output format: relative-filename:line-number:matching-line
-    RESULTS=$(grep -r -i -n --include="*.md" "$QUERY" "$MEMORY_DIR" 2>/dev/null || true)
+    RESULTS=$(grep -r -i -n -F --include="*.md" -- "$QUERY" "$MEMORY_DIR" 2>/dev/null || true)
     if [[ -z "$RESULTS" ]]; then
-      echo "No matches found for: $QUERY"
+      echo "No matches found for: $QUERY" >&2
       exit 0
     fi
     # Print results with relative paths (strip MEMORY_DIR prefix)
@@ -140,7 +141,7 @@ HELP
       relpath="${filepath#"${MEMORY_DIR}/"}"
       if [[ -n "$FILTER_TYPE" ]]; then
         # Extract type from YAML frontmatter (look for "type: <value>" in first 20 lines)
-        file_type=$(head -20 "$filepath" | awk '/^---$/{found++; next} found==1 && /^type:/{gsub(/^type:[[:space:]]*/, ""); print; exit}')
+        file_type=$(head -20 "$filepath" | awk '/^---$/{found++; next} found>=2{exit} found==1 && /^type:/{gsub(/^type:[[:space:]]*/, ""); gsub(/[[:space:]]*$/, ""); gsub(/^["'"'"']|["'"'"']$/, ""); print; exit}')
         [[ "$file_type" == "$FILTER_TYPE" ]] || continue
       fi
       echo "$relpath"
