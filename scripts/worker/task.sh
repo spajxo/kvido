@@ -281,12 +281,17 @@ EOF
   echo "$slug"
 }
 
+_strip_yaml_quotes() { local v="$1"; v="${v#\"}"; v="${v%\"}"; v="${v#\'}"; v="${v%\'}"; echo "$v"; }
+
 _kv_out() {
   # Output KEY="value" — always double-quoted so values with spaces parse cleanly
   local key="$1" val="$2"
   # Strip surrounding YAML quotes if present (e.g. "foo" → foo)
-  val="${val#\"}"
-  val="${val%\"}"
+  val=$(_strip_yaml_quotes "$val")
+  # Escape double quotes inside the value to avoid broken output
+  val="${val//\"/\\\"}"
+  # Collapse newlines to literal \n for single-line output safe for eval
+  val="${val//$'\n'/\\n}"
   printf '%s="%s"\n' "$key" "$val"
 }
 
@@ -433,9 +438,7 @@ cmd_list() {
         ;;
       slug-title)
         # slug TAB title — for dedup checks in agents
-        title=$(_read_frontmatter "$f" "title")
-        title="${title#\"}"
-        title="${title%\"}"
+        title=$(_strip_yaml_quotes "$(_read_frontmatter "$f" "title")")
         printf '%s\t%s\n' "$slug" "$title"
         ;;
       raw)
