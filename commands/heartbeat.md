@@ -52,7 +52,7 @@ Read current state via `kvido current get` (full). Also read compact summary via
 - `CURRENT_STATE` — full output of `kvido current get` — pass to planner and worker agents
 - `CURRENT_STATE_COMPACT` — output of `kvido current summary` — pass to gatherer, triager, and chat-agent
 
-Review recent activity via `kvido log list --today --format human --limit 20`.
+Review recent activity via `kvido log list --today --format human --limit 20` on planner ticks (`PLANNER_DUE=true`), or `--limit 5` on non-planner ticks.
 
 ### Recovery check
 
