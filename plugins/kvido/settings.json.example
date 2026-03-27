@@ -116,6 +116,7 @@
     },
 
     "planner": {
+      "planning_interval": 5,
       "focus_mode": {
         "enabled": true,
         "calendar_category": "focus",

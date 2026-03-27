@@ -39,7 +39,7 @@ Run:
 kvido heartbeat
 ```
 
-Output: `TIMESTAMP`, `ITERATION`, `NIGHT`, `ZONE`, `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `INTERACTION_AGO_MIN`, `OWNER_USER_ID`, `SLEEP_ACTIVE`, `SLEEP_UNTIL`, `CHAT_MESSAGES_START...CHAT_MESSAGES_END`.
+Output: `TIMESTAMP`, `ITERATION`, `NIGHT`, `ZONE`, `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `PLANNER_DUE`, `INTERACTION_AGO_MIN`, `OWNER_USER_ID`, `SLEEP_ACTIVE`, `SLEEP_UNTIL`, `CHAT_MESSAGES_START...CHAT_MESSAGES_END`.
 
 Messages in `CHAT_MESSAGES` block are in `--heartbeat` format: one line per message, empty line between top-level messages: `ts=... user:|bot: text="..." [reactions=emoji1,emoji2] [reply_count=N] [latest_reply=...]`. Thread replies are under their top-level message with prefix `  ┗` (max 5 replies). Empty block = no messages.
 
@@ -120,7 +120,9 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <slug> fa
 
 Run the planner as a **foreground subagent** (wait for completion). The planner evaluates state, schedules, and pending work, then returns natural language output describing what should happen this tick.
 
-If no `planner` task pending/in_progress:
+**Throttle:** `heartbeat.sh` outputs `PLANNER_DUE=true|false` based on `planning_interval` config (default 3 — every 3rd iteration). If `PLANNER_DUE=false`, skip Step 4 entirely and proceed to Step 5 (dispatch only previously queued agents like pending `chat:*` tasks).
+
+If `PLANNER_DUE=true` and no `planner` task pending/in_progress:
 1. `TaskCreate` subject `planner`
 2. `TaskUpdate` → `in_progress`
 3. Dispatch planner agent (foreground — wait for completion)
@@ -128,66 +130,51 @@ If no `planner` task pending/in_progress:
 5. Log: `kvido log add heartbeat dispatch --message "planner"` with token/duration from `<usage>` tag
 6. Mark planner task as `completed` via `TaskUpdate`
 
-The planner output is structured NL text listing which agents to dispatch and in what order. Example:
+The planner output uses structured lines:
 
 ```
-Dispatch gatherer (sources: gitlab, jira, calendar)
-Dispatch triager
-Dispatch worker: fix-auth-bug
-Dispatch maintenance: librarian
-Sequential: gatherer → triager (triager needs fresh data)
+DISPATCH gatherer
+DISPATCH triager
+DISPATCH worker deploy-hotfix
+DISPATCH librarian
+DISPATCH_AFTER triager gatherer
+NOTIFY stale-worker fix-auth-bug
 ```
 
-If the planner returns nothing (empty output or "nothing to do"), skip Steps 5 and 6.
+- `DISPATCH <agent>` — dispatch agent (parallel by default)
+- `DISPATCH worker <slug>` — dispatch worker for specific task
+- `DISPATCH_AFTER <agent> <after-agent>` — sequential ordering
+- `NOTIFY <type> [detail]` — heartbeat handles notification directly
+- `No dispatches needed.` — skip Steps 5 and 6
+
+If the planner returns nothing or "No dispatches needed.", skip Steps 5 and 6.
 
 ---
 
 ## Step 5: Dispatch Agents
 
-Interpret the planner's NL output from Step 4. Dispatch agents based on what the planner requested.
+Parse planner output from Step 4 line by line. Handle each line type:
 
-### Default: parallel dispatch
+### `DISPATCH <agent>` — parallel by default
 
-Unless the planner explicitly specifies sequential ordering (e.g., "Sequential: A → B"), dispatch all agents in parallel using `run_in_background: true`.
+For each `DISPATCH` line, dispatch the agent with `run_in_background: true`:
 
-### Sequential dispatch
+1. `TaskCreate` subject `<agent>` (or `worker:<slug>`, `maintenance:<agent>`)
+2. `TaskUpdate` → `in_progress`
+3. Dispatch agent (`run_in_background: true`)
+4. Log: `kvido log add heartbeat dispatch --message "<agent>"`
 
-When the planner specifies sequential ordering (e.g., "Sequential: gatherer → triager"), dispatch agents in order — wait for each to complete before dispatching the next. Use `addBlockedBy` on the `TaskCreate` for dependent agents.
+**Worker specifics:** `DISPATCH worker <slug>` — read task first (`kvido task read "$slug"`), if SOURCE_REF is set send ack via `kvido slack reply`, then `kvido task move "$slug" in-progress`.
 
-### Per-agent dispatch details
+**Maintenance specifics:** If another `maintenance:*` task is pending/in_progress, set `addBlockedBy`.
 
-#### gatherer
-If planner requests gatherer:
-- `TaskCreate` subject `gatherer`
-- `TaskUpdate` → `in_progress`
-- Dispatch gatherer agent (`run_in_background: true`)
-- Log: `kvido log add heartbeat dispatch --message "gatherer"`
+### `DISPATCH_AFTER <agent> <after-agent>` — sequential
 
-#### triager
-If planner requests triager:
-- `TaskCreate` subject `triager`
-- `TaskUpdate` → `in_progress`
-- Dispatch triager agent (`run_in_background: true`)
-- Log: `kvido log add heartbeat dispatch --message "triager"`
+Use `addBlockedBy` on the `TaskCreate` for the dependent agent. Wait for the dependency to complete before dispatching.
 
-#### worker
-If planner requests worker with a specific task slug:
-- `kvido task read "$slug"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION
-- If SOURCE_REF is set: `kvido slack reply "<SOURCE_REF>" chat --var message="Task accepted: <slug>. Working on it..."`
-- `TaskCreate` subject `worker:<slug>`
-- `TaskUpdate` → `in_progress`
-- `kvido task move "$slug" in-progress`
-- Dispatch worker agent (`run_in_background: true`)
-- Log: `kvido log add heartbeat dispatch --message "worker:<slug>"`
+### `NOTIFY <type> [detail]` — heartbeat handles directly
 
-#### maintenance agents (librarian, project-enricher, self-improver, scout)
-If planner requests a maintenance agent:
-- Verify `agents/<agent>.md` exists
-- `TaskCreate` subject `maintenance:<agent>`
-- If another `maintenance:*` task is pending/in_progress, set `addBlockedBy`
-- `TaskUpdate` → `in_progress`
-- Dispatch named agent (`run_in_background: true`)
-- Log: `kvido log add heartbeat dispatch --message "maintenance:<agent>"`
+Deliver notification via `kvido slack` using appropriate template. No agent dispatch needed.
 
 #### chat (from Step 3)
 Non-trivial chat from Step 3 creates `chat:<ts>` tasks. These are dispatched here alongside planner-requested agents.
@@ -300,5 +287,5 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **Concurrency via dependencies.** Same-group tasks use `blockedBy`. Max 1 concurrent per group (maintenance, worker, chat). Planner runs foreground. Other agents run in background.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
 - **Heartbeat owns ALL delivery.** No agent sends Slack messages directly. Chat-agent delivery in Step 3/6, all other agent outputs in Step 6.
-- **No event bus.** Planner returns NL output, heartbeat interprets it. No `kvido event emit/read/ack`.
-- **Planner is the sole scheduler.** Heartbeat never decides which agents to dispatch — it only interprets planner output.
+- **No event bus.** No `kvido event emit/read/ack`.
+- **Planner is the sole scheduler.** Heartbeat never decides which agents to dispatch — it only parses `DISPATCH` / `NOTIFY` lines from planner output.

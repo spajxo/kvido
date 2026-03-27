@@ -70,9 +70,9 @@ heartbeat (cron, every 10 min) — plugins/kvido/scripts/heartbeat/
 ├── reads Slack DM (via core slack.sh)
 ├── handles trivial chat inline
 ├── dispatches chat-agent on non-trivial Slack DM
-├── runs planner (always, foreground)
-│   └── planner returns NL output: which agents to dispatch, in what order
-├── dispatches agents per planner instructions (parallel by default)
+├── runs planner (every Nth tick via planning_interval, foreground)
+│   └── planner returns DISPATCH/NOTIFY lines parsed by heartbeat
+├── dispatches agents per planner DISPATCH lines (parallel by default)
 │   ├── gatherer — fetches sources, detects changes, recommends notifications
 │   ├── triager — manages triage lifecycle, polls reactions, recommends notifications
 │   ├── worker — executes tasks
@@ -87,7 +87,7 @@ Agents return NL output to heartbeat via stdout. State is managed via unified st
 
 | Agent | Role | Dispatch |
 |-------|------|----------|
-| planner | Pure scheduler — decides what to dispatch | heartbeat runs every tick |
+| planner | Pure scheduler — reads planner memory, returns DISPATCH lines | heartbeat runs every Nth tick (planning_interval) |
 | gatherer | Fetches data from source plugins, detects changes | planner instruction |
 | triager | Manages triage lifecycle — polls reactions, recommends notifications | planner instruction |
 | worker | Executes tasks from the queue | planner instruction |

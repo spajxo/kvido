@@ -179,6 +179,15 @@ fi
 kvido state increment heartbeat.iteration_count
 kvido state set heartbeat.last_heartbeat "$TIMESTAMP"
 
+# Planner throttle — run every N-th iteration (default 3)
+PLANNING_INTERVAL=$($CONFIG 'skills.planner.planning_interval')
+if (( PLANNING_INTERVAL < 1 )); then PLANNING_INTERVAL=1; fi
+if (( ITERATION % PLANNING_INTERVAL == 0 )); then
+  PLANNER_DUE="true"
+else
+  PLANNER_DUE="false"
+fi
+
 # Dashboard generation (non-fatal — log errors to stderr)
 DASH_ENABLED=$($CONFIG 'skills.dashboard.enabled' 'true')
 if [[ "$DASH_ENABLED" != "false" ]]; then
@@ -198,6 +207,7 @@ echo "SLEEP_UNTIL=$SLEEP_UNTIL"
 echo "TARGET_PRESET=$TARGET_PRESET"
 echo "ACTIVE_PRESET=$ACTIVE_PRESET"
 echo "CRON_JOB_ID=$CRON_JOB_ID"
+echo "PLANNER_DUE=$PLANNER_DUE"
 echo "INTERACTION_AGO_MIN=$INTERACTION_AGO_MIN"
 echo "OWNER_USER_ID=$OWNER_USER_ID"
 # CHAT_MESSAGES is compact key=value lines (--heartbeat format), output last
