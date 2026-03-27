@@ -46,13 +46,13 @@ For each enabled source, run the appropriate fetch commands as described below. 
 
 **fetch-activity:**
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT/scripts/fetch-gitlab-activity.sh" YYYY-MM-DD [--priority high]
+kvido gitlab-activity YYYY-MM-DD [--priority high]
 ```
 `--priority high` filters only repos with `priority: high`.
 
 **fetch-mrs:**
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT/scripts/fetch-gitlab-mrs.sh" [--priority high]
+kvido gitlab-mrs [--priority high]
 ```
 Repos with `type: knowledge-base` are always skipped (no MRs).
 
@@ -103,7 +103,7 @@ Repos with type: knowledge-base → skip triage detection.
 
 **fetch:**
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT/scripts/fetch-jira.sh" [--since YYYY-MM-DD] [--project KEY]
+kvido jira [--since YYYY-MM-DD] [--project KEY]
 ```
 Output: plain text, one block per project.
 
@@ -226,7 +226,7 @@ Actionable content in watched channels ("could you", "review", "please", task-li
 
 **fetch:**
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT/scripts/fetch-calendar.sh" [YYYY-MM-DD]
+kvido calendar [YYYY-MM-DD]
 ```
 Returns categorized events + total meeting/free-work time.
 
@@ -259,7 +259,7 @@ Returns categorized events + total meeting/free-work time.
 
 **fetch:**
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT/scripts/fetch-gmail.sh"
+kvido gmail
 ```
 Returns formatted summary of unread emails (from, subject, date, snippet).
 
@@ -295,7 +295,7 @@ Returns formatted summary of unread emails (from, subject, date, snippet).
 
 **fetch:**
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT/scripts/fetch-sessions.sh" [YYYY-MM-DD]
+kvido sessions [YYYY-MM-DD]
 ```
 Default: yesterday. Parses JSONL session files. Output per project:
 ```
@@ -305,7 +305,7 @@ Default: yesterday. Parses JSONL session files. Output per project:
 
 **fetch-messages:**
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT/scripts/fetch-sessions-messages.sh" [YYYY-MM-DD]
+kvido sessions-messages [YYYY-MM-DD]
 ```
 Default: today. Extracts user messages + retry patterns. Max ~2000 lines. For self-improver agent.
 

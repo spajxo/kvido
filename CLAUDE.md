@@ -22,13 +22,14 @@ hooks/
 └── session-context.md             ← runtime instructions injected at session start
 scripts/
 ├── config.sh                      ← configuration reader (dot-notation, env var resolution)
-├── fetch-gitlab-activity.sh       ← GitLab commit activity fetcher
-├── fetch-gitlab-mrs.sh            ← GitLab MR status fetcher
-├── fetch-jira.sh                  ← Jira issue fetcher
-├── fetch-calendar.sh              ← Google Calendar event fetcher
-├── fetch-gmail.sh                 ← Gmail inbox fetcher
-├── fetch-sessions.sh              ← Claude Code session parser
-├── fetch-sessions-messages.sh     ← Session message extractor
+├── fetch/                         ← source fetch scripts
+│   ├── gitlab-activity.sh
+│   ├── gitlab-mrs.sh
+│   ├── jira.sh
+│   ├── calendar.sh
+│   ├── gmail.sh
+│   ├── sessions.sh
+│   └── sessions-messages.sh
 ├── heartbeat/                     ← heartbeat data scripts
 ├── slack/                         ← Slack messaging + templates
 ├── worker/                        ← task management (task.sh)
@@ -83,7 +84,7 @@ heartbeat (cron, every 10 min) — scripts/heartbeat/
 └── delivers notifications to Slack (heartbeat is the sole communicator)
 ```
 
-Agents return NL output to heartbeat via stdout. State is managed via unified store (`kvido state get/set`). The gatherer agent contains all source fetch instructions and executes fetch scripts from `scripts/fetch-*.sh`.
+Agents return NL output to heartbeat via stdout. State is managed via unified store (`kvido state get/set`). The gatherer agent contains all source fetch instructions and executes fetch scripts from `scripts/fetch/`.
 
 ### Agents
 
@@ -105,12 +106,12 @@ Sources are configured in `settings.json` under `sources.*`. Each source can be 
 
 | Source | Fetch scripts | Prerequisites |
 |--------|---------------|---------------|
-| gitlab | fetch-gitlab-activity.sh, fetch-gitlab-mrs.sh | glab CLI |
-| jira | fetch-jira.sh | acli or Atlassian MCP |
+| gitlab | fetch/gitlab-activity.sh, fetch/gitlab-mrs.sh | glab CLI |
+| jira | fetch/jira.sh | acli or Atlassian MCP |
 | slack | (inline in gatherer) | Slack Bot Token |
-| calendar | fetch-calendar.sh | gws or Google Calendar MCP |
-| gmail | fetch-gmail.sh | gws or Gmail MCP |
-| sessions | fetch-sessions.sh, fetch-sessions-messages.sh | none |
+| calendar | fetch/calendar.sh | gws or Google Calendar MCP |
+| gmail | fetch/gmail.sh | gws or Gmail MCP |
+| sessions | fetch/sessions.sh, fetch/sessions-messages.sh | none |
 
 ## Task system
 
