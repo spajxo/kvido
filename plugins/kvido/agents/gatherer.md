@@ -52,11 +52,22 @@ For each successfully fetched source, compare items against previously seen stat
 - `calendar:event-id-xyz`
 - `slack:channel-C123-ts-1234567890`
 
-### Check and mark seen
+### Check and mark seen (time-windowed dedup)
+
+For each item, build a versioned dedup key that includes change-specific state so that updates to the same resource are still reported:
+- MR: `mr:project!123:status=merged` or `mr:project!123:commits=abc1234`
+- Issue: `issue:PROJ-456:status=in-progress`
+- Email: `email:<message_id>` (emails are immutable — plain ID is fine)
+- Calendar: `calendar:<event_id>:<start_time>` (re-report if rescheduled)
 
 For each item:
-1. Check: `kvido state get "gatherer.seen.<dedup_key>"` — if it returns a value, the item was already reported. Skip it.
-2. If new: `kvido state set "gatherer.seen.<dedup_key>" "$(date -Iseconds)"` — mark as seen.
+1. Check: `kvido state get "gatherer.seen.<dedup_key>"` — if it returns a timestamp within the last 2 hours, skip (recently reported).
+2. If new or stale (missing or older than 2h): `kvido state set "gatherer.seen.<dedup_key>" "$(date -Iseconds)"` — mark as seen.
+
+This ensures:
+- The same unchanged item is not re-reported within 2 hours
+- A new commit on an existing MR produces a different dedup key and gets reported
+- Stale entries naturally expire (2h window, not permanent)
 
 ### Side effects for new items
 
@@ -64,12 +75,12 @@ When a new item is detected, apply side effects as appropriate:
 
 - **Task creation**: If the item implies work for the user (e.g., assigned issue, review request), create a task:
   ```bash
-  kvido task create "<title>" --priority <high|medium|low> --source "<source_name>" --note "<details + URL>"
+  kvido task create --title "<title>" --instruction "<details + URL>" --priority <high|medium|low> --source "<source_name>"
   ```
 
 - **Current update**: If the item is relevant to the user's current focus (e.g., MR update on active project, calendar event soon), update current:
   ```bash
-  kvido current append context "- <brief description with URL>"
+  kvido current append --section context "- <brief description with URL>"
   ```
 
 ## Step 4: Save State
