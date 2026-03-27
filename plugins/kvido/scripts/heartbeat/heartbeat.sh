@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # heartbeat.sh — Pure data gathering: time, zone, adaptive interval, Slack DM read, state update.
 # Orchestration logic (dispatch tracking, dependencies) is in heartbeat.md via TaskCreate/TaskUpdate.
-# Output: key=value lines + CHAT_MESSAGES block + DISPATCH_EVENTS block for LLM consumption.
+# Output: key=value lines + CHAT_MESSAGES block for LLM consumption.
 
 set -euo pipefail
 
@@ -120,12 +120,6 @@ else
   fi
 fi
 
-# Planner dispatch — emit event instead of setting PLANNER_DUE flag
-PLANNING_INTERVAL=$($CONFIG 'skills.planner.planning_interval')
-if (( ITERATION % PLANNING_INTERVAL == 0 )); then
-  kvido event emit dispatch.planner --producer heartbeat >/dev/null
-fi
-
 # --- Resolve owner user ID ---
 # 1. Try kvido config 'slack.user_id' (resolves $SLACK_USER_ID from .env)
 # 2. Fall back to $SLACK_USER_ID env var directly
@@ -191,9 +185,6 @@ if [[ "$DASH_ENABLED" != "false" ]]; then
   "$SCRIPT_DIR/generate-dashboard.sh" 2>/dev/null || echo "ERROR: generate-dashboard.sh failed (exit $?)" >&2
 fi
 
-# Read pending dispatch events for heartbeat to process
-DISPATCH_EVENTS=$(kvido event read --consumer heartbeat --type 'dispatch.*' 2>/dev/null || echo "")
-
 # --- Output ---
 
 echo "TIMESTAMP=$TIMESTAMP"
@@ -217,6 +208,3 @@ echo "OWNER_USER_ID=$OWNER_USER_ID"
 echo "CHAT_MESSAGES_START"
 echo "$CHAT_MESSAGES"
 echo "CHAT_MESSAGES_END"
-echo "DISPATCH_EVENTS_START"
-echo "$DISPATCH_EVENTS"
-echo "DISPATCH_EVENTS_END"
