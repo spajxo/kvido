@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "kvido",
-      "source": ".",
+      "source": "./",
       "description": "Personal AI workflow assistant — heartbeat, planner, worker, sources"
     }
   ]
