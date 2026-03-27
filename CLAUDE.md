@@ -55,6 +55,7 @@ settings.json.example              ← config reference template
 - **Agent instructions** are self-contained in `agents/*.md` files. The gatherer agent contains all source fetch instructions inline.
 - **Agents read user customizations** via `kvido memory read <agent-name>` — users can add per-agent instructions in `$KVIDO_HOME/memory/`.
 - **Sources are toggled** via `sources.<name>.enabled` in `settings.json` (default: `true`). No separate plugin installation needed.
+- **Agent output contract** is formally defined in `docs/agent-output-contract.md` — specifies what heartbeat expects from each agent's stdout output.
 
 ## KVIDO_HOME
 
