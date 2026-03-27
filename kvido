@@ -1,0 +1,290 @@
+#!/usr/bin/env bash
+# =============================================================================
+# kvido — CLI for kvido assistant plugin
+# =============================================================================
+# Combined command dispatcher. Resolves plugin install path preferring
+# CLAUDE_PLUGIN_ROOT (set by Claude Code in plugin context), with fallback
+# to script directory detection and the Claude plugin registry.
+# Designed to be symlinked to ~/.local/bin/kvido.
+#
+# Usage:
+#   kvido                                     # launch Claude with /loop 10m /kvido:heartbeat
+#   kvido heartbeat                           # run heartbeat data gather
+#   kvido task list todo                      # shortcut for scripts/worker/task.sh
+#   kvido state set heartbeat.key value        # shortcut for scripts/state/state.sh
+#   kvido config 'sources.gitlab.repos'       # shortcut for scripts/config.sh
+#   kvido --root                              # print plugin root path
+#   kvido --install                           # install wrapper to ~/.local/bin/kvido
+#   kvido --help|-h                           # show this help
+#
+# Routing:
+#   --root / --install / --help|-h  → built-in commands
+#   <empty>                → default Claude command (/kvido:heartbeat)
+#   scripts/* / agents/*  → direct dispatch (backward compat)
+#   <name> [args]         → auto-resolve script by name from scripts/
+#   everything else       → error
+# =============================================================================
+
+set -euo pipefail
+
+_resolve_root() {
+  # 1. Prefer CLAUDE_PLUGIN_ROOT — set by Claude Code when running inside a plugin context
+  if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -d "$CLAUDE_PLUGIN_ROOT" ]]; then
+    # Verify this is actually the kvido plugin root
+    if [[ -f "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" ]] && \
+       jq -e '.name == "kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" &>/dev/null; then
+      echo "$CLAUDE_PLUGIN_ROOT"
+      return
+    fi
+    # CLAUDE_PLUGIN_ROOT is set but points to a different plugin — fall through to script dir / registry
+  fi
+
+  # 2. If running directly from plugin dir, use SCRIPT_DIR
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [[ -f "$script_dir/.claude-plugin/plugin.json" ]]; then
+    echo "$script_dir"
+    return
+  fi
+
+  # 3. Fallback: resolve from registry (shell wrapper / external entrypoint)
+  local registry="$HOME/.claude/plugins/installed_plugins.json"
+  if [[ ! -f "$registry" ]]; then
+    echo "ERROR: Plugin registry not found and CLAUDE_PLUGIN_ROOT is not set" >&2
+    exit 1
+  fi
+
+  local root
+  root=$(jq -r '
+    .plugins | to_entries[]
+    | select(.key | startswith("kvido@"))
+    | .value[0].installPath
+  ' "$registry" 2>/dev/null | head -1)
+
+  if [[ -z "$root" || "$root" == "null" || ! -d "$root" ]]; then
+    echo "ERROR: kvido plugin not found in registry and CLAUDE_PLUGIN_ROOT is not set" >&2
+    exit 1
+  fi
+  echo "$root"
+}
+
+KVIDO_ROOT="$(_resolve_root)"
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+
+_exec_claude_prompt() {
+  local prompt="$1"
+
+  # Claude Code reads official env vars automatically. Only KVIDO_* vars map
+  # to CLI flags that have no env var equivalent.
+  if [[ -f "$KVIDO_HOME/.env" ]]; then
+    set -a; source "$KVIDO_HOME/.env"; set +a
+  fi
+
+  local args=(
+    --name "${KVIDO_NAME:-kvido}"
+    --permission-mode "${KVIDO_PERMISSION_MODE:-default}"
+  )
+
+  if [[ -n "${KVIDO_EXTRA_ARGS:-}" ]]; then
+    # shellcheck disable=SC2086
+    args+=($KVIDO_EXTRA_ARGS)
+  fi
+
+  # Show animated owl banner while collecting context
+  local start_ts
+  start_ts=$(date +%s%N)
+
+  # Owl frames — eyes cycle through states
+  local -a eyes=( "o,o" "o,o" "o,o" "-,-" "o,o" "o,o" "^,^" "o,o" )
+  local frame=0
+
+  local kvido_version
+  kvido_version="$(jq -r .version "$KVIDO_ROOT/.claude-plugin/plugin.json" 2>/dev/null || echo "?")"
+
+  _draw_owl() {
+    printf '\033[?25l'        # hide cursor
+    printf '\033[H\033[2J'    # clear screen
+    printf '\n\n'
+    printf '        ^...^\n'
+    printf '       / %s \\\n' "$1"
+    printf '       |):::(|\n'
+    printf '     ====w=w====\n'
+    printf '    \033[2mkvido v%s\033[0m\n' "$kvido_version"
+  }
+
+  # Collect context in background
+  KVIDO_PROJECT="$PWD" bash "$KVIDO_ROOT/hooks/build-context.sh" > "$KVIDO_HOME/state/session-context.md" 2>/dev/null &
+  local ctx_pid=$!
+
+  # Animate owl while waiting (minimum 2s)
+  while kill -0 "$ctx_pid" 2>/dev/null || (( ($(date +%s%N) - start_ts) / 1000000 < 2000 )); do
+    _draw_owl "${eyes[$frame]}"
+    frame=$(( (frame + 1) % ${#eyes[@]} ))
+    sleep 0.3
+  done
+  wait "$ctx_pid" 2>/dev/null || true
+
+  _draw_owl "o,o"
+  sleep 0.4
+  printf '\033[?25h'          # show cursor
+  printf '\033[H\033[2J'      # clear for claude
+
+  export KVIDO_SESSION=1
+  exec claude "${args[@]}" "$prompt"
+}
+
+case "${1:-}" in
+  "")
+    _exec_claude_prompt "/loop 10m /kvido:heartbeat"
+    ;;
+  --help|-h)
+    help_version="$(jq -r .version "$KVIDO_ROOT/.claude-plugin/plugin.json" 2>/dev/null || echo "?")"
+    cat <<HELP
+        ^...^
+       / o,o \\
+       |):::(|
+     ====w=w====
+    kvido v${help_version}
+
+Usage: kvido [command] [args...]
+
+Commands:
+  (none)                            Launch Claude with /loop 10m /kvido:heartbeat
+  heartbeat                         Run heartbeat data gather
+  task <subcommand> [args]          Manage tasks (list, find, move, note, update, create...)
+  state <subcommand>                Read/write unified state store (get, set, increment, delete, list)
+  config <key> [default]            Read kvido config values from settings.json
+  log <subcommand> [args]           Activity log (add, list, purge)
+  slack <subcommand> [args]         Slack messaging (send, reply, edit, read, react, delete, upload...)
+  dashboard                         Open the dashboard HTML in the default browser
+  memory <subcommand>               Memory access (read, write, tree)
+  current <get|dump|set|append|clear>  Read/write current focus sections (state/current.md)
+  migrate                           Run lazy state migration (heartbeat-state/planner-state → state)
+  scripts/<script>.sh [args]        Direct script dispatch (backward compat)
+  agents/<script>.sh [args]         Direct agent dispatch (backward compat)
+
+Flags:
+  --root                            Print plugin root path
+  --install                         Install wrapper to ~/.local/bin/kvido
+  --help, -h                        Show this help message
+
+Task subcommands (all accept numeric ID or slug):
+  create --title "..." --instruction "..." [--priority P] [--size S] [--source SRC] [--source-ref REF] [--goal G]
+  read <id|slug>        Returns frontmatter + content as key=value
+  read-raw <id|slug>    Returns raw markdown content
+  update <id|slug> <field> <value>
+  move <id|slug> <status>  Moves task (triage|todo|in-progress|done|failed|cancelled)
+  list [status]         Lists tasks, optional filter by status
+  find <id|slug>        Returns current status of task
+  note <id|slug> "<text>"  Appends text to Worker Notes
+  count [status]        Count of tasks, optionally per status
+  migrate-ids           Assign numeric IDs to legacy tasks
+
+Log subcommands:
+  add <agent> <action> [--message "..."] [--task_id "..."] [--tokens N] [--duration_ms N]
+  list [--today] [--format json|human] [--limit N] [--summary]
+  purge [--before YYYY-MM-DD]
+
+Slack subcommands:
+  send [channel] <template> [--var key=value]...
+  reply [channel] <thread_ts> <template> [--var key=value]...
+  edit [channel] <message_ts> <template> [--var key=value]...
+  read [channel] [--limit N] [--oldest ts] [--thread ts]
+  react <ts> <emoji> [channel]
+  reactions <message_ts> [channel]
+  delete [channel] <message_ts>
+  download <url_private> [output_dir]
+  upload [channel] <file_path> [--title '...'] [--thread <ts>]
+
+State subcommands:
+  get <key>                         Get value (exit 1 if missing)
+  get-json <key>                    Get JSON value
+  set <key> <value>                 Set string value
+  set-json <key> <json>             Set JSON value
+  increment <key>                   Atomic increment
+  delete <key>                      Delete key
+  list [prefix]                     List keys
+
+HELP
+    ;;
+  --root)
+    echo "$KVIDO_ROOT"
+    ;;
+  --install)
+    mkdir -p "$HOME/.local/bin"
+    # Write a wrapper that resolves the plugin path at runtime.
+    # Prefers CLAUDE_PLUGIN_ROOT (set by Claude Code in plugin context).
+    # Falls back to installed_plugins.json for standalone shell invocations.
+    # A symlink would go stale when the plugin version changes in cache.
+    cat > "$HOME/.local/bin/kvido" <<'WRAPPER'
+#!/usr/bin/env bash
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -d "$CLAUDE_PLUGIN_ROOT" ]]; then
+  if [[ -f "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" ]] && \
+     jq -e '.name == "kvido"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" &>/dev/null; then
+    exec "$CLAUDE_PLUGIN_ROOT/kvido" "$@"
+  fi
+fi
+_P=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null | head -1)
+if [[ -z "$_P" || "$_P" == "null" || ! -d "$_P" ]]; then
+  echo "ERROR: kvido plugin not found in registry and CLAUDE_PLUGIN_ROOT is not set" >&2; exit 1
+fi
+exec "$_P/kvido" "$@"
+WRAPPER
+    chmod +x "$HOME/.local/bin/kvido"
+    echo "Installed: ~/.local/bin/kvido (CLAUDE_PLUGIN_ROOT-first wrapper)"
+    ;;
+  dashboard)
+    _DASHBOARD="$KVIDO_HOME/state/dashboard.html"
+    if [[ ! -f "$_DASHBOARD" ]]; then
+      echo "ERROR: Dashboard not found: $_DASHBOARD" >&2
+      echo "Run 'kvido heartbeat' to generate the dashboard." >&2
+      exit 1
+    fi
+    case "$(uname -s)" in
+      Darwin) open "$_DASHBOARD" ;;
+      Linux)
+        if command -v wslview &>/dev/null; then
+          wslview "$_DASHBOARD"
+        else
+          xdg-open "$_DASHBOARD"
+        fi ;;
+      *) echo "ERROR: Unsupported platform. Open manually: $_DASHBOARD" >&2; exit 1 ;;
+    esac
+    ;;
+  scripts/*|agents/*)
+    # Script dispatch — resolve to plugin install path
+    TARGET="$KVIDO_ROOT/$1"
+    shift
+    if [[ ! -f "$TARGET" ]]; then
+      echo "ERROR: Script not found: $TARGET" >&2
+      exit 1
+    fi
+    exec bash "$TARGET" "$@"
+    ;;
+  *)
+    # Try auto-resolve as short command name → scripts/*.sh
+    if [[ $# -gt 0 ]]; then
+      _RESOLVED=""
+      _NAME="${1%.sh}"
+      if [[ -f "$KVIDO_ROOT/scripts/$_NAME.sh" ]]; then
+        _RESOLVED="$KVIDO_ROOT/scripts/$_NAME.sh"
+      elif [[ -f "$KVIDO_ROOT/scripts/$_NAME/$_NAME.sh" ]]; then
+        _RESOLVED="$KVIDO_ROOT/scripts/$_NAME/$_NAME.sh"
+      else
+        _MATCH=$(find "$KVIDO_ROOT/scripts" -name "$_NAME.sh" -type f 2>/dev/null | head -1)
+        [[ -n "$_MATCH" ]] && _RESOLVED="$_MATCH"
+      fi
+
+      if [[ -n "$_RESOLVED" ]]; then
+        shift
+        exec bash "$_RESOLVED" "$@"
+      fi
+
+      echo "ERROR: Unknown kvido command: $1" >&2
+      echo "Run 'kvido' without arguments to launch Claude Code." >&2
+      exit 1
+    fi
+    _exec_claude_prompt "/kvido:heartbeat"
+    ;;
+esac
