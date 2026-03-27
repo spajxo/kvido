@@ -191,8 +191,6 @@ List via `kvido config --keys 'sources.slack.channels'`. For high+normal priorit
 - Without `use_mcp`: `kvido slack read "<channel_id>" --limit 5`
 - With `use_mcp: true`: `mcp__claude_ai_Slack__slack_read_channel(channel_id="<channel_id>", limit=5)`
 
-For `watch_for: marvin_qa` channels: analyze messages for Marvin AI quality issues, log via `kvido log add planner marvin-qa --message "..."`.
-
 **triage-detect:** Actionable messages ("could you", "review", "please", task-like) → triage item.
 
 **health:** `kvido slack read --limit 1` — OK if non-empty.
