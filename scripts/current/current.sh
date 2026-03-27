@@ -5,6 +5,9 @@ set -euo pipefail
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 STATE_FILE="${KVIDO_HOME}/state/current.md"
 
+# shellcheck source=../lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
+
 # --- helpers ---
 
 _ensure_file() {
@@ -68,7 +71,7 @@ _replace_section() {
   local content="$2"
   _ensure_file
   local tmp
-  tmp="$(mktemp "${STATE_FILE}.tmp.XXXXXX")"
+  tmp="$(_make_tmp "$STATE_FILE")"
   local line_num=0
   local skipping=false
   while IFS= read -r line || [[ -n "$line" ]]; do
@@ -101,7 +104,7 @@ _append_to_section() {
   local text="$2"
   _ensure_file
   local tmp
-  tmp="$(mktemp "${STATE_FILE}.tmp.XXXXXX")"
+  tmp="$(_make_tmp "$STATE_FILE")"
   local line_num=0
   local in_section=false
   local last_content_line=0
@@ -166,7 +169,7 @@ _create_section() {
   local header
   header="$(_slug_to_header "$slug")"
   local tmp
-  tmp="$(mktemp "${STATE_FILE}.tmp.XXXXXX")"
+  tmp="$(_make_tmp "$STATE_FILE")"
   cat "$STATE_FILE" > "$tmp"
   # Ensure trailing newline before new section
   [[ -s "$STATE_FILE" ]] && echo "" >> "$tmp"
@@ -232,7 +235,7 @@ case "$cmd" in
     if [[ -z "$SECTION" ]]; then
       # Backwards compatible: overwrite from stdin
       mkdir -p "$(dirname "$STATE_FILE")"
-      tmp="$(mktemp "${STATE_FILE}.tmp.XXXXXX")"
+      tmp="$(_make_tmp "$STATE_FILE")"
       cat > "$tmp"
       mv "$tmp" "$STATE_FILE"
     else

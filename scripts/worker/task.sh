@@ -24,6 +24,9 @@ KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 TASKS_DIR="${TASKS_DIR:-${KVIDO_HOME}/state/tasks}"
 STATUSES="triage todo in-progress done failed cancelled"
 
+# shellcheck source=../lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
+
 # --- Helpers ---
 
 _slugify() {
@@ -101,7 +104,8 @@ _read_frontmatter() {
 
 _update_frontmatter() {
   local file="$1" key="$2" value="$3"
-  local tmp="${file}.tmp"
+  local tmp
+  tmp="$(_make_tmp "$file")"
   awk -v k="$key" -v v="$value" '
     /^---$/ { c++; if (c == 2 && !found) print k ": " v; print; next }
     c == 1 && index($0, k ": ") == 1 { print k ": " v; found = 1; next }
@@ -127,7 +131,9 @@ _next_id() {
   [[ -f "$counter_file" ]] && id=$(cat "$counter_file")
   id=$((id + 1))
   mkdir -p "$(dirname "$counter_file")"
-  echo "$id" > "$counter_file.tmp" && mv "$counter_file.tmp" "$counter_file"
+  local tmp
+  tmp="$(_make_tmp "$counter_file")"
+  echo "$id" > "$tmp" && mv "$tmp" "$counter_file"
   echo "$id"
 }
 
@@ -483,7 +489,9 @@ cmd_migrate() {
     echo "Migrated: $slug → ${id}-${slug}" >&2
   done <<< "$sorted"
 
-  echo "$id" > "$counter_file.tmp" && mv "$counter_file.tmp" "$counter_file"
+  local counter_tmp
+  counter_tmp="$(_make_tmp "$counter_file")"
+  echo "$id" > "$counter_tmp" && mv "$counter_tmp" "$counter_file"
   echo "Migrated ${#all_tasks[@]} tasks. Counter: $id" >&2
 }
 
@@ -493,6 +501,31 @@ COMMAND="${1:-}"
 shift || true  # shift may fail if no args; handled by case fallback below
 
 case "$COMMAND" in
+  --help|-h)
+    cat <<'HELP'
+kvido task — task queue management
+
+Usage: kvido task <subcommand> [args...]
+
+Subcommands:
+  create --title "..." --instruction "..." [--priority urgent|high|medium|low]
+         [--size s|m|l|xl] [--source SRC] [--source-ref REF] [--goal G]
+  read <id|slug>              Print frontmatter fields as key=value
+  read-raw <id|slug>          Print raw markdown file
+  update <id|slug> <field> <value>  Update a frontmatter field
+  move <id|slug> <status>     Move task (triage|todo|in-progress|done|failed|cancelled)
+  list <status> [--sort priority] [--source SRC]  List tasks
+  find <id|slug>              Print current status of task
+  note <id|slug> "<text>"     Append text to ## Worker Notes
+  count [status]              Count tasks, optionally filtered by status
+  migrate-ids                 Assign numeric IDs to legacy tasks
+
+Examples:
+  kvido task create --title "Fix login" --instruction "Fix the login bug" --priority high
+  kvido task list in-progress
+  kvido task move 42 done
+HELP
+    ;;
   create)   cmd_create "$@" ;;
   read)     cmd_read "$@" ;;
   read-raw) cmd_read_raw "$@" ;;
@@ -505,6 +538,7 @@ case "$COMMAND" in
   migrate-ids) cmd_migrate "$@" ;;
   *)
     echo "Usage: task.sh <create|read|read-raw|update|move|list|find|note|count|migrate-ids> [args...]" >&2
+    echo "Run 'kvido task --help' for details." >&2
     exit 1
     ;;
 esac

@@ -19,6 +19,9 @@ STATE_FILE="${KVIDO_HOME}/state/state.json"
 LOCK_FILE="${STATE_FILE}.lock"
 LOCK_TIMEOUT=10
 
+# shellcheck source=../lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
+
 _ensure_file() {
   if [[ ! -f "$STATE_FILE" ]]; then
     mkdir -p "$(dirname "$STATE_FILE")"
@@ -29,7 +32,7 @@ _ensure_file() {
 _atomic_write() {
   local content="$1"
   local tmp
-  tmp="$(mktemp "${STATE_FILE}.tmp.XXXXXX")"
+  tmp="$(_make_tmp "$STATE_FILE")"
   echo "$content" > "$tmp"
   mv "$tmp" "$STATE_FILE"
 }
@@ -38,12 +41,7 @@ _locked_write() {
   local jq_filter="$1"
   shift
   (
-    mkdir -p "$(dirname "$LOCK_FILE")"
-    exec 200>"$LOCK_FILE"
-    if ! flock -w "$LOCK_TIMEOUT" 200; then
-      echo "state.sh: timeout acquiring lock ($LOCK_TIMEOUT s)" >&2
-      exit 1
-    fi
+    _lock_acquire "$LOCK_FILE" "$LOCK_TIMEOUT"
     _ensure_file
     updated=$(jq "$@" "$jq_filter" "$STATE_FILE")
     _atomic_write "$updated"
@@ -53,6 +51,27 @@ _locked_write() {
 CMD="${1:-}"
 
 case "$CMD" in
+  --help|-h)
+    cat <<'HELP'
+kvido state — unified key-value state store
+
+Usage: kvido state <subcommand> [args...]
+
+Subcommands:
+  get <key>              Print string value (exit 1 if missing)
+  get-json <key>         Print JSON value
+  set <key> <value>      Set string value
+  set-json <key> <json>  Set JSON value
+  increment <key>        Atomically increment counter (starts at 0)
+  delete <key>           Delete a key
+  list [prefix]          List keys, optionally filtered by prefix
+
+Examples:
+  kvido state set heartbeat.last_run "$(date -Iseconds)"
+  kvido state get heartbeat.last_run
+  kvido state list heartbeat
+HELP
+    ;;
   get)
     key="${2:?Usage: state.sh get <key>}"
     _ensure_file
@@ -106,6 +125,7 @@ case "$CMD" in
 
   *)
     echo "Usage: state.sh <get|get-json|set|set-json|increment|delete|list> [args...]" >&2
+    echo "Run 'kvido state --help' for details." >&2
     exit 1
     ;;
 esac
