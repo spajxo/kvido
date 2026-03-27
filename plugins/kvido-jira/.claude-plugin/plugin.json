@@ -1,6 +1,6 @@
 {
   "name": "kvido-jira",
-  "version": "0.25.1",
+  "version": "0.26.0",
   "description": "Kvido source plugin for Jira — issue tracking, status changes (requires acli or Atlassian MCP)",
   "keywords": [
     "kvido",
