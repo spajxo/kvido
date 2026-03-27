@@ -219,10 +219,10 @@ cmd_create() {
   # Title: explicit or first ~80 chars of instruction
   [[ -z "$TITLE" ]] && TITLE="${INSTRUCTION:0:80}"
 
-  # Status: user-initiated → todo (skip triage), agent-generated → triage
+  # Status: slack DM (user-initiated) → todo (skip triage), everything else → triage
   if [[ -z "$STATUS" ]]; then
     case "$SOURCE" in
-      slack|manual) STATUS="todo" ;;
+      slack) STATUS="todo" ;;
       *) STATUS="triage" ;;
     esac
   fi
