@@ -33,9 +33,9 @@ When heartbeat detects a new chat message:
 
 ## Digest threading
 
-When planner returns multiple events in a single cycle:
-- 1 event → deliver as standalone (current behavior)
-- 2+ events → send digest parent via `kvido slack send ... digest`, then each event as `kvido slack reply ... <digest_ts> event`
+When agents return multiple findings to deliver in a single cycle:
+- 1 finding → deliver as standalone
+- 2+ findings → send digest parent via `kvido slack send ... digest`, then each finding as `kvido slack reply ... <digest_ts> event`
 - `digest_ts` is ephemeral — used only within the current heartbeat execution
 
 ## Batch flush threading
@@ -51,7 +51,7 @@ For worker and planner dispatches, heartbeat sends a status message and edits it
 | Dispatch | Status message | On success | On failure |
 |----------|---------------|------------|------------|
 | worker | `kvido slack send ... chat --var message=":hourglass_flowing_sand: Working on <title>..."` | `kvido slack edit ... <ts> chat --var message=":white_check_mark: Done: <title> — <duration>"` | `kvido slack edit ... <ts> chat --var message=":x: Failed: <title> — <summary>"` |
-| planner | `kvido slack send ... chat --var message=":hourglass_flowing_sand: Planner scanning..."` | `kvido slack edit ... <ts> chat --var message=":white_check_mark: Planner done — <count> events"` | `kvido slack edit ... <ts> chat --var message=":x: Planner failed — <error>"` |
+| planner | `kvido slack send ... chat --var message=":hourglass_flowing_sand: Planner scanning..."` | `kvido slack edit ... <ts> chat --var message=":white_check_mark: Planner done — <count> dispatches"` | `kvido slack edit ... <ts> chat --var message=":x: Planner failed — <error>"` |
 
 Chat-agent uses ack reactions only (see Chat ack lifecycle above), not status edits.
 
