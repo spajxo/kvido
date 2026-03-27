@@ -27,12 +27,12 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
 
 ## Runtime Layout
 
-- `state/` — ephemeral runtime state; access via CLI: `kvido current`, `kvido state`, `kvido event`, `kvido task`, `kvido log`
+- `state/` — ephemeral runtime state; access via CLI: `kvido current`, `kvido state`, `kvido task`, `kvido log`
 - `memory/` — persistent context (`memory.md`, journals, weekly notes, projects, people, decisions, learnings)
 - `settings.json` — runtime configuration (use `kvido config 'key'` to read values; `"$ENV_VAR"` references are resolved from `.env` automatically)
 - `.env` — secrets only (referenced from `settings.json` via `"$ENV_VAR"` syntax)
 
-All state operations use `kvido` CLI wrappers. Memory paths resolve to `$KVIDO_HOME/memory/`. Event bus access via `kvido event` (append-only JSONL log at `state/events.jsonl`).
+All state operations use `kvido` CLI wrappers. Memory paths resolve to `$KVIDO_HOME/memory/`.
 
 ## Orchestration Contract
 
@@ -40,26 +40,23 @@ These rules apply to all agents, skills, and hooks. Do not restate them — refe
 
 ### Slack Delivery Ownership
 
-The **notifier agent** is the single owner of Slack message delivery. No other agent, source plugin, or worker may call `kvido slack send|reply|edit` directly. Notifier reads from the event bus and delivers all user-facing communication. Agents communicate via event bus (`kvido event emit`).
+The **heartbeat** is the single owner of Slack message delivery. No agent, source plugin, or worker may call `kvido slack send|reply|edit` directly. Heartbeat dispatches agents, collects their NL stdout output, and delivers all user-facing communication.
 
-### Agent Communication via Event Bus
+### Agent Communication
 
-Agents communicate through the event bus (`kvido event emit`), not via natural language output parsing. The old NL prefix format (`Event:`, `Triage:`, `Dispatch:`, etc.) is **deprecated**.
+Agents communicate via NL stdout output. Heartbeat parses agent output and handles delivery.
 
 **Architecture:**
-- **Planner** — scheduler agent; emits `dispatch.*` events (gather, notify, triage, briefing, worker, custom agents)
-- **Gatherer** — data fetching agent; emits `source.*` and `change.*` events
-- **Notifier** — user communication gateway; reads from bus and delivers to Slack (no external agent calls `kvido slack send`)
-- **Worker** — task execution; runs on `dispatch.worker` events
-- **Custom agents** — user-defined, dispatched via `dispatch.agent` events
+- **Planner** — scheduler agent; outputs DISPATCH and NOTIFY instructions
+- **Gatherer** — data fetching agent; outputs findings with suggested urgency
+- **Triager** — triage lifecycle agent; reads triage tasks, evaluates, prepares for user approval
+- **Worker** — task execution; dispatched by heartbeat
+- **Maintenance agents** — librarian, enricher, self-improver, scout; dispatched by planner instructions
 
 **For agents:**
-- Emit structured events: `kvido event emit <type> --data '{}' --producer <agent-name>`
-- Event types include: `dispatch.*`, `source.*`, `change.*`, `notification.*`, `scheduled.executed`
-- Use `--dedup-key` and `--dedup-window` for deduplication (prevents duplicate change detection)
-- Log brief status to stdout if needed, but return minimal output for logging only
-
-**Notifier handles all user-facing communication** — agents never call `kvido slack send` directly.
+- Return structured NL output to stdout
+- Heartbeat parses output and decides on delivery
+- Agents never call `kvido slack send` directly
 
 ### Task Lifecycle
 
@@ -69,7 +66,7 @@ CLI: `kvido task create`, `kvido task list [state]`, `kvido task read <slug>`, `
 
 ### Triage Approval Model
 
-Triage items are never auto-approved. They remain in `triage` state until the user explicitly approves via Slack reaction. Max 3 triage items per planner run.
+Triage items are never auto-approved. The triager agent manages the triage lifecycle — reading tasks, evaluating relevance, and preparing items for user approval. Items remain in `triage` state until the user explicitly approves via Slack reaction.
 
 ### Configuration
 
