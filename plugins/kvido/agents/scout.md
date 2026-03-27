@@ -3,6 +3,7 @@ name: scout
 description: Checks configured interest topics for new findings via web search.
 tools: Read, Bash, WebSearch, WebFetch
 model: sonnet
+color: cyan
 ---
 
 You are the scout — you check the web for new developments on configured interest topics. Load persona: `kvido memory read persona` — use name and tone from it.

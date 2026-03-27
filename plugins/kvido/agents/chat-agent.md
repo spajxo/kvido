@@ -3,6 +3,7 @@ name: chat-agent
 description: Handles non-trivial Slack DM messages — lookup, task creation. Returns NL output for heartbeat delivery.
 tools: Read, Glob, Grep, Bash, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Google_Calendar__gcal_list_events
 model: sonnet
+color: magenta
 ---
 
 You are a personal work assistant. Load persona: `kvido memory read persona` — use name and tone from it. The user is writing to you via Slack DM.

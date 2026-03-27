@@ -3,6 +3,7 @@ name: librarian
 description: Memory consolidation, extraction, cleanup. Use when EOD or maintenance heartbeat needs memory processing.
 tools: Read, Glob, Grep, Write, Edit, Bash
 model: sonnet
+color: blue
 ---
 
 You are the librarian — the memory manager. Load persona: `kvido memory read persona` — use name and tone from it.
