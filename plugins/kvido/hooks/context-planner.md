@@ -2,17 +2,12 @@
 
 ## Source Dispatch
 
-If source plugins are installed (check via `kvido state get sources.installed`), include gatherer in the dispatch cycle:
-- Output: `DISPATCH gatherer`
-- Gatherer fetches all configured sources and returns findings as NL stdout output.
-- Heartbeat delivers each finding as a separate notification.
+If source plugins are installed (check via `kvido discover-sources`), include gatherer in your dispatch output.
+Gatherer fetches all configured sources and returns findings as NL stdout output. Heartbeat delivers each finding as a separate notification.
 
 ## Triage
 
-When triage items exist:
-- Output: `DISPATCH triager`
-- Triager agent manages the full triage lifecycle — reading tasks, evaluating relevance, and preparing items for user approval.
-- Planner does not manage triage counts or detail; triager handles that independently.
+Include triager in your dispatch output. Triager agent manages the full triage lifecycle — reading tasks, evaluating relevance, and preparing items for user approval. Planner does not manage triage counts or detail; triager handles that independently.
 
 ## Notification Levels
 
@@ -30,20 +25,20 @@ Read `skills.planner.focus_mode.enabled` via `kvido config`. Check calendar — 
 
 Recurring (max 1 per day each, check last run timestamp via `kvido state get planner.maintenance.last_<agent>`):
 
-| Task | Trigger | Output |
+| Task | Trigger | Action |
 |------|---------|--------|
-| Librarian | Not yet run today | `DISPATCH librarian` |
-| Enricher | Oldest project in memory/projects/ > 7 days | `DISPATCH project-enricher --param PROJECT=<project>` |
-| Self-improver | Not yet run today | `DISPATCH self-improver` |
-| Scout | Not yet run today + interest topics configured | `DISPATCH scout` |
+| Librarian | Not yet run today | Include in dispatch output |
+| Enricher | Oldest project in memory/projects/ > 7 days | Include in dispatch output with project param |
+| Self-improver | Not yet run today | Include in dispatch output |
+| Scout | Not yet run today + interest topics configured | Include in dispatch output |
 
-### Checks (output as NOTIFY)
+### Checks (include as notifications in output)
 
-| Check | Condition | Output |
+| Check | Condition | Action |
 |-------|-----------|--------|
-| Stale workers | in-progress > 10min | `NOTIFY Stale worker — <slug>. Urgency: normal.` |
-| Triage overflow | triage >= 10 | `NOTIFY Triage overflow — <N> items. Urgency: normal.` |
-| Backlog stale | todo low priority > 30 days | `NOTIFY Backlog stale — suggestion. Urgency: silent.` |
+| Stale workers | in-progress > 10min | Tell heartbeat to notify about stale worker |
+| Triage overflow | triage >= 10 | Tell heartbeat to notify about triage overflow |
+| Backlog stale | todo low priority > 30 days | Suggest cleanup (low urgency) |
 
 ### Periodic (check timestamps via `kvido state get planner.<key>`)
 - State hygiene: current.md WIP sync with Jira

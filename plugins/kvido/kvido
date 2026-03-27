@@ -153,7 +153,6 @@ Commands:
   heartbeat                         Run heartbeat data gather
   task <subcommand> [args]          Manage tasks (list, find, move, note, update, create...)
   state <subcommand>                Read/write unified state store (get, set, increment, delete, list)
-  event <subcommand>                Event bus (emit, read, ack, gc, count)
   config <key> [default]            Read kvido config values from settings.json
   log <subcommand> [args]           Activity log (add, list, purge)
   slack <subcommand> [args]         Slack messaging (send, reply, edit, read, react, delete, upload...)
@@ -207,12 +206,6 @@ State subcommands:
   delete <key>                      Delete key
   list [prefix]                     List keys
 
-Event subcommands:
-  emit <type> [--data '{}'] [--producer <name>] [--dedup-key <key> --dedup-window <dur>]
-  read [--consumer <name>] [--type <glob>] [--since <ts>] [--limit N]
-  ack --consumer <name> [--through <event-id>]
-  gc [--older-than 72h]
-  count [--consumer <name>] [--type <glob>] [--unread]
 HELP
     ;;
   --root)

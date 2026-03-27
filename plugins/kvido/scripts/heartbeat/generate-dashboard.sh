@@ -429,7 +429,7 @@ tbody tr:last-child td { border-bottom: none; }
 .agent { font-weight: 600; }
 .agent-planner { color: var(--accent); }
 .agent-worker { color: var(--success); }
-.agent-notifier { color: var(--muted); }
+.agent-triager { color: var(--muted); }
 .agent-listener { color: var(--purple); }
 .agent-morning { color: var(--warning); }
 .agent-eod { color: var(--warning); }

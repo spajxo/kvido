@@ -27,8 +27,8 @@ Output: human-readable summary — from, subject, date, snippet. Max `max_result
 ### watch
 Quick check of unread count from priority senders since last check.
 If `gws` not available, use the MCP fallback from the fetch section above with a narrower query.
-If new important email (from priority_senders) → emit event for heartbeat.
-Event key pattern: `email:<message_id>` — for dedup via kvido event emit --dedup-key.
+If new important email (from priority_senders) → report in NL output for heartbeat.
+Dedup key pattern: `email:<message_id>` — for dedup via `kvido state get/set "gatherer.seen.<key>"`.
 
 ### health
 ```bash
