@@ -9,7 +9,12 @@
     "heartbeat",
     "planner",
     "monitoring",
-    "sources"
+    "sources",
+    "triage",
+    "worker",
+    "librarian",
+    "scout",
+    "chat-agent"
   ],
   "author": {
     "name": "Pavel Stejskal"

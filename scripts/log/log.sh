@@ -17,10 +17,30 @@ elif [[ -f "$OLD_LOG" && -f "$ACTIVITY_LOG" ]]; then
   rm "$OLD_LOG"
 fi
 
-ACTION="${1:?Usage: kvido log <add|list|purge> [args...]}"
-shift
+ACTION="${1:-}"
+shift || true
 
 case "$ACTION" in
+
+  --help|-h)
+    cat <<'HELP'
+kvido log — activity log for kvido agents
+
+Usage: kvido log <subcommand> [args...]
+
+Subcommands:
+  add <agent> <action> [--message "..."] [--detail "..."]
+      [--tokens N] [--duration_ms N] [--task_id "..."]
+  list [--today] [--agent <name>] [--since <ts>]
+       [--format human|json|jsonl] [--limit N] [--summary]
+  purge --before <YYYY-MM-DD|today> [--archive] [--dry-run]
+
+Examples:
+  kvido log add worker complete --message "task done" --task_id "42-fix-bug"
+  kvido log list --today --limit 20
+  kvido log purge --before today --dry-run
+HELP
+    ;;
 
   # ---------------------------------------------------------------------------
   # kvido log add <agent> <action> [--message "..."] [--tokens N] [--duration_ms N] [--detail "..."] [--task_id "..."]
@@ -226,8 +246,9 @@ case "$ACTION" in
     fi
     ;;
 
-  *)
+  ""|*)
     echo "Usage: kvido log <add|list|purge> [args...]" >&2
+    echo "Run 'kvido log --help' for details." >&2
     exit 1
     ;;
 esac
