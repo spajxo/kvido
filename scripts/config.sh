@@ -139,7 +139,7 @@ _validate() {
 
 # ── Check config file ────────────────────────────────────────────────────────
 
-if [[ "${1:-}" != "--validate" && ! -f "$CONFIG_FILE" ]]; then
+if [[ "${1:-}" != "--validate" && "${1:-}" != "--help" && "${1:-}" != "-h" && ! -f "$CONFIG_FILE" ]]; then
     echo "ERROR: Config file not found: $CONFIG_FILE" >&2
     echo "  Expected at: $CONFIG_FILE" >&2
     echo "  Copy settings.json.example from the plugin and fill in your data." >&2

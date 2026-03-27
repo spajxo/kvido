@@ -21,14 +21,17 @@ KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 TEMPLATES_DIR="$SCRIPT_DIR/templates"
 
 SLACK_API="https://slack.com/api"
-TOKEN=$(kvido config 'slack.bot_token' '' 2>/dev/null || echo "ERROR: failed to read slack.bot_token config (exit $?)" >&2)
-
-if [[ -z "$TOKEN" ]]; then
-  echo "Error: slack.bot_token not set in settings.json (use \"\$SLACK_BOT_TOKEN\" to reference .env)" >&2
-  exit 1
-fi
-
 ACTION="${1:-}"
+
+# Skip token lookup for help — allow help display without configuration
+if [[ "$ACTION" != "--help" && "$ACTION" != "-h" ]]; then
+  TOKEN=$(kvido config 'slack.bot_token' '' 2>/dev/null || echo "ERROR: failed to read slack.bot_token config (exit $?)" >&2)
+
+  if [[ -z "$TOKEN" ]]; then
+    echo "Error: slack.bot_token not set in settings.json (use \"\$SLACK_BOT_TOKEN\" to reference .env)" >&2
+    exit 1
+  fi
+fi
 shift || true  # shift may fail if no args; handled by case fallback below
 
 # If next arg looks like a Slack channel/DM ID (C.../D.../G...), consume it.
