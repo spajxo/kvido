@@ -12,7 +12,7 @@
 #   read-raw    <id|slug>           # full file contents
 #   update      <id|slug> <key> <value>  # update frontmatter field
 #   move        <id|slug> <status>  # move between folders
-#   list        <status> [--sort priority] [--source SRC]  # list id + slug
+#   list        <status> [--sort priority] [--source SRC] [--format human|raw|slug-title]  # list tasks
 #   find        <id|slug>           # returns current status
 #   note        <id|slug> <message> # append to ## Worker Notes
 #   count       <status>            # number of tasks in folder
@@ -281,6 +281,20 @@ EOF
   echo "$slug"
 }
 
+_strip_yaml_quotes() { local v="$1"; v="${v#\"}"; v="${v%\"}"; v="${v#\'}"; v="${v%\'}"; echo "$v"; }
+
+_kv_out() {
+  # Output KEY="value" — always double-quoted so values with spaces parse cleanly
+  local key="$1" val="$2"
+  # Strip surrounding YAML quotes if present (e.g. "foo" → foo)
+  val=$(_strip_yaml_quotes "$val")
+  # Escape double quotes inside the value to avoid broken output
+  val="${val//\"/\\\"}"
+  # Collapse newlines to literal \n for single-line output safe for eval
+  val="${val//$'\n'/\\n}"
+  printf '%s="%s"\n' "$key" "$val"
+}
+
 cmd_read() {
   local slug="${1:-}"
   [[ -z "$slug" ]] && { echo "Usage: task.sh read <id|slug>" >&2; exit 1; }
@@ -291,25 +305,25 @@ cmd_read() {
   local status
   status=$(_find_task "$slug")
 
-  echo "TASK_ID=$(_read_frontmatter "$file" 'task_id')"
-  echo "SLUG=$slug"
-  echo "STATUS=$status"
-  echo "TITLE=$(_read_frontmatter "$file" 'title')"
-  echo "PRIORITY=$(_read_frontmatter "$file" 'priority')"
-  echo "SIZE=$(_read_frontmatter "$file" 'size')"
-  echo "SOURCE=$(_read_frontmatter "$file" 'source')"
-  echo "SOURCE_REF=$(_read_frontmatter "$file" 'source_ref')"
-  echo "GOAL=$(_read_frontmatter "$file" 'goal')"
-  echo "RECURRING=$(_read_frontmatter "$file" 'recurring')"
-  echo "WAITING_ON=$(_read_frontmatter "$file" 'waiting_on')"
-  echo "CREATED_AT=$(_read_frontmatter "$file" 'created_at')"
-  echo "UPDATED_AT=$(_read_frontmatter "$file" 'updated_at')"
-  echo "TRIAGE_SLACK_TS=$(_read_frontmatter "$file" 'triage_slack_ts')"
+  _kv_out TASK_ID "$(_read_frontmatter "$file" 'task_id')"
+  _kv_out SLUG    "$slug"
+  _kv_out STATUS  "$status"
+  _kv_out TITLE   "$(_read_frontmatter "$file" 'title')"
+  _kv_out PRIORITY "$(_read_frontmatter "$file" 'priority')"
+  _kv_out SIZE    "$(_read_frontmatter "$file" 'size')"
+  _kv_out SOURCE  "$(_read_frontmatter "$file" 'source')"
+  _kv_out SOURCE_REF "$(_read_frontmatter "$file" 'source_ref')"
+  _kv_out GOAL    "$(_read_frontmatter "$file" 'goal')"
+  _kv_out RECURRING "$(_read_frontmatter "$file" 'recurring')"
+  _kv_out WAITING_ON "$(_read_frontmatter "$file" 'waiting_on')"
+  _kv_out CREATED_AT "$(_read_frontmatter "$file" 'created_at')"
+  _kv_out UPDATED_AT "$(_read_frontmatter "$file" 'updated_at')"
+  _kv_out TRIAGE_SLACK_TS "$(_read_frontmatter "$file" 'triage_slack_ts')"
 
-  # Extract instruction from body
+  # Extract instruction from body (first 5 non-empty lines)
   local instruction
   instruction=$(sed -n '/^## Instruction/,/^## /{/^## /!p}' "$file" | sed '/^$/d' | head -5)
-  echo "INSTRUCTION=$instruction"
+  _kv_out INSTRUCTION "$instruction"
 }
 
 cmd_read_raw() {
@@ -356,25 +370,27 @@ cmd_move() {
 }
 
 cmd_list() {
-  local status="${1:-}" sort_mode="" source_filter=""
+  local status="${1:-}" sort_mode="" source_filter="" format="human"
   shift || true  # shift may fail if no args; handled by empty check below
 
-  [[ -z "$status" ]] && { echo "Usage: task.sh list <status> [--sort priority] [--source SRC]" >&2; exit 1; }
+  [[ -z "$status" ]] && { echo "Usage: task.sh list <status> [--sort priority] [--source SRC] [--format human|raw|slug-title]" >&2; exit 1; }
 
   local dir="$TASKS_DIR/$status"
   [[ ! -d "$dir" ]] && exit 0
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --sort)   sort_mode="$2";     shift 2 ;;
+      --sort)   sort_mode="$2";   shift 2 ;;
       --source) source_filter="$2"; shift 2 ;;
+      --format) format="$2";      shift 2 ;;
       *) shift ;;
     esac
   done
 
+  # Collect and optionally sort task files
+  local files=()
   if [[ "$sort_mode" == "priority" ]]; then
-    # Read all tasks, sort by priority weight then created_at
-    local entries="" task_id slug base priority created_at weight
+    local entries="" base slug task_id priority created_at weight src
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
       if [[ -n "$source_filter" ]]; then
@@ -388,25 +404,65 @@ cmd_list() {
       [[ -z "$priority" ]] && priority="medium"
       created_at=$(_read_frontmatter "$f" "created_at")
       weight=$(_priority_weight "$priority")
-      entries="${entries}${weight} ${created_at} ${task_id} ${slug}\n"
+      entries="${entries}${weight} ${created_at} ${task_id} ${slug} ${f}\n"
     done
     if [[ -n "$entries" ]]; then
-      printf '%b' "$entries" | sort -t' ' -k1,1n -k2,2 | awk '{print $3, $4}'
+      while IFS=' ' read -r _ _ _ _ filepath; do
+        files+=("$filepath")
+      done < <(printf '%b' "$entries" | sort -t' ' -k1,1n -k2,2)
     fi
   else
-    # Simple listing by filename
-    local base task_id
+    local src
     for f in "$dir"/*.md; do
       [[ -f "$f" ]] || continue
       if [[ -n "$source_filter" ]]; then
         src=$(_read_frontmatter "$f" "source")
         [[ "$src" != "$source_filter" ]] && continue
       fi
-      base=$(basename "$f" .md)
-      task_id=$(_id_from_filename "$base")
-      echo "${task_id} $(_slug_from_filename "$base")"
+      files+=("$f")
     done
   fi
+
+  # Output in requested format
+  local first=true
+  for f in "${files[@]}"; do
+    local base task_id slug title
+    base=$(basename "$f" .md)
+    task_id=$(_id_from_filename "$base")
+    slug=$(_slug_from_filename "$base")
+
+    case "$format" in
+      human)
+        # Default: id slug
+        echo "${task_id} ${slug}"
+        ;;
+      slug-title)
+        # slug TAB title — for dedup checks in agents
+        title=$(_strip_yaml_quotes "$(_read_frontmatter "$f" "title")")
+        printf '%s\t%s\n' "$slug" "$title"
+        ;;
+      raw)
+        # KEY="value" block per task, separated by ---
+        [[ "$first" == "false" ]] && echo "---"
+        first=false
+        _kv_out TASK_ID  "$(_read_frontmatter "$f" 'task_id')"
+        _kv_out SLUG     "$slug"
+        _kv_out STATUS   "$status"
+        _kv_out TITLE    "$(_read_frontmatter "$f" 'title')"
+        _kv_out PRIORITY "$(_read_frontmatter "$f" 'priority')"
+        _kv_out SIZE     "$(_read_frontmatter "$f" 'size')"
+        _kv_out SOURCE   "$(_read_frontmatter "$f" 'source')"
+        _kv_out SOURCE_REF "$(_read_frontmatter "$f" 'source_ref')"
+        _kv_out WAITING_ON "$(_read_frontmatter "$f" 'waiting_on')"
+        _kv_out CREATED_AT "$(_read_frontmatter "$f" 'created_at')"
+        _kv_out UPDATED_AT "$(_read_frontmatter "$f" 'updated_at')"
+        ;;
+      *)
+        echo "Unknown format: $format (use human|raw|slug-title)" >&2
+        exit 1
+        ;;
+    esac
+  done
 }
 
 cmd_find() {
@@ -510,11 +566,11 @@ Usage: kvido task <subcommand> [args...]
 Subcommands:
   create --title "..." --instruction "..." [--priority urgent|high|medium|low]
          [--size s|m|l|xl] [--source SRC] [--source-ref REF] [--goal G]
-  read <id|slug>              Print frontmatter fields as key=value
+  read <id|slug>              Print frontmatter fields as KEY="value" (consistently quoted)
   read-raw <id|slug>          Print raw markdown file
   update <id|slug> <field> <value>  Update a frontmatter field
   move <id|slug> <status>     Move task (triage|todo|in-progress|done|failed|cancelled)
-  list <status> [--sort priority] [--source SRC]  List tasks
+  list <status> [--sort priority] [--source SRC] [--format human|raw|slug-title]  List tasks
   find <id|slug>              Print current status of task
   note <id|slug> "<text>"     Append text to ## Worker Notes
   count [status]              Count tasks, optionally filtered by status

@@ -24,7 +24,7 @@ Before generating new proposals, evaluate the results of previous ones.
    ```bash
    for SLUG in $(kvido task list done --source self-improver) $(kvido task list cancelled --source self-improver); do
      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
-     updated=$(echo "$TASK_DATA" | grep '^UPDATED_AT=' | cut -d= -f2-)
+     eval "$(echo "$TASK_DATA" | grep '^UPDATED_AT=')"
      # Filter last 7 days
      echo "$SLUG"
    done
@@ -64,9 +64,8 @@ Use this limit instead of the fixed "max 5" in subsequent steps.
   ```bash
   for SLUG in $(kvido task list --source self-improver); do
     TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
-    title=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-)
-    status=$(echo "$TASK_DATA" | grep '^STATUS=' | cut -d= -f2-)
-    echo "$SLUG | $title | $status"
+    eval "$(echo "$TASK_DATA" | grep -E '^(TITLE|STATUS)=')"
+    echo "$SLUG | $TITLE | $STATUS"
   done
   ```
 
@@ -98,8 +97,8 @@ Analyze repeated task patterns to identify automatable patterns.
    ```bash
    for SLUG in $(kvido task list done); do
      TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
-     title=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d= -f2-)
-     echo "$SLUG | $title"
+     eval "$(echo "$TASK_DATA" | grep '^TITLE=')"
+     echo "$SLUG | $TITLE"
    done
    ```
 

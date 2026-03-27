@@ -57,12 +57,12 @@ kvido state set planner.interests.<topic>.last_summary "<brief one-line summary 
 
 ## Dedup
 
-Do not create a triage task if a similar topic already exists:
+Do not create a triage task if a similar topic already exists. Use `slug-title` format for efficient title lookup:
 
 ```bash
-for d in $(kvido task list | awk '{print $1}'); do
-  kvido task read "$d" 2>/dev/null | grep '^TITLE=' | cut -d= -f2-
-done | grep -i "<search term>"
+kvido task list triage      --format slug-title | cut -f2- | grep -i "<search term>"
+kvido task list todo        --format slug-title | cut -f2- | grep -i "<search term>"
+kvido task list in-progress --format slug-title | cut -f2- | grep -i "<search term>"
 ```
 
 ## Output
