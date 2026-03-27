@@ -25,7 +25,11 @@ If empty, the message is top-level — reply flat to the channel.
 
 ## Context
 
-{{CURRENT_STATE}}
+Read compact current state for focus awareness:
+
+```bash
+kvido current summary
+```
 
 {{MEMORY}}
 

@@ -15,7 +15,6 @@ SIZE: {{SIZE}}
 SOURCE_REF: {{SOURCE_REF}}
 
 ## Context
-{{CURRENT_STATE}}
 {{MEMORY}}
 
 ## Task Status Flow
