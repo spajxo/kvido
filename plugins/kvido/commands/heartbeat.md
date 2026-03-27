@@ -39,13 +39,13 @@ Run:
 kvido heartbeat
 ```
 
-Output: `TIMESTAMP`, `ITERATION`, `NIGHT`, `ZONE`, `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `INTERACTION_AGO_MIN`, `OWNER_USER_ID`, `SLEEP_ACTIVE`, `SLEEP_UNTIL`, `CHAT_MESSAGES_START...CHAT_MESSAGES_END`, `DISPATCH_EVENTS_START...DISPATCH_EVENTS_END`.
+Output: `TIMESTAMP`, `ITERATION`, `NIGHT`, `ZONE`, `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `INTERACTION_AGO_MIN`, `OWNER_USER_ID`, `SLEEP_ACTIVE`, `SLEEP_UNTIL`, `CHAT_MESSAGES_START...CHAT_MESSAGES_END`.
 
 Messages in `CHAT_MESSAGES` block are in `--heartbeat` format: one line per message, empty line between top-level messages: `ts=... user:|bot: text="..." [reactions=emoji1,emoji2] [reply_count=N] [latest_reply=...]`. Thread replies are under their top-level message with prefix `  ┗` (max 5 replies). Empty block = no messages.
 
 The `user:` prefix means the message is from the workspace owner (you). The `bot:` prefix means the message is from anyone else (bot or other user). `OWNER_USER_ID` contains the resolved Slack user ID (from config or cached state). If `OWNER_USER_ID` is empty, annotation is disabled and messages retain the raw `user=<ID>` format — use `SLACK_USER_ID` from `.env` or `OWNER_USER_ID` from heartbeat output to compare manually.
 
-The script automatically: increments iteration_count, sets last_heartbeat, reads Slack DM, reads dispatch events from event bus.
+The script automatically: increments iteration_count, sets last_heartbeat, reads Slack DM.
 
 Read current state via `kvido current get`. Review recent activity via `kvido log list --today --format human --limit 20`.
 
@@ -92,7 +92,7 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <slug> fa
 
    **Non-trivial** — requires MCP lookup, research, or task creation:
    - If no active `chat:*` task:
-     - `TaskCreate` subject `chat:<ts>` (stays `pending` — actual dispatch happens in Step 4 unified loop)
+     - `TaskCreate` subject `chat:<ts>` (stays `pending` — dispatched in Step 5)
    - If active `chat:*` task exists:
      - Send ack: `kvido slack reply dm <ts> chat --var message="One moment..."` (thread under the new message)
      - `TaskCreate` subject `chat:<ts>` with `addBlockedBy` pointing to the active chat task (stays `pending`)
@@ -110,39 +110,98 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <slug> fa
 
 4. **Agent completion:** When a dispatched chat-agent completes (background task finishes), in the next heartbeat iteration:
    - `TaskList` -- find `chat:*` tasks with status `in_progress`
-   - Since the agent has already finished, proceed to **Step 3c** for output processing and inline delivery
+   - Since the agent has already finished, proceed to **Step 6** for output processing and delivery
    - After delivery is processed, mark chat task as `completed` via `TaskUpdate`
    - Check for `pending` chat tasks -- if any exist, dispatch next one (FIFO) -- but only AFTER delivery is processed for the completed task
 
 ---
 
-## Step 3b: Triage Task Creation & Reactions Polling
+## Step 4: Run Planner
 
-### Creating triage tasks
+Run the planner as a **foreground subagent** (wait for completion). The planner evaluates state, schedules, and pending work, then returns natural language output describing what should happen this tick.
 
-Triage TODOs are created in Step 3c when heartbeat delivers a `triage-item` notification through `kvido slack`. The returned `ts` is written into `triage:<slug>` TODO description. No CHAT_MESSAGES scanning needed for triage creation.
+If no `planner` task pending/in_progress:
+1. `TaskCreate` subject `planner`
+2. `TaskUpdate` → `in_progress`
+3. Dispatch planner agent (foreground — wait for completion)
+4. Read planner's NL output
+5. Log: `kvido log add heartbeat dispatch --message "planner"` with token/duration from `<usage>` tag
+6. Mark planner task as `completed` via `TaskUpdate`
 
-### Polling reactions
+The planner output is structured NL text listing which agents to dispatch and in what order. Example:
 
-Use `TaskList` to find all `triage:*` tasks (not completed). Build JSON input and delegate to bash:
-
-```bash
-# Build input: [{"slug":"fix-auth-bug","ts":"1773..."},...]
-echo "$TRIAGE_JSON" | kvido triage-poll
+```
+Dispatch gatherer (sources: gitlab, jira, calendar)
+Dispatch triager
+Dispatch worker: fix-auth-bug
+Dispatch maintenance: librarian
+Sequential: gatherer → triager (triager needs fresh data)
 ```
 
-Output: `[{"slug":"fix-auth-bug","result":"approved|rejected|pending"},...]`
-
-For each result:
-- `approved` → `kvido log add triage approved --message "<slug> approved -> todo"`, mark `triage:<slug>` task completed via `TaskUpdate`
-- `rejected` → `kvido log add triage rejected --message "<slug> rejected -> cancelled"`, mark task completed via `TaskUpdate`
-- `pending` → skip
+If the planner returns nothing (empty output or "nothing to do"), skip Steps 5 and 6.
 
 ---
 
-## Step 3c: Agent Output Processing & Delivery
+## Step 5: Dispatch Agents
 
-When a background agent completes (detected via `TaskList` — task status is `in_progress` but agent has returned result), process its output and deliver directly from heartbeat via `kvido slack`.
+Interpret the planner's NL output from Step 4. Dispatch agents based on what the planner requested.
+
+### Default: parallel dispatch
+
+Unless the planner explicitly specifies sequential ordering (e.g., "Sequential: A → B"), dispatch all agents in parallel using `run_in_background: true`.
+
+### Sequential dispatch
+
+When the planner specifies sequential ordering (e.g., "Sequential: gatherer → triager"), dispatch agents in order — wait for each to complete before dispatching the next. Use `addBlockedBy` on the `TaskCreate` for dependent agents.
+
+### Per-agent dispatch details
+
+#### gatherer
+If planner requests gatherer:
+- `TaskCreate` subject `gatherer`
+- `TaskUpdate` → `in_progress`
+- Dispatch gatherer agent (`run_in_background: true`)
+- Log: `kvido log add heartbeat dispatch --message "gatherer"`
+
+#### triager
+If planner requests triager:
+- `TaskCreate` subject `triager`
+- `TaskUpdate` → `in_progress`
+- Dispatch triager agent (`run_in_background: true`)
+- Log: `kvido log add heartbeat dispatch --message "triager"`
+
+#### worker
+If planner requests worker with a specific task slug:
+- `kvido task read "$slug"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION
+- If SOURCE_REF is set: `kvido slack reply "<SOURCE_REF>" chat --var message="Task accepted: <slug>. Working on it..."`
+- `TaskCreate` subject `worker:<slug>`
+- `TaskUpdate` → `in_progress`
+- `kvido task move "$slug" in-progress`
+- Dispatch worker agent (`run_in_background: true`)
+- Log: `kvido log add heartbeat dispatch --message "worker:<slug>"`
+
+#### maintenance agents (librarian, project-enricher, self-improver, scout)
+If planner requests a maintenance agent:
+- Verify `agents/<agent>.md` exists
+- `TaskCreate` subject `maintenance:<agent>`
+- If another `maintenance:*` task is pending/in_progress, set `addBlockedBy`
+- `TaskUpdate` → `in_progress`
+- Dispatch named agent (`run_in_background: true`)
+- Log: `kvido log add heartbeat dispatch --message "maintenance:<agent>"`
+
+#### chat (from Step 3)
+Non-trivial chat from Step 3 creates `chat:<ts>` tasks. These are dispatched here alongside planner-requested agents.
+
+If `chat:*` task is `pending` with no blockers:
+- `TaskUpdate` → `in_progress`
+- Dispatch chat-agent (`run_in_background: true`)
+- Log: `kvido log add heartbeat dispatch --message "chat:<ts>"`
+
+---
+
+## Step 6: Collect Outputs & Deliver
+
+When background agents complete (detected via `TaskList` — task was `in_progress` but agent has returned result), collect their NL outputs and deliver via Slack.
 
 ### Delivery rules
 
@@ -154,102 +213,49 @@ kvido context heartbeat
 
 Heartbeat is responsible for parsing agent output into structured fields, deciding notification level, choosing template, and calling `kvido slack`. Apply the rules from the assembled context. Plugin-contributed rules extend or override defaults.
 
+### Urgency classification
+
+| Factor | Effect |
+|--------|--------|
+| Gatherer recommends "immediate" | high |
+| calendar_event < 15min | high |
+| Focus mode active | Suppress high → batch |
+| Night hours | Suppress high → batch |
+| Gatherer recommends "normal" | normal |
+| Everything else | low |
+
+### Notification levels
+
+- **immediate** — deliver right now via `kvido slack`
+- **high** — deliver now unless focus mode or night hours (then batch)
+- **normal** — deliver now
+- **low** — batch for next digest
+
 ### Common pattern (all agent completions)
 
-1. Read agent's NL output (returned by Agent tool)
+1. Read agent's NL output (returned by Agent tool or `TaskOutput`)
 2. Parse `total_tokens` + `duration_ms` from `<usage>` tag → `kvido log add <type> execute --tokens ... --duration_ms ... --message "<summary>"`
 3. `TaskCreate` subject `notify:<type>:<id>`, then `TaskUpdate` status `in_progress`
-4. Apply delivery rules → deliver via `kvido slack` → mark task completed via `TaskUpdate`
+4. Classify urgency → choose template → deliver via `kvido slack` → mark notify task completed via `TaskUpdate`
 5. Mark agent task as completed via `TaskUpdate`
 
-### Per-agent specifics
+### Per-agent delivery
 
-| Agent | Parse fields | Template | Level | Extra |
-|-------|-------------|----------|-------|-------|
-| chat-agent | `Reply`, `Thread`, `Type` | `chat` | always `immediate` | Extract `ORIGINAL_TS` from task subject `chat:<ts>`. If `Thread` non-empty: `kvido slack reply dm <Thread> chat --var message="<Reply>"`. If `Thread` empty (top-level): `kvido slack reply dm <ORIGINAL_TS> chat --var message="<Reply>"`. After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
-| worker | `Result`, `Task`, `Type`, `Source` | `worker-report` | `high` for error, else `normal` | — |
-| other | template variables per agent | agent name as template, fallback `event` | per delivery rules | Most agents now communicate via event bus. When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
+| Agent | Template | Level | Notes |
+|-------|----------|-------|-------|
+| chat-agent | `chat` | always immediate | Extract `ORIGINAL_TS` from task subject `chat:<ts>`. If agent returns `Thread` non-empty: `kvido slack reply dm <Thread> chat --var message="<Reply>"`. If `Thread` empty: `kvido slack reply dm <ORIGINAL_TS> chat --var message="<Reply>"`. After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
+| worker | `worker-report` | `high` for error, else `normal` | — |
+| gatherer | `event` | per urgency rules | Parse findings, each as separate notification |
+| triager | `triage-item` | `immediate` | For triage items needing user attention, save returned `ts` to task note |
+| maintenance | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
 
-### Batch flush
+### Digest threading
 
-Flush `notify:*` tasks with `pending` status (via `TaskList`) when: planner iteration runs, or focus mode switches off. Re-deliver stored template+vars via `kvido slack`. On failure, leave `pending` for next flush.
-
----
-
-## Step 4: Dispatch Loop
-
-Parse `DISPATCH_EVENTS` block from heartbeat.sh output. Each line is a JSON event with `type` and `data` fields.
-
-### Dependency handling
-
-Dispatch events may contain `blocked_by` in their `data` field (e.g., `dispatch.notify` with `"blocked_by":"dispatch.gather"`). When processing:
-
-1. First pass: dispatch all events WITHOUT `blocked_by` (or whose blocker has already completed)
-2. For events WITH `blocked_by`: create a `TaskCreate` with `addBlockedBy` pointing to the blocker task. The dispatch loop skips blocked tasks — they will be dispatched once the blocker completes (detected via `TaskList` in next iteration).
-
-This allows the planner to define execution order without heartbeat needing agent-specific logic.
-
-### Processing (single pass — new events emitted during this tick are picked up on the NEXT tick):
-
-### dispatch.planner
-If no `planner` task pending/in_progress:
-- `TaskCreate` subject `planner`
-- Dispatch planner agent (foreground — wait for completion)
-- Log: `kvido log add heartbeat dispatch --message "planner"`
-
-### dispatch.gather
-If no `gatherer` task pending/in_progress:
-- `TaskCreate` subject `gatherer`
-- Dispatch gatherer agent (`run_in_background: true`)
-- Log: `kvido log add heartbeat dispatch --message "gatherer"`
-
-### dispatch.notify, dispatch.triage, dispatch.briefing
-Check `blocked_by` in event data. If `blocked_by` references a dispatch type (e.g., `dispatch.gather`):
-- Find or create the blocker task (e.g., `gatherer`)
-- `TaskCreate` subject `notifier` with `addBlockedBy` pointing to the blocker task
-- The dispatch loop will skip this task until the blocker completes
-
-If no `blocked_by` (or blocker already completed) and no `notifier` task pending/in_progress:
-- `TaskCreate` subject `notifier`
-- Dispatch notifier agent (`run_in_background: true`)
-- Pass dispatch event types as context (so notifier knows whether to process triage, briefing, etc.)
-- Log: `kvido log add heartbeat dispatch --message "notifier"`
-
-### dispatch.worker
-Parse slug from event data. If no `worker:*` task pending/in_progress:
-- `kvido task read "$slug"` → get SIZE, PRIORITY, SOURCE_REF, INSTRUCTION
-- If SOURCE_REF is set: `kvido slack reply "<SOURCE_REF>" chat --var message="Task accepted: <slug>. Working on it..."`
-- `TaskCreate` subject `worker:<slug>`
-- `kvido task move "$slug" in-progress`
-- Dispatch worker agent (`run_in_background: true`)
-- Log: `kvido log add heartbeat dispatch --message "worker:<slug>"`
-
-### dispatch.agent
-Parse agent name and params from event data. If no `maintenance:<agent>` task pending/in_progress:
-- Verify `agents/<agent>.md` exists
-- `TaskCreate` subject `maintenance:<agent>`
-- If another `maintenance:*` task is pending/in_progress, set `addBlockedBy`
-- Dispatch named agent (`run_in_background: true`)
-- Log: `kvido log add heartbeat dispatch --message "maintenance:<agent>"`
-
-### Chat dispatch (from Step 3)
-Non-trivial chat from Step 3 still creates `chat:<ts>` tasks. These are dispatched here alongside event bus dispatches.
-
-If `chat:*` task is `pending` with no blockers:
-- `TaskUpdate` → `in_progress`
-- Dispatch chat-agent
-- Log: `kvido log add heartbeat dispatch --message "chat:<ts>"`
-
-After processing all dispatch events:
-```bash
-kvido event ack --consumer heartbeat
-```
-
-**Single pass:** Dispatch events emitted by agents during this tick are picked up on the NEXT heartbeat tick. No loop, no chaining within a tick.
+Low-urgency notifications are batched. Flush batched `notify:*` tasks with `pending` status (via `TaskList`) when: planner iteration runs, or focus mode switches off. Re-deliver stored template+vars via `kvido slack`. On failure, leave `pending` for next flush.
 
 ---
 
-## Step 5: Adaptive Interval
+## Step 7: Adaptive Interval
 
 `heartbeat.sh` returns `TARGET_PRESET`, `ACTIVE_PRESET`, `CRON_JOB_ID`, `TURBO_ACTIVE/UNTIL`, `SLEEP_ACTIVE/UNTIL`.
 
@@ -276,12 +282,13 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 |---------|-----|
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
 | Dispatching chat-agent for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
-| Dispatching agent when same-group task is pending/in_progress | Use `blockedBy` dependencies, dispatch loop skips blocked tasks |
-| Creating maintenance tasks directly | Maintenance dispatch via event bus — planner emits `dispatch.agent` events |
+| Dispatching agent when same-group task is pending/in_progress | Use `blockedBy` dependencies, dispatch skips blocked tasks |
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 2 |
 | Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |
 | Not updating `last_chat_ts` after processing | Always `kvido state set heartbeat.last_chat_ts` after chat handling |
 | Using `--source "github#NN"` when creating tasks from user DM | Use `--source slack --source-ref "github#NN"` — source=slack routes to `todo/`, source=github#NN routes to `triage/` |
+| Using event bus commands (`kvido event emit/read/ack`) | Event bus is removed — planner returns NL, heartbeat interprets directly |
+| Dispatching notifier agent separately | Heartbeat owns ALL Slack delivery — no separate notifier dispatch |
 
 ## Critical Rules
 
@@ -290,5 +297,8 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **State-first.** Read from files, write to files.
 - **Time from system.** `date -Iseconds`.
 - **Task tools (`TaskCreate`/`TaskList`/`TaskUpdate`) are the single source of truth** for dispatch tracking. No file-based locks.
-- **Concurrency via dependencies.** Same-group tasks use `blockedBy`. Max 1 concurrent per group (maintenance, worker, chat). Planner runs in parallel with all groups. Dispatch loop skips tasks with unresolved blockers.
+- **Concurrency via dependencies.** Same-group tasks use `blockedBy`. Max 1 concurrent per group (maintenance, worker, chat). Planner runs foreground. Other agents run in background.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
+- **Heartbeat owns ALL delivery.** No agent sends Slack messages directly. Chat-agent delivery in Step 3/6, all other agent outputs in Step 6.
+- **No event bus.** Planner returns NL output, heartbeat interprets it. No `kvido event emit/read/ack`.
+- **Planner is the sole scheduler.** Heartbeat never decides which agents to dispatch — it only interprets planner output.
