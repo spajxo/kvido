@@ -34,44 +34,6 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
 
 All state operations use `kvido` CLI wrappers. Memory paths resolve to `$KVIDO_HOME/memory/`.
 
-## Orchestration Contract
-
-These rules apply to all agents and hooks. Do not restate them — reference this contract.
-
-### Slack Delivery Ownership
-
-The **heartbeat** is the single owner of Slack message delivery. No agent or worker may call `kvido slack send|reply|edit` directly. Heartbeat dispatches agents, collects their NL stdout output, and delivers all user-facing communication.
-
-### Agent Communication
-
-Agents communicate via NL stdout output. Heartbeat parses agent output and handles delivery.
-
-**Architecture:**
-- **Planner** — scheduler agent; outputs DISPATCH and NOTIFY instructions
-- **Gatherer** — data fetching agent; outputs findings with suggested urgency
-- **Triager** — triage lifecycle agent; reads triage tasks, evaluates, prepares for user approval
-- **Worker** — task execution; dispatched by heartbeat
-- **Maintenance agents** — librarian, enricher, self-improver, scout; dispatched by planner instructions
-
-**For agents:**
-- Return structured NL output to stdout
-- Heartbeat parses output and decides on delivery
-- Agents never call `kvido slack send` directly
-
-### Task Lifecycle
-
-Tasks are managed via `kvido task` commands. States: `pending` → `in_progress` → `completed`. Untriaged items go to `triage` state.
-
-CLI: `kvido task create`, `kvido task list [state]`, `kvido task read <slug>`, `kvido task note <slug> "<text>"`.
-
-### Triage Approval Model
-
-Triage items are never auto-approved. The triager agent manages the triage lifecycle — reading tasks, evaluating relevance, and preparing items for user approval. Items remain in `triage` state until the user explicitly approves via Slack reaction.
-
-### Configuration
-
-Use `kvido config 'key.subkey'` for all configuration lookups. Never parse `settings.json` directly. See `settings.json.example` for available keys.
-
 ## Natural Language Triggers
 
 ### Sleep Mode
