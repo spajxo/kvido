@@ -32,7 +32,9 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 - **Source plugins reference core scripts** (`scripts/slack/slack.sh`, `scripts/worker/task.sh`) via relative paths. This works because they are always invoked by agents running in the core plugin's context — never standalone.
 - **Config** is always read via `kvido config 'dot.key'` in source plugin scripts, or via `scripts/config.sh 'dot.key'` in core plugin scripts — never parse `$KVIDO_HOME/settings.json` directly with jq.
 - **All bash scripts** use `set -euo pipefail`.
-- **Agents never send Slack messages directly** — they return NL output. Heartbeat delivers via `slack.sh`.
+- **Agents communicate via NL stdout output** — heartbeat interprets and acts. No event bus.
+- **Heartbeat is the sole Slack communicator** — no agent calls `kvido slack` directly. They return NL output, heartbeat delivers.
+- **Planner is a pure scheduler** — returns NL dispatch instructions, does not execute anything.
 - **Prompts default to English**. Runtime language is configured in the user's `memory/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The SKILL.md for each source plugin documents the MCP fallback procedure.
 - **config.sh lives only in the core plugin** (`plugins/kvido/scripts/config.sh`). Source plugins call `kvido config 'a.b.c'` instead of maintaining their own copy. The `kvido config` CLI delegates to `scripts/config.sh`.
@@ -42,7 +44,7 @@ Source plugins contain only `skills/source-*/` with SKILL.md + fetch scripts. Th
 ## KVIDO_HOME
 
 All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
-- `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, state.json, events.jsonl, tasks/, dashboard.html)
+- `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, state.json, tasks/, dashboard.html)
 - `memory/` — persistent (memory.md, journals, projects, weekly, learnings)
 - `settings.json` — configuration (JSON, parsed via `scripts/config.sh`)
 - `.env` — secrets (Slack tokens, channel IDs)
@@ -56,8 +58,8 @@ Plugins contribute instructions via `hooks/context-<phase>.md` files. Assembled 
 | Phase | When | What plugins contribute |
 |-------|------|------------------------|
 | session | Before Claude launch | State summary, project info |
-| heartbeat | Step 2c delivery | Notification templates, delivery rules |
-| planner | Step 3-7 | Event keys, triage rules, maintenance tasks |
+| heartbeat | Step 6 delivery | Notification templates, delivery rules |
+| planner | Step 4 scheduling | Dispatch rules, maintenance tasks |
 | setup | Validation | Prerequisites, config schema |
 | compact | Before compaction | State summary per plugin |
 
@@ -66,31 +68,34 @@ Plugins contribute instructions via `hooks/context-<phase>.md` files. Assembled 
 ```
 heartbeat (cron, every 10 min) — plugins/kvido/scripts/heartbeat/
 ├── reads Slack DM (via core slack.sh)
-├── reads dispatch events from event bus (state/events.jsonl)
-├── dispatches agents based on dispatch.* events:
-│   ├── dispatch.planner → planner (pure scheduler, emits further dispatch events)
-│   ├── dispatch.gather → gatherer (fetches sources, emits change.detected events)
-│   ├── dispatch.notify → notifier (reads changes, delivers to Slack directly)
-│   ├── dispatch.worker → worker (executes tasks)
-│   └── dispatch.agent → maintenance/custom agents
-└── dispatches chat-agent on non-trivial Slack DM
+├── handles trivial chat inline
+├── dispatches chat-agent on non-trivial Slack DM
+├── runs planner (always, foreground)
+│   └── planner returns NL output: which agents to dispatch, in what order
+├── dispatches agents per planner instructions (parallel by default)
+│   ├── gatherer — fetches sources, detects changes, recommends notifications
+│   ├── triager — manages triage lifecycle, polls reactions, recommends notifications
+│   ├── worker — executes tasks
+│   └── maintenance agents (librarian, scout, project-enricher, self-improver)
+├── collects NL outputs from all agents
+└── delivers notifications to Slack (heartbeat is the sole communicator)
 ```
 
-Agents communicate via event bus (`kvido event emit/read/ack`). State is managed via unified store (`kvido state get/set`). Source plugins are never invoked standalone — the gatherer agent runs in the core plugin context, reads source SKILL.md files, and executes their fetch scripts. This is why source plugins can reference core scripts (`scripts/slack/slack.sh`, `scripts/worker/task.sh`) via relative paths.
+Agents return NL output to heartbeat via stdout. State is managed via unified store (`kvido state get/set`). Source plugins are never invoked standalone — the gatherer agent runs in the core plugin context, reads source SKILL.md files, and executes their fetch scripts. This is why source plugins can reference core scripts (`scripts/slack/slack.sh`, `scripts/worker/task.sh`) via relative paths.
 
 ### Agents
 
 | Agent | Role | Dispatch |
 |-------|------|----------|
-| planner | Pure scheduler — decides what to dispatch | `dispatch.planner` (every N heartbeats) |
-| gatherer | Fetches data from source plugins | `dispatch.gather` |
-| notifier | Delivers notifications to Slack | `dispatch.notify` |
-| worker | Executes tasks from the queue | `dispatch.worker` |
+| planner | Pure scheduler — decides what to dispatch | heartbeat runs every tick |
+| gatherer | Fetches data from source plugins, detects changes | planner instruction |
+| triager | Manages triage lifecycle — polls reactions, recommends notifications | planner instruction |
+| worker | Executes tasks from the queue | planner instruction |
 | chat-agent | Handles non-trivial Slack DM messages | heartbeat inline |
-| librarian | Memory consolidation and cleanup | `dispatch.agent` (daily) |
-| project-enricher | Updates project knowledge from git/MRs | `dispatch.agent` (daily) |
-| self-improver | Conversation analysis, improvement proposals | `dispatch.agent` (daily) |
-| scout | Checks interest topics via web search | `dispatch.agent` (daily) |
+| librarian | Memory consolidation and cleanup | planner instruction (daily) |
+| project-enricher | Updates project knowledge from git/MRs | planner instruction (daily) |
+| self-improver | Conversation analysis, improvement proposals | planner instruction (daily) |
+| scout | Checks interest topics via web search | planner instruction (daily) |
 
 ## Task system
 
@@ -108,7 +113,7 @@ CLI: `kvido task <create|read|move|list|count|find|note> [args]` (delegates to `
 
 Entry point: `plugins/kvido/kvido` (symlinked to `~/.local/bin/kvido` via `kvido --install`). Resolves plugin root from `CLAUDE_PLUGIN_ROOT` → script directory → plugin registry fallback.
 
-Key commands: `kvido heartbeat`, `kvido task ...`, `kvido state ...`, `kvido event ...`, `kvido config ...`, `kvido slack ...`, `kvido log ...`, `kvido memory ...`, `kvido context <phase>`, `kvido dashboard`. Run `kvido --help` for full reference.
+Key commands: `kvido heartbeat`, `kvido task ...`, `kvido state ...`, `kvido config ...`, `kvido slack ...`, `kvido log ...`, `kvido memory ...`, `kvido context <phase>`, `kvido dashboard`. Run `kvido --help` for full reference.
 
 ## Working on this codebase
 

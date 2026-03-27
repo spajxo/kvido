@@ -86,7 +86,7 @@ Each line is one instruction. Use these patterns:
 
 - **Dispatch an agent:** `Dispatch <agent-name>.`
 - **Dispatch with parameters:** `Dispatch worker for task <slug>.`
-- **Dispatch with ordering:** `First dispatch gatherer. Then dispatch notifier.`
+- **Dispatch with ordering:** `First dispatch gatherer. Then dispatch worker for task X.`
 - **Briefing notification:** `Morning briefing is due — notify user with <sections>.`
 - **No dispatches:** `No dispatches needed.`
 
