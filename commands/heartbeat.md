@@ -49,6 +49,9 @@ The script automatically: increments iteration_count, sets last_heartbeat, reads
 
 Read current state via `kvido current get`. Review recent activity via `kvido log list --today --format human --limit 20` on planner ticks (`PLANNER_DUE=true`), or `--limit 5` on non-planner ticks.
 
+Read user-specific instructions: `kvido instructions read heartbeat 2>/dev/null || true`
+Apply any additional rules or overrides.
+
 ### Recovery check
 
 Use `TaskList` to list all existing tasks. Mark all `in_progress` tasks from a previous session as `completed` (agent process is gone from previous session). Pending tasks with unsatisfied `blockedBy` unblock automatically.
