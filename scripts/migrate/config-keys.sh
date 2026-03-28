@@ -32,6 +32,18 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
   exit 0
 fi
 
+# DISABLED: Scripts still use skills.*/sources.* key format.
+# Migration must not run until all scripts are updated to use the flat format.
+# Re-enable when config key refactor is complete.
+# See: https://github.com/spajxo/kvido/issues/171
+exit 0
+
+# Check if migration is needed — skip if neither "sources" nor "skills" key exists
+needs_migration=$(jq 'has("sources") or has("skills")' "$CONFIG_FILE" 2>/dev/null || echo "false")
+if [[ "$needs_migration" != "true" ]]; then
+  exit 0
+fi
+
 # Backup original for safety (but don't fail if already backed up)
 BACKUP="${CONFIG_FILE}.pre-0.28.0"
 if [[ ! -f "$BACKUP" ]]; then
