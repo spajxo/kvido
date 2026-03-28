@@ -31,10 +31,10 @@ done
 projects=()
 labels=()
 jql_filters=()
-for proj_key in $($CONFIG --keys 'sources.jira.projects'); do
+for proj_key in $($CONFIG --keys 'jira.projects'); do
   projects+=("$proj_key")
-  labels+=("$($CONFIG "sources.jira.projects.${proj_key}.label" "$proj_key")")
-  jql_filters+=("$($CONFIG "sources.jira.projects.${proj_key}.filter")")
+  labels+=("$($CONFIG "jira.projects.${proj_key}.label" "$proj_key")")
+  jql_filters+=("$($CONFIG "jira.projects.${proj_key}.filter")")
 done
 
 if [[ ${#projects[@]} -eq 0 ]]; then

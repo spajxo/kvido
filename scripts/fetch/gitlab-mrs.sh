@@ -85,9 +85,9 @@ process_repo() {
 }
 
 # Parse repos from central settings.json via kvido config
-for repo_key in $($CONFIG --keys 'sources.gitlab.repos'); do
-  repo_path=$($CONFIG "sources.gitlab.repos.${repo_key}.path")
-  repo_priority=$($CONFIG "sources.gitlab.repos.${repo_key}.priority" "normal")
-  repo_type=$($CONFIG "sources.gitlab.repos.${repo_key}.type" "")
+for repo_key in $($CONFIG --keys 'gitlab.repos'); do
+  repo_path=$($CONFIG "gitlab.repos.${repo_key}.path")
+  repo_priority=$($CONFIG "gitlab.repos.${repo_key}.priority" "normal")
+  repo_type=$($CONFIG "gitlab.repos.${repo_key}.type" "")
   process_repo "$repo_key" "$repo_path" "$repo_priority" "$repo_type"
 done

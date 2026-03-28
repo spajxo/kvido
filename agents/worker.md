@@ -74,7 +74,7 @@ source_ref: "1773933088.437"
 1. Check WIP limit before starting:
    ```bash
    WIP=$(kvido task count in-progress)
-   WIP_LIMIT=$(kvido config 'skills.triage.wip_limit' '3')
+   WIP_LIMIT=$(kvido config 'triage.wip_limit' '3')
    ```
    If WIP >= WIP_LIMIT: fail with "WIP limit reached ($WIP/$WIP_LIMIT in-progress tasks)". Tasks with non-empty `WAITING_ON` field (from `kvido task read`) do not count toward the limit.
 

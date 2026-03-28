@@ -74,7 +74,7 @@ Setup will:
 - Create `$KVIDO_HOME` (default: `~/.config/kvido`) with `state/`, `memory/`, `settings.json`, and `.env`
 - Install the `kvido` CLI wrapper to `~/.local/bin/kvido`
 - Validate prerequisites and source config
-- Disable sources you don't need via `sources.<name>.enabled: false`
+- Disable sources you don't need via `<name>.enabled: false`
 
 Runtime instructions are loaded through plugin hooks — Kvido does not need a `CLAUDE.md` in your project.
 
@@ -86,7 +86,7 @@ After `/kvido:setup`, the `kvido` CLI is available at `~/.local/bin/kvido`:
 kvido                             # launch Claude Code with /kvido:heartbeat
 kvido heartbeat                   # run the heartbeat script directly
 kvido task list todo              # list worker queue tasks
-kvido config 'skills.heartbeat.wh_start'   # read a config value
+kvido config 'heartbeat.wh_start'          # read a config value
 ```
 
 Shell rule: `kvido` without arguments launches Claude Code. Any argument switches to bash script dispatch (`kvido heartbeat`, `kvido task`, `kvido slack`, `kvido config`, ...).

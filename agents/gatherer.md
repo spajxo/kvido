@@ -21,7 +21,7 @@ kvido current summary
 For each source (gitlab, jira, slack, calendar, gmail, sessions), check if enabled:
 
 ```bash
-kvido config "sources.<name>.enabled" "true"
+kvido config "<name>.enabled" "true"
 ```
 
 Skip any source where enabled != "true". Proceed with the remaining enabled sources.

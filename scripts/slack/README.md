@@ -93,11 +93,11 @@ Flat messages as default. Threading applies in these cases:
 
 ## Focus Mode
 
-Read `kvido config 'skills.planner.focus_mode.enabled'`. Unchanged — suppress, batching, after_focus_summary work identically.
+Read `kvido config 'planner.focus_mode.enabled'`. Unchanged — suppress, batching, after_focus_summary work identically.
 
 ## Batching
 
-Read `kvido config 'skills.slack.batching'`. Batch notifications are managed by heartbeat via notify TODOs with pending status — flushed at planner iteration or on focus mode change.
+Read `kvido config 'slack.batching'`. Batch notifications are managed by heartbeat via notify TODOs with pending status — flushed at planner iteration or on focus mode change.
 
 ## Auth
 

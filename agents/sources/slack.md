@@ -1,6 +1,6 @@
 ### Slack
 
-> Config: `sources.slack.*` keys. Credentials via `.env`. Requires: Slack Web API (kvido slack) + optionally Slack MCP.
+> Config: `slack.*` keys. Credentials via `.env`. Requires: Slack Web API (kvido slack) + optionally Slack MCP.
 
 #### Capabilities
 
@@ -8,9 +8,9 @@
 ```bash
 kvido slack read --limit 5
 ```
-Filter new messages via `jq` (`.ts > "$last_dm_ts"`). Also check `sources.slack.dm_channels`:
+Filter new messages via `jq` (`.ts > "$last_dm_ts"`). Also check `slack.dm_channels`:
 ```bash
-kvido config --keys 'sources.slack.dm_channels'
+kvido config --keys 'slack.dm_channels'
 ```
 For each with `channel_id`:
 ```bash
@@ -27,7 +27,7 @@ Notification levels for new messages from other users:
 Always update: `kvido state set heartbeat.last_dm_ts "<newest ts>"`
 
 **watch-channels:**
-List via `kvido config --keys 'sources.slack.channels'`. For high+normal priority with `channel_id`:
+List via `kvido config --keys 'slack.channels'`. For high+normal priority with `channel_id`:
 - Without `use_mcp`: `kvido slack read "<channel_id>" --limit 5`
 - With `use_mcp: true`: `mcp__claude_ai_Slack__slack_read_channel(channel_id="<channel_id>", limit=5)`
 
@@ -46,7 +46,7 @@ List via `kvido config --keys 'sources.slack.channels'`. For high+normal priorit
 |---|---|
 | slack.bot_token | `kvido config 'slack.bot_token'` returns non-empty |
 | slack.dm_channel_id | `kvido config 'slack.dm_channel_id'` returns non-empty |
-| sources.slack.channels or dm_channels | At least one configured |
+| slack.channels or slack.dm_channels | At least one configured |
 
 #### Dedup Keys
 - `slack:<channel>:<thread_ts>` — channel thread activity

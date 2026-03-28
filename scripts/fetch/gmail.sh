@@ -13,8 +13,8 @@ if ! command -v gws &>/dev/null; then
 fi
 
 # Parse config
-WATCH_QUERY=$($CONFIG 'sources.gmail.watch_query')
-MAX_RESULTS=$($CONFIG 'sources.gmail.max_results')
+WATCH_QUERY=$($CONFIG 'gmail.watch_query')
+MAX_RESULTS=$($CONFIG 'gmail.max_results')
 
 WATCH_MODE=false
 if [[ "${1:-}" == "--watch" ]]; then

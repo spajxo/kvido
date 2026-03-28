@@ -110,7 +110,7 @@ Check WIP limit first:
 
 ```bash
 WIP=$(kvido task count in-progress)
-WIP_LIMIT=$(kvido config 'skills.triage.wip_limit' '3')
+WIP_LIMIT=$(kvido config 'triage.wip_limit' '3')
 ```
 
 If `WIP >= WIP_LIMIT`: do not dispatch another worker. Emit `NOTIFY wip-limit-reached` instead.

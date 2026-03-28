@@ -19,12 +19,12 @@ STATE_DIR="${KVIDO_HOME}/state"
 OUTPUT="$STATE_DIR/dashboard.html"
 
 # Check if dashboard is enabled
-DASHBOARD_ENABLED=$($CONFIG 'skills.dashboard.enabled' 'true')
+DASHBOARD_ENABLED=$($CONFIG 'dashboard.enabled' 'true')
 if [[ "$DASHBOARD_ENABLED" == "false" ]]; then
   exit 0
 fi
 
-AUTO_REFRESH=$($CONFIG 'skills.dashboard.auto_refresh' '20')
+AUTO_REFRESH=$($CONFIG 'dashboard.auto_refresh' '20')
 NOW=$(date -Iseconds)
 TODAY=$(date -I)
 WARNINGS=()

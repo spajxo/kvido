@@ -55,7 +55,7 @@ If a required tool is missing, inform the user and offer installation. Do not pr
 Check which sources are enabled in configuration:
 ```bash
 for src in gitlab jira slack calendar gmail sessions; do
-  enabled=$(kvido config "sources.$src.enabled" "true" 2>/dev/null || echo "true")
+  enabled=$(kvido config "$src.enabled" "true" 2>/dev/null || echo "true")
   echo "$src: $enabled"
 done
 ```
@@ -64,14 +64,14 @@ For each enabled source, validate prerequisites and config keys. The setup requi
 
 | Source | Prerequisites | Required Config |
 |--------|---------------|-----------------|
-| gitlab | glab | sources.gitlab.repos |
-| jira | acli or Atlassian MCP | sources.jira.projects |
-| slack | Slack Bot Token | slack.bot_token, slack.dm_channel_id, sources.slack.channels or dm_channels |
+| gitlab | glab | gitlab.repos |
+| jira | acli or Atlassian MCP | jira.projects |
+| slack | Slack Bot Token | slack.bot_token, slack.dm_channel_id, slack.channels or slack.dm_channels |
 | calendar | Google Calendar MCP | — |
-| gmail | gws or Gmail MCP | sources.gmail.watch_query |
+| gmail | gws or Gmail MCP | gmail.watch_query |
 | sessions | — | — |
 
-To disable a source: set `sources.<name>.enabled` to `false` in settings.json.
+To disable a source: set `<name>.enabled` to `false` in settings.json.
 
 ## Step 1: First-time Setup
 

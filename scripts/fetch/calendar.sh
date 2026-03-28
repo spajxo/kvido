@@ -64,8 +64,8 @@ echo "$EVENTS" | jq -r '.items[] | @base64' | while read -r ITEM_B64; do
         break 2
       fi
     done
-  done < <(for cat_key in $($CONFIG --keys 'sources.calendar.categories'); do
-    printf '%s\t%s\n' "$cat_key" "$($CONFIG "sources.calendar.categories.${cat_key}")"
+  done < <(for cat_key in $($CONFIG --keys 'calendar.categories'); do
+    printf '%s\t%s\n' "$cat_key" "$($CONFIG "calendar.categories.${cat_key}")"
   done)
 
   # Format time
