@@ -49,19 +49,20 @@ If the message contains an action verb with scope > 1 lookup ("go through", "wri
      --priority <urgent|high|medium|low> \
      --source slack \
      --source-ref "<message ts>")
+   TASK_ID=$(kvido task read "$TASK_SLUG" | grep '^TASK_ID=' | cut -d'"' -f2)
    ```
-4. Return: `"Reply: Added to queue as $TASK_SLUG. Thread: $THREAD_TS. Type: chat-reply."`
+4. Return: `"Reply: Added to queue as #$TASK_ID ($TASK_SLUG). Thread: $THREAD_TS. Type: chat-reply."`
 5. Don't try to process the task yourself.
 
 ### Triage approval (via text)
 
-If the message contains ✅/❌/👍/👎 or "approved"/"rejected"/"approve"/"reject" followed by a slug or positional reference:
+If the message contains ✅/❌/👍/👎 or "approved"/"rejected"/"approve"/"reject" followed by an ID, slug, or positional reference:
 
-1. List pending triage tasks: `kvido task list triage`
-2. Match the user's intent to task slugs (by name, order, or explicit slug)
-3. Approve: `kvido task move <slug> todo`
-4. Reject: `kvido task note <slug> "Rejected via chat" && kvido task move <slug> cancelled`
-5. Modify: `kvido task note <slug> "<user feedback>"`
+1. List pending triage tasks: `kvido task list triage` (output: `<id> <slug>` per line)
+2. Match the user's intent to task IDs or slugs (by ID number, name, order, or explicit reference)
+3. Approve: `kvido task move <id> todo`
+4. Reject: `kvido task note <id> "Rejected via chat" && kvido task move <id> cancelled`
+5. Modify: `kvido task note <id> "<user feedback>"`
 
 ### Interactive triage (user asks "triage" or "what's in triage")
 
@@ -75,16 +76,16 @@ If the user asks to review the triage inbox:
 
 2. For each task, read detail and present:
    ```bash
-   kvido task read <slug>
+   kvido task read <id>
    ```
-   Format per item: `[N/total] <slug>: <title> — priority: <p>, size: <s>, added: <date>`
+   Format per item: `[N/total] #<id> <slug>: <title> — priority: <p>, size: <s>, added: <date>`
 
 3. Ask user for decision per item: yes (approve) / later (defer) / no (reject).
 
 4. Process responses:
-   - `yes` → `kvido task move <slug> todo`
-   - `later` → `kvido task note <slug> "Deferred: $(date +%Y-%m-%d)"`, leave in triage
-   - `no` → `kvido task note <slug> "Rejected by user" && kvido task move <slug> cancelled`
+   - `yes` → `kvido task move <id> todo`
+   - `later` → `kvido task note <id> "Deferred: $(date +%Y-%m-%d)"`, leave in triage
+   - `no` → `kvido task note <id> "Rejected by user" && kvido task move <id> cancelled`
 
 5. Summarize: "Triage done: X accepted, Y deferred, Z discarded."
 

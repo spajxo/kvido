@@ -22,11 +22,12 @@ Before generating new proposals, evaluate the results of previous ones.
 
 1. Read completed/cancelled tasks with `source: self-improver` from the last 7 days:
    ```bash
-   for SLUG in $(kvido task list done --source self-improver) $(kvido task list cancelled --source self-improver); do
-     TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
+   { kvido task list done --source self-improver; kvido task list cancelled --source self-improver; } \
+   | while read -r TASK_ID SLUG; do
+     TASK_DATA=$(kvido task read "$TASK_ID" 2>/dev/null) || continue
      eval "$(echo "$TASK_DATA" | grep '^UPDATED_AT=')"
      # Filter last 7 days
-     echo "$SLUG"
+     echo "#$TASK_ID $SLUG"
    done
    ```
 
@@ -62,10 +63,13 @@ Use this limit instead of the fixed "max 5" in subsequent steps.
 - Read Slack DM channel via MCP: `slack_read_channel` (last 20 messages)
 - Check existing tasks for dedup:
   ```bash
-  for SLUG in $(kvido task list --source self-improver); do
-    TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
+  kvido task list triage --source self-improver
+  kvido task list todo --source self-improver
+  kvido task list in-progress --source self-improver \
+  | while read -r TASK_ID SLUG; do
+    TASK_DATA=$(kvido task read "$TASK_ID" 2>/dev/null) || continue
     eval "$(echo "$TASK_DATA" | grep -E '^(TITLE|STATUS)=')"
-    echo "$SLUG | $TITLE | $STATUS"
+    echo "#$TASK_ID $SLUG | $TITLE | $STATUS"
   done
   ```
 
@@ -95,10 +99,10 @@ Analyze repeated task patterns to identify automatable patterns.
 
 1. Read completed worker tasks from the last 7 days:
    ```bash
-   for SLUG in $(kvido task list done); do
-     TASK_DATA=$(kvido task read "$SLUG" 2>/dev/null) || continue
+   kvido task list done | while read -r TASK_ID SLUG; do
+     TASK_DATA=$(kvido task read "$TASK_ID" 2>/dev/null) || continue
      eval "$(echo "$TASK_DATA" | grep '^TITLE=')"
-     echo "$SLUG | $TITLE"
+     echo "#$TASK_ID $SLUG | $TITLE"
    done
    ```
 

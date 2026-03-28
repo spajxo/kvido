@@ -53,7 +53,7 @@ Read current state via `kvido current get`. Review recent activity via `kvido lo
 
 Use `TaskList` to list all existing tasks. Mark all `in_progress` tasks from a previous session as `completed` (agent process is gone from previous session). Pending tasks with unsatisfied `blockedBy` unblock automatically.
 
-Exception: for `worker:*` in_progress tasks, also run `kvido task move <slug> failed` to mark the **local** task file as failed (worker tracks state via local task files independently; the TaskList entry still goes to `completed` like all others).
+Exception: for `worker:*` in_progress tasks, also run `kvido task move <id> failed` to mark the **local** task file as failed (worker tracks state via local task files independently; the TaskList entry still goes to `completed` like all others). The numeric ID is in the subject after `worker:` (e.g. subject `worker:42` → ID `42`).
 
 ---
 
@@ -81,10 +81,10 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <slug> fa
      TURBO_UNTIL=$(date -d "+30 min" -Iseconds)  # or parsed duration
      kvido state set heartbeat.turbo_until "$TURBO_UNTIL"
      ```
-   - Cancel ("cancel <slug>"):
+   - Cancel ("cancel <id>" or "cancel <slug>"):
      ```bash
-     kvido task note <slug> "Cancelled via chat"
-     kvido task move <slug> cancelled
+     kvido task note <id|slug> "Cancelled via chat"
+     kvido task move <id|slug> cancelled
      ```
    - Simple status questions answerable from `kvido current get` and `kvido log list --today`
 
@@ -135,14 +135,14 @@ The planner output uses structured lines:
 ```
 DISPATCH gatherer
 DISPATCH triager
-DISPATCH worker deploy-hotfix model=sonnet
+DISPATCH worker 86 model=sonnet
 DISPATCH librarian
 DISPATCH_AFTER triager gatherer
-NOTIFY stale-worker fix-auth-bug
+NOTIFY stale-worker 42
 ```
 
 - `DISPATCH <agent>` — dispatch agent (parallel by default)
-- `DISPATCH worker <slug> [model=<model>]` — dispatch worker for specific task; optional `model=` token selects model (haiku/sonnet/opus, default sonnet)
+- `DISPATCH worker <id> [model=<model>]` — dispatch worker for specific task (by numeric ID); optional `model=` token selects model (haiku/sonnet/opus, default sonnet)
 - `DISPATCH_AFTER <agent> <after-agent>` — sequential ordering
 - `NOTIFY <type> [detail]` — heartbeat handles notification directly
 - `No dispatches needed.` — skip Steps 5 and 6
@@ -159,12 +159,12 @@ Parse planner output from Step 4 line by line. Handle each line type:
 
 For each `DISPATCH` line, dispatch the agent with `run_in_background: true`:
 
-1. `TaskCreate` subject `<agent>` (or `worker:<slug>`, `maintenance:<agent>`)
+1. `TaskCreate` subject `<agent>` (or `worker:<id>`, `maintenance:<agent>`)
 2. `TaskUpdate` → `in_progress`
 3. Dispatch agent (`run_in_background: true`)
 4. Log: `kvido log add heartbeat dispatch --message "<agent>"`
 
-**Worker specifics:** `DISPATCH worker <slug> [model=<model>]` — parse the optional `model=` token from the DISPATCH line (default: `sonnet` if absent). Read task first (`kvido task read "$slug"`), if SOURCE_REF is set send ack via `kvido slack reply`, then `kvido task move "$slug" in-progress`. Pass the resolved model name as the `model` parameter to the Agent tool when dispatching the worker.
+**Worker specifics:** `DISPATCH worker <id> [model=<model>]` — parse the numeric task ID and optional `model=` token from the DISPATCH line (default: `sonnet` if absent). Read task first (`kvido task read "$id"`), if SOURCE_REF is set send ack via `kvido slack reply`, then `kvido task move "$id" in-progress`. Pass the resolved model name as the `model` parameter to the Agent tool when dispatching the worker. Pass both `TASK_ID` (numeric) and `TASK_SLUG` (from task read output) to the worker agent.
 
 **Maintenance specifics:** If another `maintenance:*` task is pending/in_progress, set `addBlockedBy`.
 
@@ -252,7 +252,7 @@ Chat-agent uses ack reactions only (see above), not status edits.
 | chat-agent | `chat` | always immediate | Extract `ORIGINAL_TS` from task subject `chat:<ts>`. If agent returns `Thread` non-empty: `kvido slack reply dm <Thread> chat --var message="<Reply>"`. If `Thread` empty: `kvido slack reply dm <ORIGINAL_TS> chat --var message="<Reply>"`. After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
 | worker | `worker-report` | `high` for error, else `normal` | — |
 | gatherer | `event` | per urgency rules | Parse findings, each as separate notification |
-| triager | `triage-item` | `immediate` | For triage items needing user attention, save returned `ts` to task frontmatter: `kvido task update <slug> triage_slack_ts <ts>` |
+| triager | `triage-item` | `immediate` | For triage items needing user attention, save returned `ts` to task frontmatter: `kvido task update <id> triage_slack_ts <ts>` |
 | maintenance | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
 
 ### Digest threading

@@ -24,14 +24,14 @@ List all tasks in triage status:
 kvido task list triage
 ```
 
-If empty, skip to Step 5 (save state and exit).
+Output format per line: `<id> <slug>`. If empty, skip to Step 5 (save state and exit).
 
 ## Step 2: Poll Reactions
 
 For each triage task, read its metadata to get the Slack message timestamp (`triage_ts`):
 
 ```bash
-kvido task read <slug>
+kvido task read <id>
 ```
 
 Look for `triage_ts` in the task frontmatter. Build a JSON array of items that have a `triage_ts` and pass them to the triage poll script:
@@ -53,8 +53,8 @@ For each result from triage-poll:
 Task was already moved to `todo` by `triage-poll.sh`. Log it:
 
 ```bash
-kvido task note <slug> "## Approved\n\nApproved via triage reaction, moved to todo"
-kvido log add triager info --message "triage approved: <slug>"
+kvido task note <id> "## Approved\n\nApproved via triage reaction, moved to todo"
+kvido log add triager info --message "triage approved: #<id>"
 ```
 
 ### Rejected
@@ -62,7 +62,7 @@ kvido log add triager info --message "triage approved: <slug>"
 Task was already moved to `cancelled` by `triage-poll.sh`. Log it:
 
 ```bash
-kvido log add triager info --message "triage rejected: <slug>"
+kvido log add triager info --message "triage rejected: #<id>"
 ```
 
 ### Pending
@@ -75,7 +75,7 @@ For pending triage items, decide which ones heartbeat should remind the user abo
 
 1. **Check last-notified time** to avoid spamming:
    ```bash
-   kvido state get triager.notified.<slug>
+   kvido state get triager.notified.<id>
    ```
    If the value is a timestamp within the last 2 hours, skip this item.
 
@@ -85,13 +85,13 @@ For pending triage items, decide which ones heartbeat should remind the user abo
 
 4. **Mark as notified** after recommending:
    ```bash
-   kvido state set triager.notified.<slug> "$(date -Iseconds)"
+   kvido state set triager.notified.<id> "$(date -Iseconds)"
    ```
 
 For items without a `triage_ts` (never notified to Slack yet), always include them in recommendations — they are new triage items the user has not seen.
 
 Build recommendation output as natural language. For each recommended item include:
-- Task slug and title
+- Task numeric ID and title
 - Brief description of what needs triaging
 - Full clickable URL if available (from task metadata)
 - How long it has been in triage
@@ -109,7 +109,7 @@ Print natural language to stdout. Heartbeat will read this and deliver via Slack
 **If there are approved/rejected results**, report them first:
 
 ```
-Triage update: "fix-auth-bug" approved (moved to todo), "stale-dep-check" rejected (cancelled).
+Triage update: #12 "fix-auth-bug" approved (moved to todo), #15 "stale-dep-check" rejected (cancelled).
 ```
 
 **If there are notification recommendations**, list them:
@@ -117,8 +117,8 @@ Triage update: "fix-auth-bug" approved (moved to todo), "stale-dep-check" reject
 ```
 Pending triage — please react in Slack to approve or reject:
 
-1. fix-login-race (waiting 3h) — Race condition in login flow causes intermittent 500 errors. https://github.com/org/repo/issues/42
-2. update-node-deps (waiting 1d) — Node dependencies have 2 high-severity CVEs.
+1. #18 fix-login-race (waiting 3h) — Race condition in login flow causes intermittent 500 errors. https://github.com/org/repo/issues/42
+2. #21 update-node-deps (waiting 1d) — Node dependencies have 2 high-severity CVEs.
 ```
 
 **If nothing to do**:

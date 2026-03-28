@@ -36,7 +36,7 @@ Include as `NOTIFY` lines when conditions are met:
 
 | Check | Condition | Output |
 |-------|-----------|--------|
-| Stale workers | in-progress task > 10min | `NOTIFY stale-worker <slug>` |
+| Stale workers | in-progress task > 10min | `NOTIFY stale-worker <id>` |
 | Triage overflow | triage count >= 10 | `NOTIFY triage-overflow` |
 | Backlog stale | todo low priority > 30 days | `NOTIFY backlog-stale` |
 
@@ -115,7 +115,7 @@ WIP_LIMIT=$(kvido config 'skills.triage.wip_limit' '3')
 
 If `WIP >= WIP_LIMIT`: do not dispatch another worker. Emit `NOTIFY wip-limit-reached` instead.
 
-If a slot is available, dispatch the top-priority task. Read its `size` field and map to model:
+If a slot is available, dispatch the top-priority task. Extract its numeric ID and read its `size` field via `kvido task read <id>` to map it to a model hint:
 
 | size | model |
 |------|-------|
@@ -125,7 +125,7 @@ If a slot is available, dispatch the top-priority task. Read its `size` field an
 | `xl` | opus |
 | _(missing)_ | sonnet |
 
-Emit the dispatch as `DISPATCH worker <slug> model=<model>`.
+Emit the dispatch as `DISPATCH worker <id> model=<model>`.
 
 ## Step 5: Output
 
@@ -136,12 +136,12 @@ Print dispatch lines. Each dispatched agent is one line:
 ```
 DISPATCH gatherer
 DISPATCH triager
-DISPATCH worker deploy-hotfix model=sonnet
+DISPATCH worker 86 model=sonnet
 DISPATCH librarian
 ```
 
 Rules:
-- One `DISPATCH <agent>` per line. Worker includes task slug and model hint: `DISPATCH worker <slug> model=<model>`.
+- One `DISPATCH <agent>` per line. Worker includes task numeric ID and model hint: `DISPATCH worker <id> model=<model>`.
 - If nothing to dispatch: output `No dispatches needed.`
 - Ordering: by default heartbeat runs all in parallel. For sequential, use `DISPATCH_AFTER <agent> <after-agent>` (e.g., `DISPATCH_AFTER triager gatherer`).
 
