@@ -144,49 +144,33 @@ Triager: no triage items pending
 
 **Purpose:** Reports the result of executing a task.
 
-**Format (success):**
+**Format:**
+
+The worker writes a free-form natural language message in the tone from `persona.md` (Heartbeat section), followed by routing fields:
 
 ```
-Task <slug> done. <brief summary>.
-Result: <concrete result 1>; <concrete result 2>
-Task: <slug>
+<free-form result message>
+
+Task: #<task_id>
 Type: worker-report
 Source: <source_ref>
 ```
 
-**Format (failure):**
+The free-form message contains the substance — what was done, findings, branch name, etc. Tone and structure are controlled by persona, not by this contract.
 
-```
-Task <slug> failed. Reason: <reason>.
-Task: <slug>
-Type: worker-report
-```
-
-**Parsed fields:**
+**Routing fields:**
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `Task:` | yes | Task slug — used for routing and logging |
-| `Type:` | yes | Always `worker-report` — error vs. success is determined by template variables (e.g. presence of `Result:` field), not a separate template |
+| `Task:` | yes | Numeric task ID — used for routing and logging |
+| `Type:` | yes | Always `worker-report` |
 | `Source:` | if non-empty | Original source ref (Slack `ts`, Jira key, etc.) — used for thread routing |
-| `Result:` | for success | Summary of what was done — absent on failure |
 
-**Delivery:** Heartbeat always uses `worker-report` template. Level is `normal` on success, `high` on failure (detected by absence of `Result:`). If `Source:` contains a Slack `ts`, heartbeat replies in that thread.
+**Delivery:** Heartbeat uses `worker-report` template with `--var message="<full output above routing fields>"`. Level is `normal` on success, `high` on failure (detected by context — e.g. "failed" or absence of substantive result). If `Source:` contains a Slack `ts`, heartbeat replies in that thread.
 
-**Slack appearance** (what heartbeat renders):
-
-```
-🔧 *<brief task name>*
-━━━━━━━━━━━━━━━━
-✅ <concrete result 1>
-✅ <concrete result 2>
-⚠️ <warning — only if relevant>
-
-<slug> · <Xm Ys>
-```
+**Slack appearance** (what heartbeat renders): the free-form message as-is in mrkdwn, plus context footer with task ID and duration.
 
 **Fallback:** If `Type:` field is missing, heartbeat treats the output as `worker-report` and delivers as-is with `normal` level.
-
 ---
 
 ### 2.4 Chat-agent
@@ -196,16 +180,18 @@ Type: worker-report
 **Format:**
 
 ```
-Reply: <response text for the user>
+Reply: <response text>
 Thread: <thread_ts or empty>
 Type: chat-reply
 ```
+
+The `Reply:` value is free-form text written in the tone from `persona.md`. Heartbeat delivers it as-is.
 
 **Parsed fields:**
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `Reply:` | yes | The response text to deliver to the user |
+| `Reply:` | yes | The response text — free-form, per persona tone |
 | `Thread:` | yes | If replying to a thread: the parent message `thread_ts`. If flat message: empty string. **Never `ts` of the message itself.** |
 | `Type:` | yes | Always `chat-reply` |
 

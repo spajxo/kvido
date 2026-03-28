@@ -250,7 +250,7 @@ Chat-agent uses ack reactions only (see above), not status edits.
 | Agent | Template | Level | Notes |
 |-------|----------|-------|-------|
 | chat-agent | `chat` | always immediate | Extract `ORIGINAL_TS` from task subject `chat:<ts>`. If agent returns `Thread` non-empty: `kvido slack reply dm <Thread> chat --var message="<Reply>"`. If `Thread` empty: `kvido slack reply dm <ORIGINAL_TS> chat --var message="<Reply>"`. After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
-| worker | `worker-report` | `high` for error, else `normal` | — |
+| worker | `worker-report` | `high` for error, else `normal` | Pass worker output (up to routing fields) as `--var message="..."`. If `Source:` is a Slack `ts`, reply in that thread. |
 | gatherer | `event` | per urgency rules | Parse findings, each as separate notification |
 | triager | `triage-item` | `immediate` | For triage items needing user attention, save returned `ts` to task frontmatter: `kvido task update <id> triage_slack_ts <ts>` |
 | maintenance | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |

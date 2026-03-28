@@ -159,41 +159,19 @@ If this check fails: do NOT push. Report failure — the worktree was created fr
 
 Don't send messages via `kvido slack`. Return natural language result of the work.
 
-Always include:
-- **Result:** summary of what was done
-- **Task:** #{{TASK_ID}} — {{TITLE}}
-- **Type:** worker-report (or worker-error on failure)
-- **Source:** {{SOURCE_REF}} (if non-empty — for thread context)
+Write a free-form message in the tone and language from `persona.md` (Heartbeat section). Be specific and concrete — not "checked MRs" but "group/project !342: waiting 3 days, assignee Jan, 2 unresolved comments". If output > 3000 chars, trim to top 5 items + "and X more".
 
-Success example:
+Heartbeat needs these routing fields at the end of your output:
+
 ```
-Task #47 "Security review ds-parking" done. Found 2 medium issues.
-Result: 1) SQL injection at endpoint /api/search 2) Missing rate limiting at /api/upload
-Task: #47 — Security review ds-parking
+Task: #{{TASK_ID}}
 Type: worker-report
-Source: 1773933088.437
+Source: {{SOURCE_REF}}
 ```
 
-Failure example:
-```
-Task #23 "Sync Jira epics" failed. Reason: API timeout after 3 attempts.
-Task: #23 — Sync Jira epics
-Type: worker-error
-```
-
-Report appearance:
-```
-🔧 *<brief task name>*
-━━━━━━━━━━━━━━━━
-✅ <concrete result 1>
-✅ <concrete result 2>
-⚠️ <warning — only if relevant>
-
-#<id> · <Xm Ys>
-```
-
-**Specificity is mandatory.** Not "checked MRs" but "group/project !342: waiting 3 days, assignee Jan, 2 unresolved comments". If output > 3000 chars → trim to top 5 items + "and X more".
-
+- `Task:` — always include (numeric ID for routing)
+- `Type:` — always `worker-report`; heartbeat detects success vs. failure from context
+- `Source:` — include only if `{{SOURCE_REF}}` is non-empty (used for Slack thread routing)
 ## Error handling
 1. `kvido task note {{TASK_ID}} "## Failed\n<reason>"`
 2. `kvido task move {{TASK_ID}} failed`

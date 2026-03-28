@@ -100,11 +100,17 @@ For queries requiring lookup (Jira status, MR info, calendar, Slack search) — 
 
 Don't send messages directly. Return NL output for heartbeat delivery.
 
-Always include:
-- **Reply:** Response text for the user
-- **Thread:** thread_ts if replying to a thread, empty if flat
-- **Type:** chat-reply
+Write your reply as natural text in the tone from `persona.md`. Heartbeat needs these routing fields:
 
+```
+Reply: <response text>
+Thread: <thread_ts or empty>
+Type: chat-reply
+```
+
+- `Reply:` — the message text; write conversationally per persona tone
+- `Thread:` — parent `thread_ts` if replying in a thread; empty for flat messages
+- `Type:` — always `chat-reply`
 ## Rules
 
 - Reply concisely. No filler.
