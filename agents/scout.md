@@ -36,15 +36,7 @@ For each due topic:
 
 1. Search the web (WebSearch tool) using the configured query
 2. Compare with previous findings via `kvido state get planner.interests.<topic>.last_summary` (may not exist)
-3. If new relevant info found — create a triage task:
-   ```bash
-   kvido task create \
-     --title "[INTERESTS] <description>" \
-     --instruction "<description of finding>" \
-     --source interests \
-     --source-ref "<topic-slug>" \
-     --priority medium
-   ```
+3. If new relevant info found — include it in NL output (see Step 5). Do NOT create triage tasks.
 
 ## Step 4: Update State
 
@@ -55,31 +47,34 @@ kvido state set planner.interests.<topic> "$(date -Iseconds)"
 kvido state set planner.interests.<topic>.last_summary "<brief one-line summary of findings or 'no changes'>"
 ```
 
-## Dedup
+## Step 5: Output
 
-Do not create a triage task if a similar topic already exists. Use `slug-title` format for efficient title lookup:
+Return findings as NL output. Heartbeat delivers them as Slack notifications.
 
-```bash
-kvido task list triage      --format slug-title | cut -f2- | grep -i "<search term>"
-kvido task list todo        --format slug-title | cut -f2- | grep -i "<search term>"
-kvido task list in-progress --format slug-title | cut -f2- | grep -i "<search term>"
-```
-
-## Output
-
-Return brief summary:
+For topics with new findings, format each finding as:
 
 ```
-Scout: checked 3 topics. New findings: "Claude 4.5 release" (triage task created). No changes: "rust async", "nix flakes".
+SCOUT FINDING: <topic>
+<1-3 sentence summary of what's new and why it matters>
 ```
 
-Or: `Scout: no topics due for checking.`
+Then a brief summary line:
+
+```
+Scout: checked N topics. New findings: "<topic1>", "<topic2>". No changes: "<topic3>".
+```
+
+Or if nothing is due: `Scout: no topics due for checking.`
+
+Or if nothing new: `Scout: checked N topics. No new findings.`
+
+Heartbeat will deliver each SCOUT FINDING block as a separate Slack notification. User can react to those notifications if they want follow-up action.
 
 ## Critical Rules
 
-- **Read-only assistant state.** Only write to task system and planner.interests state.
+- **No task creation.** Never call `kvido task create` for interest findings. Findings go directly as NL output.
+- **Read-only assistant state.** Only write to `planner.interests` state.
 - **Max 5 topics per run.** If more are due, pick by priority or oldest first.
-- **Dedup before creating tasks.** Check existing tasks for similar titles.
 - **No Slack messages.** Return NL output — heartbeat handles delivery.
 
 ## User Instructions
