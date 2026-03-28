@@ -56,13 +56,64 @@ Go through planner memory. For each rule:
    - If the rule dispatches an agent: include in output
    - Mark as done **after** side effects succeed: `kvido state set planner.<key> "$(date +%Y-%m-%d)"`
 
-## Step 3: Check Worker Queue
+## Step 3: Read Full Task Snapshot
+
+Read all task queues to build a complete picture before making scheduling decisions:
 
 ```bash
-next_task=$(kvido task list todo --sort priority 2>/dev/null | head -1 || echo "")
+kvido task list triage 2>/dev/null || true
+kvido task list todo 2>/dev/null || true
+kvido task list in-progress 2>/dev/null || true
 ```
 
-If non-empty, include worker dispatch for that task. Read the task's `size` field via `kvido task read <slug>` and map it to a model hint:
+For each task in triage and todo, read its full details:
+
+```bash
+kvido task read <id_or_slug>
+```
+
+This gives you: `TASK_ID`, `SLUG`, `STATUS`, `TITLE`, `PRIORITY`, `SIZE`, `SOURCE`, `SOURCE_REF`, `WAITING_ON`, `INSTRUCTION`.
+
+### Duplicate Detection
+
+After reading all tasks, compare them:
+
+- If two tasks share the same `SOURCE_REF` (e.g., same Jira key, same GitHub issue/PR, same Slack `ts`): they are likely duplicates.
+- If two tasks have nearly identical titles or instructions targeting the same artifact: flag as duplicate.
+- Action: cancel the lower-priority or older duplicate via `kvido task note <slug> "Duplicate of #<id>"` + `kvido task move <slug> cancelled`.
+
+### Dependency Awareness
+
+Check task `INSTRUCTION` and `WAITING_ON` fields:
+
+- If a task's `WAITING_ON` is non-empty: it is blocked — do not dispatch it.
+- If task A's instruction explicitly references task B (by slug or ID) as a prerequisite, and B is not yet `done`: skip A this cycle.
+- Tasks with non-empty `WAITING_ON` do not count toward WIP limit.
+
+### Autonomous Prioritization
+
+After deduplication and dependency filtering, rank the remaining todo tasks:
+
+1. `urgent` priority tasks first — dispatch immediately regardless of size.
+2. `high` priority tasks next.
+3. Within same priority: prefer smaller size (`s` < `m` < `l` < `xl`) — faster turnaround.
+4. `low` priority tasks: only dispatch if no higher-priority tasks are pending.
+5. Tasks from `source: planner` or `source: slack` take precedence over `source: jira` at equal priority.
+
+## Step 4: Check Worker Queue
+
+Using the prioritized list from Step 3, select the highest-priority non-blocked todo task.
+
+Check WIP limit first:
+
+```bash
+WIP=$(kvido task count in-progress)
+WIP_LIMIT=$(kvido config 'skills.triage.wip_limit' '3')
+```
+
+If `WIP >= WIP_LIMIT`: do not dispatch another worker. Emit `NOTIFY wip-limit-reached` instead.
+
+If a slot is available, dispatch the top-priority task. Read its `size` field and map to model:
 
 | size | model |
 |------|-------|
@@ -74,7 +125,7 @@ If non-empty, include worker dispatch for that task. Read the task's `size` fiel
 
 Emit the dispatch as `DISPATCH worker <slug> model=<model>`.
 
-## Step 4: Output
+## Step 5: Output
 
 Save last run: `kvido state set planner.last_run "$(date -Iseconds)"`
 
@@ -100,6 +151,7 @@ Rules:
 - **Idempotent.** If already dispatched today, skip.
 - **Triage is triager's job.** Do not triage tasks — only dispatch the triager agent.
 - **Planner memory is the source of truth.** All scheduling rules come from `kvido memory read planner`. Do not invent rules.
+- **Full snapshot before decisions.** Always read triage + todo + in-progress before deciding what to dispatch.
 
 ## User Instructions
 
