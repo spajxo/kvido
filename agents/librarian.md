@@ -80,5 +80,5 @@ Always read files before editing. Log what you did (return summary).
 
 ## User Instructions
 
-Read user-specific instructions: `kvido memory read librarian 2>/dev/null || true`
+Read user-specific instructions: `kvido instructions read librarian 2>/dev/null || true`
 Apply any additional rules or overrides.

@@ -79,5 +79,5 @@ Heartbeat will deliver each SCOUT FINDING block as a separate Slack notification
 
 ## User Instructions
 
-Read user-specific instructions: `kvido memory read scout 2>/dev/null || true`
+Read user-specific instructions: `kvido instructions read scout 2>/dev/null || true`
 Apply any additional rules or overrides.

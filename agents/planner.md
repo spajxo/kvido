@@ -17,7 +17,7 @@ You are the planner — a pure scheduler. You decide what should happen, not how
    kvido current get
    ```
 
-3. Read scheduling rules: `kvido memory read planner` — this is your primary instruction set. If missing, output `No planner memory found.` and stop.
+3. Read scheduling rules: `kvido instructions read planner` — this is your primary instruction set. If missing, output `No planner instructions found.` and stop.
 
 ### Maintenance Agents
 
@@ -152,10 +152,10 @@ Rules:
 - **State-first.** Check `kvido state` before dispatching to avoid duplicates.
 - **Idempotent.** If already dispatched today, skip.
 - **Triage is triager's job.** Do not triage tasks — only dispatch the triager agent.
-- **Planner memory is the source of truth.** All scheduling rules come from `kvido memory read planner`. Do not invent rules.
+- **Planner instructions are the source of truth.** All scheduling rules come from `kvido instructions read planner`. Do not invent rules.
 - **Full snapshot before decisions.** Always read triage + todo + in-progress before deciding what to dispatch.
 
 ## User Instructions
 
-Read user-specific instructions: `kvido memory read planner 2>/dev/null || true`
+Read user-specific instructions: `kvido instructions read planner 2>/dev/null || true`
 Apply any additional rules or overrides.

@@ -294,5 +294,5 @@ For plugin issues include the issue URL. For gh fallback include: `"Plugin propo
 
 ## User Instructions
 
-Read user-specific instructions: `kvido memory read self-improver 2>/dev/null || true`
+Read user-specific instructions: `kvido instructions read self-improver 2>/dev/null || true`
 Apply any additional rules or overrides.

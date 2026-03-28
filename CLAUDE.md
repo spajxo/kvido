@@ -37,6 +37,7 @@ scripts/
 ├── current/                       ← current focus management
 ├── log/                           ← activity logging
 ├── memory/                        ← memory file access
+├── instructions/                  ← per-agent instruction file access
 └── migrate/                       ← state migration
 kvido                              ← CLI entry point
 settings.json.example              ← config reference template
@@ -51,17 +52,19 @@ settings.json.example              ← config reference template
 - **Planner is a pure scheduler** — returns NL dispatch instructions, does not execute anything.
 - **Prompts default to English**. Runtime language is configured in the user's `memory/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The gatherer agent documents MCP fallback procedures for each source.
-- **Memory files** are accessed via `kvido memory read <name>` / `kvido memory write <name>` / `kvido memory tree` — never via hardcoded paths.
+- **Memory files** are accessed via `kvido memory read <name>` / `kvido memory write <name>` / `kvido memory tree` — never via hardcoded paths. Memory is unstructured — librarian manages organization autonomously.
+- **Per-agent instructions** are accessed via `kvido instructions read <agent-name>` / `kvido instructions write <agent-name>` — stored in `$KVIDO_HOME/instructions/`.
 - **Agent instructions** are self-contained in `agents/*.md` files. The gatherer agent contains all source fetch instructions inline.
-- **Agents read user customizations** via `kvido memory read <agent-name>` — users can add per-agent instructions in `$KVIDO_HOME/memory/`.
 - **Sources are toggled** via `sources.<name>.enabled` in `settings.json` (default: `true`). No separate plugin installation needed.
 - **Agent output contract** is formally defined in `docs/agent-output-contract.md` — specifies what heartbeat expects from each agent's stdout output.
 
 ## KVIDO_HOME
 
 All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
-- `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, state.json, tasks/, dashboard.html)
-- `memory/` — persistent (memory.md, journals, projects, weekly, learnings)
+- `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, state.json, dashboard.html)
+- `tasks/` — task queue (`<status>/<id>-<slug>.md` files, task_counter)
+- `instructions/` — per-agent instruction files (read via `kvido instructions read <agent>`)
+- `memory/` — persistent, unstructured (memory.md, journals, projects, weekly, learnings) — librarian manages organization
 - `settings.json` — configuration (JSON, parsed via `scripts/config.sh`)
 - `.env` — secrets (Slack tokens, channel IDs)
 
@@ -116,7 +119,7 @@ Sources are configured in `settings.json` under `sources.*`. Each source can be 
 
 ## Task system
 
-Tasks live in `$KVIDO_HOME/state/tasks/<status>/` as markdown files with YAML frontmatter. Canonical statuses (defined in `scripts/worker/task.sh`):
+Tasks live in `$KVIDO_HOME/tasks/<status>/` as markdown files with YAML frontmatter. Canonical statuses (defined in `scripts/worker/task.sh`):
 
 ```
 triage → todo → in-progress → done
@@ -130,7 +133,7 @@ CLI: `kvido task <create|read|move|list|count|find|note> [args]` (delegates to `
 
 Entry point: `./kvido` (symlinked to `~/.local/bin/kvido` via `kvido --install`). Resolves plugin root from `CLAUDE_PLUGIN_ROOT` → script directory → plugin registry fallback.
 
-Key commands: `kvido heartbeat`, `kvido task ...`, `kvido state ...`, `kvido config ...`, `kvido slack ...`, `kvido log ...`, `kvido memory ...`, `kvido dashboard`. Run `kvido --help` for full reference.
+Key commands: `kvido heartbeat`, `kvido task ...`, `kvido state ...`, `kvido config ...`, `kvido slack ...`, `kvido log ...`, `kvido memory ...`, `kvido instructions ...`, `kvido dashboard`. Run `kvido --help` for full reference.
 
 ## Working on this codebase
 

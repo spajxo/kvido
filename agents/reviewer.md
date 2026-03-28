@@ -22,7 +22,7 @@ TASK_SLUG: {{TASK_SLUG}}
 
 ## User Instructions
 
-Read user-specific instructions: `kvido memory read reviewer 2>/dev/null || true`
+Read user-specific instructions: `kvido instructions read reviewer 2>/dev/null || true`
 Apply any additional rules or overrides. Users may configure custom review tools (e.g. codex, custom linters) via this memory file.
 
 ## Process
