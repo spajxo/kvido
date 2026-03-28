@@ -178,8 +178,11 @@ Commands:
   instructions <subcommand>         Per-agent instructions (read, write, list, tree)
   current <get|dump|summary|set|append|clear>  Read/write current focus sections (state/current.md)
   migrate                           Run lazy state migration (heartbeat-state/planner-state → state)
+  memory-sync [--status|--commit-only|--dry-run]  Commit & push KVIDO_HOME to git remote
   scripts/<script>.sh [args]        Direct script dispatch (backward compat)
   agents/<script>.sh [args]         Direct agent dispatch (backward compat)
+
+Note: personal scripts in \$KVIDO_HOME/scripts/ take precedence over plugin scripts.
 
 Flags:
   --root                            Print plugin root path
@@ -290,10 +293,15 @@ WRAPPER
     ;;
   *)
     # Try auto-resolve as short command name → scripts/*.sh
+    # Checks $KVIDO_HOME/scripts/ first (personal overrides), then $KVIDO_ROOT/scripts/ (plugin).
     if [[ $# -gt 0 ]]; then
       _RESOLVED=""
       _NAME="${1%.sh}"
-      if [[ -f "$KVIDO_ROOT/scripts/$_NAME.sh" ]]; then
+      # 1. Personal override: $KVIDO_HOME/scripts/<name>.sh
+      if [[ -f "$KVIDO_HOME/scripts/$_NAME.sh" ]]; then
+        _RESOLVED="$KVIDO_HOME/scripts/$_NAME.sh"
+      # 2. Plugin scripts: flat, nested, or deep-search
+      elif [[ -f "$KVIDO_ROOT/scripts/$_NAME.sh" ]]; then
         _RESOLVED="$KVIDO_ROOT/scripts/$_NAME.sh"
       elif [[ -f "$KVIDO_ROOT/scripts/$_NAME/$_NAME.sh" ]]; then
         _RESOLVED="$KVIDO_ROOT/scripts/$_NAME/$_NAME.sh"
