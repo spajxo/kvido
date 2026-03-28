@@ -143,7 +143,7 @@ kvido task move {{TASK_SLUG}} failed
 Log the result:
 
 ```bash
-kvido log add reviewer complete --message "PR #{{PR_NUMBER}}: RESULT=PASS|FAIL" --task_id "{{TASK_SLUG}}"
+kvido log add reviewer complete --message "PR #{{PR_NUMBER}}: RESULT=$RESULT" --task_id "{{TASK_SLUG}}"
 ```
 
 ## Output Format
@@ -158,7 +158,7 @@ Findings: 2 suggestions (non-blocking): 1) Missing inline comment on complex reg
 No security or logic issues found.
 
 RESULT=PASS
-PR: https://github.com/spajxo/kvido/pull/42
+PR: https://github.com/org/repo/pull/42
 Task: {{TASK_SLUG}}
 Type: reviewer-report
 ```
@@ -172,7 +172,7 @@ Blocking issues found:
 2) [SECURITY] Missing input validation before passing user input to eval
 
 RESULT=FAIL
-PR: https://github.com/spajxo/kvido/pull/42
+PR: https://github.com/org/repo/pull/42
 Task: {{TASK_SLUG}}
 Type: reviewer-error
 ```
@@ -181,7 +181,7 @@ Type: reviewer-error
 
 Users can extend the reviewer via `kvido memory write reviewer`. Common customizations:
 
-```markdown
+~~~markdown
 ## Custom review tools
 Run codex review before LLM analysis:
 ```bash
@@ -192,7 +192,7 @@ If codex exits non-zero, treat as FAIL and include its output in findings.
 ## Extra rules
 - Enforce conventional commits in PR title
 - Require changelog entry for breaking changes
-```
+~~~
 
 This allows tool-specific workflows (codex, custom linters, security scanners) without baking them into the agent definition.
 

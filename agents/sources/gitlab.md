@@ -43,8 +43,8 @@ Repos with `type: knowledge-base` are always skipped (no MRs).
 - `mr:<repo>!<iid>:comment_<count>` — MR comment count change
 
 #### Triage Detection
-New MR where I am reviewer, no matching task found via `kvido task list --source gitlab` → triage item.
-Dedup: check existing tasks with `kvido task list --source gitlab --source-ref <repo>!<IID>`.
+New MR where I am reviewer, no matching task found via `kvido task list triage --source gitlab` → triage item.
+Dedup: check existing tasks with `kvido task list triage --source gitlab --source-ref <repo>!<IID>`.
 Repos with type: knowledge-base → skip triage detection.
 
 #### Notification Rules

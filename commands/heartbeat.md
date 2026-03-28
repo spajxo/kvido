@@ -254,6 +254,7 @@ Chat-agent uses ack reactions only (see above), not status edits.
 | gatherer | `event` | per urgency rules | Parse findings, each as separate notification |
 | triager | `triage-item` | `immediate` | For triage items needing user attention, save returned `ts` to task frontmatter: `kvido task update <id> triage_slack_ts <ts>` |
 | maintenance | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
+| scout | `event` | per scout's suggested urgency in each finding block | Split output by `SCOUT FINDING:` markers — deliver each finding as a separate notification |
 
 ### Digest threading
 

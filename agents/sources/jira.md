@@ -20,7 +20,7 @@ Output: plain text, one block per project.
 
 **triage-detect:** After fetch — new ticket assignee=me → dedup check:
 ```bash
-kvido task list --source jira --format slug-title
+kvido task list triage --source jira --format slug-title
 ```
 If no matching task → create triage task:
 ```bash
