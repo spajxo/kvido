@@ -31,7 +31,7 @@ Apply any additional rules or overrides. Users may configure custom review tools
 
 **Detect platform** — if PLATFORM is empty, infer from PR_URL:
 - URL contains `github.com` → `github`
-- URL contains `gitlab` or `git.*.cz` or `git.digital.cz` → `gitlab`
+- URL contains `gitlab` → `gitlab`
 - Otherwise → check current git remote: `git remote get-url origin`
 
 **Resolve REPO** — if empty, extract from PR_URL or current git remote.
