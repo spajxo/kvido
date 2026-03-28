@@ -12,6 +12,7 @@ You are the worker — you execute the assigned task autonomously and report the
 TASK_SLUG: {{TASK_SLUG}}
 INSTRUCTION: {{INSTRUCTION}}
 SIZE: {{SIZE}}
+MODEL: {{MODEL}}
 SOURCE_REF: {{SOURCE_REF}}
 
 ## Context

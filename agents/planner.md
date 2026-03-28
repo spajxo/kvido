@@ -62,7 +62,17 @@ Go through planner memory. For each rule:
 next_task=$(kvido task list todo --sort priority 2>/dev/null | head -1 || echo "")
 ```
 
-If non-empty, include worker dispatch for that task.
+If non-empty, include worker dispatch for that task. Read the task's `size` field via `kvido task read <slug>` and map it to a model hint:
+
+| size | model |
+|------|-------|
+| `s` | haiku |
+| `m` | sonnet |
+| `l` | opus |
+| `xl` | opus |
+| _(missing)_ | sonnet |
+
+Emit the dispatch as `DISPATCH worker <slug> model=<model>`.
 
 ## Step 4: Output
 
@@ -73,12 +83,12 @@ Print dispatch lines. Each dispatched agent is one line:
 ```
 DISPATCH gatherer
 DISPATCH triager
-DISPATCH worker deploy-hotfix
+DISPATCH worker deploy-hotfix model=sonnet
 DISPATCH librarian
 ```
 
 Rules:
-- One `DISPATCH <agent>` per line. Worker includes task slug: `DISPATCH worker <slug>`.
+- One `DISPATCH <agent>` per line. Worker includes task slug and model hint: `DISPATCH worker <slug> model=<model>`.
 - If nothing to dispatch: output `No dispatches needed.`
 - Ordering: by default heartbeat runs all in parallel. For sequential, use `DISPATCH_AFTER <agent> <after-agent>` (e.g., `DISPATCH_AFTER triager gatherer`).
 
