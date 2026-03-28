@@ -127,12 +127,26 @@ If a task takes > `task_timeout_minutes` (from `settings.json`):
 **Worktree is always on.** All worker tasks run in an isolated git worktree. Heartbeat always sets `isolation: "worktree"` on the Agent tool.
 
 ### Rules
+- **Worktree branch MUST be based on `origin/main`** — never on another feature branch
 - Commit all changes into the worktree branch
 - `git push -u origin HEAD`
 - User creates the MR manually
 - Do not push directly to main
 - Branch name: automatically from worktree (Claude Code creates it)
 - Commit message: conventional commit (feat/fix/chore)
+
+### Pre-push validation (ancestry check)
+Before pushing, verify the branch is cleanly based on `origin/main`:
+```bash
+git fetch origin
+MERGE_BASE=$(git merge-base HEAD origin/main)
+MAIN_TIP=$(git rev-parse origin/main)
+if [[ "$MERGE_BASE" != "$MAIN_TIP" ]]; then
+  echo "ERROR: Branch is not based on origin/main."
+  exit 1
+fi
+```
+If this check fails: do NOT push. Report failure — the worktree was created from the wrong base.
 
 ### After completing a worktree task
 - `kvido task note "{{TASK_SLUG}}" "## Result\nBranch: <branch>, pushed. <description of changes>"`
@@ -194,6 +208,7 @@ Report appearance:
 | Skipping cancel check at start | Always `kvido task find` first — task may have been cancelled while queued |
 | Continuing past timeout | Check elapsed time; if > `task_timeout_minutes`, emit partial result and move to `failed/` |
 | Pushing to main in worktree mode | Always push to feature branch. Never push directly to main. |
+| Branching worktree from a feature branch instead of main | Always base on `origin/main`. Run ancestry check before pushing. |
 
 ## User Instructions
 
