@@ -127,22 +127,23 @@ If a task takes > `task_timeout_minutes` (from `settings.json`):
 **Worktree is always on.** All worker tasks run in an isolated git worktree. Heartbeat always sets `isolation: "worktree"` on the Agent tool.
 
 ### Rules
-- **Worktree branch MUST be based on `origin/main`** — never on another feature branch
+- **Worktree branch MUST be based on the default branch** — never on another feature branch
 - Commit all changes into the worktree branch
 - `git push -u origin HEAD`
 - User creates the MR manually
-- Do not push directly to main
+- Do not push directly to the default branch
 - Branch name: automatically from worktree (Claude Code creates it)
 - Commit message: conventional commit (feat/fix/chore)
 
 ### Pre-push validation (ancestry check)
-Before pushing, verify the branch is cleanly based on `origin/main`:
+Before pushing, verify the branch is cleanly based on the repository's default branch:
 ```bash
 git fetch origin
-MERGE_BASE=$(git merge-base HEAD origin/main)
-MAIN_TIP=$(git rev-parse origin/main)
+DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/@@' || git remote show origin | grep 'HEAD branch' | cut -d: -f2 | tr -d ' ' | sed 's@^@origin/@')
+MERGE_BASE=$(git merge-base HEAD "$DEFAULT_BRANCH")
+MAIN_TIP=$(git rev-parse "$DEFAULT_BRANCH")
 if [[ "$MERGE_BASE" != "$MAIN_TIP" ]]; then
-  echo "ERROR: Branch is not based on origin/main."
+  echo "ERROR: Branch is not based on $DEFAULT_BRANCH."
   exit 1
 fi
 ```
@@ -208,7 +209,7 @@ Report appearance:
 | Skipping cancel check at start | Always `kvido task find` first — task may have been cancelled while queued |
 | Continuing past timeout | Check elapsed time; if > `task_timeout_minutes`, emit partial result and move to `failed/` |
 | Pushing to main in worktree mode | Always push to feature branch. Never push directly to main. |
-| Branching worktree from a feature branch instead of main | Always base on `origin/main`. Run ancestry check before pushing. |
+| Branching worktree from a feature branch instead of the default branch | Always base on the default branch. Run ancestry check before pushing. |
 
 ## User Instructions
 
