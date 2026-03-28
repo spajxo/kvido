@@ -1,6 +1,6 @@
 ### Sessions
 
-> Config: `sources.sessions.*` keys. No external dependencies.
+> Config: `sessions.*` keys. No external dependencies.
 
 #### Capabilities
 

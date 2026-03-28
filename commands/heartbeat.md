@@ -270,7 +270,7 @@ Low-urgency notifications are batched. Flush batched `notify:*` tasks with `pend
 |------|---------|---------------|----------|
 | Sleep | "going to sleep" in DM | `sleep` | `CronDelete` old → `CronCreate` one-shot at `SLEEP_UNTIL` (default 06:00). No planner/worker dispatch. After wake: normal flow. |
 | Turbo | "turbo" in DM | `1m` | 30min burst. After expiry: `heartbeat.sh` auto-clears, returns normal. |
-| Normal | — | decay-based | Based on interaction age (config `skills.heartbeat.decay.*`). |
+| Normal | — | decay-based | Based on interaction age (config `heartbeat.decay.*`). |
 
 If `TARGET_PRESET != ACTIVE_PRESET`:
 1. **Lazy cron reconciliation:** `CronList` → verify `CRON_JOB_ID` is valid in the current session

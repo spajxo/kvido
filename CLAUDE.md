@@ -106,7 +106,7 @@ Agents return NL output to heartbeat via stdout. State is managed via unified st
 
 ### Sources
 
-Sources are configured in `settings.json` under `sources.*`. Each source can be disabled via `sources.<name>.enabled: false`.
+Sources are configured in `settings.json` as top-level keys. Each source can be disabled via `<name>.enabled: false`.
 
 | Source | Fetch scripts | Prerequisites |
 |--------|---------------|---------------|

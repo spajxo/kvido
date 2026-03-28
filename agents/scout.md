@@ -11,13 +11,13 @@ You are the scout — you check the web for new developments on configured inter
 ## Step 1: Load Topics
 
 ```bash
-kvido config --keys 'skills.interests.topics'
+kvido config --keys 'interests.topics'
 ```
 
 For each topic, read its config:
 ```bash
-kvido config "skills.interests.topics.<topic>.query"
-kvido config "skills.interests.topics.<topic>.check_interval" # e.g. "24h", "7d"
+kvido config "interests.topics.<topic>.query"
+kvido config "interests.topics.<topic>.check_interval" # e.g. "24h", "7d"
 ```
 
 ## Step 2: Check Intervals

@@ -7,187 +7,176 @@
     "bot_token": "$SLACK_BOT_TOKEN",
     "dm_channel_id": "$SLACK_DM_CHANNEL_ID",
     "user_id": "$SLACK_USER_ID",
-    "user_name": "$SLACK_USER_NAME"
-  },
+    "user_name": "$SLACK_USER_NAME",
 
-  "sources": {
-    "_comment": "Set 'enabled': false to disable a source. Default: true.",
-
-    "jira": {
-      "enabled": true,
-      "tool": {
-        "primary": "acli",
-        "fallback": "atlassian-mcp"
-      },
-      "projects": {
-        "_comment": "Add one block per Jira project to monitor.",
-        "_example": {
-          "PROJ": {
-            "filter": "assignee = currentUser() AND status != Done ORDER BY updated DESC",
-            "label": "My Project"
-          }
+    "enabled": true,
+    "self_dm_channel": {
+      "name": "assistant",
+      "channel_id": ""
+    },
+    "dm_channels": {
+      "_comment": "Add one block per DM channel to monitor.",
+      "_example": {
+        "person-name": {
+          "user_id": "UXXXXXXXXXX",
+          "channel_id": "DXXXXXXXXXX",
+          "priority": "normal"
         }
       }
     },
-
-    "gitlab": {
-      "enabled": true,
-      "repos": {
-        "_comment": "Add one block per repository to monitor.",
-        "_example": {
-          "group-project": {
-            "path": "~/Projects/path/to/repo",
-            "branches": "main",
-            "priority": "high"
-          },
-          "group-kb": {
-            "path": "~/Projects/path/to/kb",
-            "priority": "low",
-            "type": "knowledge-base"
-          }
+    "channels": {
+      "_comment": "Add one block per public/private channel to watch.",
+      "_example": {
+        "channel-name": {
+          "channel_id": "CXXXXXXXXXX",
+          "priority": "high"
         }
       }
     },
-
-    "slack": {
+    "batching": {
       "enabled": true,
-      "self_dm_channel": {
-        "name": "assistant",
-        "channel_id": ""
-      },
-      "dm_channels": {
-        "_comment": "Add one block per DM channel to monitor.",
-        "_example": {
-          "person-name": {
-            "user_id": "UXXXXXXXXXX",
-            "channel_id": "DXXXXXXXXXX",
-            "priority": "normal"
-          }
-        }
-      },
-      "channels": {
-        "_comment": "Add one block per public/private channel to watch.",
-        "_example": {
-          "channel-name": {
-            "channel_id": "CXXXXXXXXXX",
-            "priority": "high"
-          }
-        }
-      }
-    },
-
-    "calendar": {
-      "enabled": true,
-      "categories": {
-        "standup": "standup,daily",
-        "planning": "planning,refinement,grooming",
-        "one_on_one": "1:1,1on1",
-        "focus": "focus,deep work"
-      },
-      "default_category": "meeting"
-    },
-
-    "gmail": {
-      "enabled": true,
-      "watch_query": "is:unread -category:promotions -category:social",
-      "max_results": 20,
-      "priority_senders": "",
-      "labels_ignore": ""
-    },
-
-    "sessions": {
-      "enabled": true,
-      "idle_threshold_min": 10,
-      "default_date": "yesterday"
+      "window": "full_heartbeat"
     }
   },
 
-  "skills": {
-    "heartbeat": {
-      "presets": {
-        "5m":  "*/5 * * * *",
-        "10m": "*/10 * * * *",
-        "30m": "*/30 * * * *",
-        "60m": "3 * * * *"
-      },
-      "wh_start": 7,
-      "wh_end": 16,
-      "wh_min_interval": "10m",
-      "wh_after_interaction": "5m",
-      "wh_interaction_window_minutes": 30,
-      "decay": {
-        "30":   { "preset": "5m" },
-        "120":  { "preset": "10m" },
-        "240":  { "preset": "30m" },
-        "null": { "preset": "60m" }
+  "jira": {
+    "enabled": true,
+    "tool": {
+      "primary": "acli",
+      "fallback": "atlassian-mcp"
+    },
+    "projects": {
+      "_comment": "Add one block per Jira project to monitor.",
+      "_example": {
+        "PROJ": {
+          "filter": "assignee = currentUser() AND status != Done ORDER BY updated DESC",
+          "label": "My Project"
+        }
       }
-    },
+    }
+  },
 
-    "planner": {
-      "planning_interval": 5,
-      "focus_mode": {
-        "enabled": true,
-        "calendar_category": "focus",
-        "after_focus_summary": true
+  "gitlab": {
+    "enabled": true,
+    "repos": {
+      "_comment": "Add one block per repository to monitor.",
+      "_example": {
+        "group-project": {
+          "path": "~/Projects/path/to/repo",
+          "branches": "main",
+          "priority": "high"
+        },
+        "group-kb": {
+          "path": "~/Projects/path/to/kb",
+          "priority": "low",
+          "type": "knowledge-base"
+        }
       }
-    },
+    }
+  },
 
-    "worker": {
-      "work_dir": "state/work",
-      "max_concurrent": 2,
-      "task_timeout_minutes": 8,
-      "stale_lock_minutes": 10,
-      "overflow_threshold": 20,
-      "models": {
-        "s":  "claude-sonnet-4-6",
-        "m":  "claude-sonnet-4-6",
-        "l":  "claude-opus-4-6",
-        "xl": "claude-opus-4-6"
-      },
-      "urgent_model": "claude-opus-4-6"
+  "calendar": {
+    "enabled": true,
+    "categories": {
+      "standup": "standup,daily",
+      "planning": "planning,refinement,grooming",
+      "one_on_one": "1:1,1on1",
+      "focus": "focus,deep work"
     },
+    "default_category": "meeting"
+  },
 
-    "slack": {
-      "batching": {
-        "enabled": true,
-        "window": "full_heartbeat"
-      }
+  "gmail": {
+    "enabled": true,
+    "watch_query": "is:unread -category:promotions -category:social",
+    "max_results": 20,
+    "priority_senders": "",
+    "labels_ignore": ""
+  },
+
+  "sessions": {
+    "enabled": true,
+    "idle_threshold_min": 10,
+    "default_date": "yesterday"
+  },
+
+  "heartbeat": {
+    "presets": {
+      "5m":  "*/5 * * * *",
+      "10m": "*/10 * * * *",
+      "30m": "*/30 * * * *",
+      "60m": "3 * * * *"
     },
+    "wh_start": 7,
+    "wh_end": 16,
+    "wh_min_interval": "10m",
+    "wh_after_interaction": "5m",
+    "wh_interaction_window_minutes": 30,
+    "decay": {
+      "30":   { "preset": "5m" },
+      "120":  { "preset": "10m" },
+      "240":  { "preset": "30m" },
+      "null": { "preset": "60m" }
+    }
+  },
 
-    "triage": {
-      "wip_limit": 3,
-      "triage_overflow_threshold": 10,
-      "done_rotation": "friday"
-    },
-
-    "dashboard": {
+  "planner": {
+    "planning_interval": 5,
+    "focus_mode": {
       "enabled": true,
-      "auto_refresh": 20
-    },
+      "calendar_category": "focus",
+      "after_focus_summary": true
+    }
+  },
 
-    "daily_questions": {
-      "enabled": true,
-      "max_questions": 2,
-      "frequency": "weekdays"
+  "worker": {
+    "work_dir": "state/work",
+    "max_concurrent": 2,
+    "task_timeout_minutes": 8,
+    "stale_lock_minutes": 10,
+    "overflow_threshold": 20,
+    "models": {
+      "s":  "claude-sonnet-4-6",
+      "m":  "claude-sonnet-4-6",
+      "l":  "claude-opus-4-6",
+      "xl": "claude-opus-4-6"
     },
+    "urgent_model": "claude-opus-4-6"
+  },
 
-    "self_improver": {
-      "github_issues": {
-        "enabled": false
-      }
-    },
+  "triage": {
+    "wip_limit": 3,
+    "triage_overflow_threshold": 10,
+    "done_rotation": "friday"
+  },
 
-    "interests": {
-      "topics": {
-        "_comment": "Add one block per topic to monitor.",
-        "_example": {
-          "example-topic": {
-            "name": "Example topic",
-            "query": "example search query",
-            "urgency": "medium",
-            "check_interval": "weekly",
-            "reason": "Why this matters"
-          }
+  "dashboard": {
+    "enabled": true,
+    "auto_refresh": 20
+  },
+
+  "daily_questions": {
+    "enabled": true,
+    "max_questions": 2,
+    "frequency": "weekdays"
+  },
+
+  "self_improver": {
+    "github_issues": {
+      "enabled": false
+    }
+  },
+
+  "interests": {
+    "topics": {
+      "_comment": "Add one block per topic to monitor.",
+      "_example": {
+        "example-topic": {
+          "name": "Example topic",
+          "query": "example search query",
+          "urgency": "medium",
+          "check_interval": "weekly",
+          "reason": "Why this matters"
         }
       }
     }

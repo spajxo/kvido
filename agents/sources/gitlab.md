@@ -1,6 +1,6 @@
 ### GitLab
 
-> Config: `sources.gitlab.*` keys. Requires: `glab` CLI.
+> Config: `gitlab.*` keys. Requires: `glab` CLI.
 
 #### Capabilities
 
@@ -21,7 +21,7 @@ Repos with `type: knowledge-base` are always skipped (no MRs).
 **triage-detect:** New MR where I am reviewer, not in backlog → triage item:
 `- [ ] Review MR !IID: title (repo) #source:gitlab #added:YYYY-MM-DD #ref:repo!IID`
 
-**health:** For each repo via `kvido config --keys 'sources.gitlab.repos'`:
+**health:** For each repo via `kvido config --keys 'gitlab.repos'`:
 `test -d <path>/.git` + `glab auth status 2>/dev/null`
 
 #### Schedule
@@ -34,7 +34,7 @@ Repos with `type: knowledge-base` are always skipped (no MRs).
 | Prerequisite | Check |
 |---|---|
 | glab | `command -v glab` |
-| sources.gitlab.repos | `kvido config --keys 'sources.gitlab.repos'` returns non-empty |
+| gitlab.repos | `kvido config --keys 'gitlab.repos'` returns non-empty |
 
 #### Dedup Keys
 - `git:<repo>:<branch>:<hash>` — commit activity

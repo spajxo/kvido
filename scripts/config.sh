@@ -3,10 +3,10 @@
 # config.sh — Unified config loader for assistant (jq wrapper)
 # =============================================================================
 # Usage: config.sh 'key'
-#   config.sh 'sources.gitlab.repos.group-project.path'
-#   config.sh 'skills.worker.task_timeout_minutes'
-#   config.sh 'skills.dashboard.enabled' 'true'    # with default
-#   config.sh --keys 'sources.gitlab.repos'         # list child keys
+#   config.sh 'gitlab.repos.group-project.path'
+#   config.sh 'worker.task_timeout_minutes'
+#   config.sh 'dashboard.enabled' 'true'    # with default
+#   config.sh --keys 'gitlab.repos'         # list child keys
 #   config.sh --validate                            # check config format
 #
 # Reads KVIDO_HOME/settings.json (standard JSON via jq).
@@ -167,8 +167,8 @@ Exit codes: 0 success, 1 file not found, 2 invalid JSON, 3 key not found
 
 Examples:
   kvido config 'slack.dm_channel_id'
-  kvido config 'skills.worker.task_timeout_minutes' '30'
-  kvido config --keys 'sources'
+  kvido config 'worker.task_timeout_minutes' '30'
+  kvido config --keys 'gitlab.repos'
 HELP
         ;;
     --validate)

@@ -85,7 +85,7 @@ Use this limit instead of the fixed "max 5" in subsequent steps.
 
 **Missing config:**
 - Mention of repo, Slack channel, Jira project outside monitoring
-- Compare with `settings.json` (sections `sources.gitlab`, `sources.jira`, `sources.slack`)
+- Compare with `settings.json` (sections `gitlab`, `jira`, `slack`)
 
 **Manual work:**
 - User doing something that could be automated (repeated command, manual lookup)
@@ -160,7 +160,7 @@ For patterns identified in Step 2b with 3+ repetitions generate skill drafts.
 
 Read config early — all routing decisions below depend on this value:
 ```bash
-GITHUB_ISSUES_ENABLED=$(kvido config 'skills.self_improver.github_issues.enabled' 'false')
+GITHUB_ISSUES_ENABLED=$(kvido config 'self_improver.github_issues.enabled' 'false')
 ```
 
 - Check existing local tasks (see dedup in Step 1) — don't propose anything already there (compare title)
@@ -257,12 +257,12 @@ If `gh` not available or `GITHUB_ISSUES_ENABLED` is not `true`: write proposal t
 
 After proposals, optionally generate reflective questions for the user's journal.
 
-1. Check if enabled: `kvido config 'skills.daily_questions.enabled'` — if `false`, skip entirely.
-2. Check `frequency` via `kvido config 'skills.daily_questions.frequency'`:
+1. Check if enabled: `kvido config 'daily_questions.enabled'` — if `false`, skip entirely.
+2. Check `frequency` via `kvido config 'daily_questions.frequency'`:
    - `weekdays` → skip Saturday and Sunday
    - `friday_only` → skip if not Friday
    - `daily` → always
-3. Select 1-2 questions contextually (max per `kvido config 'skills.daily_questions.max_questions'`):
+3. Select 1-2 questions contextually (max per `kvido config 'daily_questions.max_questions'`):
    - Compare Active Focus from `kvido current get` vs actual git activity → "Did you manage to stay focused on the plan?"
    - Check Jira deadlines for tomorrow → "Is there anything tomorrow that requires preparation?"
    - If it was a frustrating day (many error entries in `kvido log list --today --agent heartbeat`) → "What slowed you down the most today?"
@@ -277,7 +277,7 @@ After proposals, optionally generate reflective questions for the user's journal
 - Don't read source code files — only conversational patterns and Slack DMs
 - Adaptive proposal limit (2-7 based on acceptance_rate) + max 2 skill drafts
 - Don't propose large refactors — one file or config entry
-- Be specific: "add channel #dev-ops to settings.json → sources.slack.channels" > "improve monitoring"
+- Be specific: "add channel #dev-ops to settings.json → slack.channels" > "improve monitoring"
 - Done/cancelled tasks with `source: self-improver` = don't add again
 - Rejected patterns from Step 0 = don't add similar proposals
 

@@ -1,6 +1,6 @@
 ### Jira
 
-> Config: `sources.jira.*` keys. Requires: `acli` CLI or Atlassian MCP.
+> Config: `jira.*` keys. Requires: `acli` CLI or Atlassian MCP.
 
 #### Capabilities
 
@@ -11,8 +11,8 @@ kvido jira [--since YYYY-MM-DD] [--project KEY]
 Output: plain text, one block per project.
 
 **MCP fallback (exit 10):**
-1. Read project config via `kvido config --keys 'sources.jira.projects'`
-2. For each project, get its JQL filter: `kvido config 'sources.jira.projects.<KEY>.filter'`
+1. Read project config via `kvido config --keys 'jira.projects'`
+2. For each project, get its JQL filter: `kvido config 'jira.projects.<KEY>.filter'`
 3. Call `mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql(jql="<filter>", maxResults=20)`
 4. Format output: `=== Project (N issues) ===` then `  KEY [status] summary` per issue
 
@@ -43,7 +43,7 @@ Fallback: Atlassian MCP searchJiraIssuesUsingJql with test JQL (limit 1).
 | Prerequisite | Check |
 |---|---|
 | acli or Atlassian MCP | `command -v acli` or MCP available |
-| sources.jira.projects | `kvido config --keys 'sources.jira.projects'` returns non-empty |
+| jira.projects | `kvido config --keys 'jira.projects'` returns non-empty |
 
 #### Dedup Keys
 - `jira:<key>:status_<status>` — ticket status change

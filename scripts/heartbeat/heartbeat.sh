@@ -68,19 +68,19 @@ fi
 # Load adaptive rules from central settings.json via config.sh
 CONFIG="$PLUGIN_ROOT/scripts/config.sh"
 
-WH_START=$($CONFIG 'skills.heartbeat.wh_start')
-WH_END=$($CONFIG 'skills.heartbeat.wh_end')
-WH_INTERACTION_WINDOW=$($CONFIG 'skills.heartbeat.wh_interaction_window_minutes')
-WH_AFTER_INTERACTION=$($CONFIG 'skills.heartbeat.wh_after_interaction')
-WH_MIN_INTERVAL=$($CONFIG 'skills.heartbeat.wh_min_interval')
+WH_START=$($CONFIG 'heartbeat.wh_start')
+WH_END=$($CONFIG 'heartbeat.wh_end')
+WH_INTERACTION_WINDOW=$($CONFIG 'heartbeat.wh_interaction_window_minutes')
+WH_AFTER_INTERACTION=$($CONFIG 'heartbeat.wh_after_interaction')
+WH_MIN_INTERVAL=$($CONFIG 'heartbeat.wh_min_interval')
 
 # Parse off_hours decay from flat config
 declare -A OH_DECAY_MAX
 declare -A OH_DECAY_PRESET
 OH_DECAY_COUNT=0
-for decay_key in $($CONFIG --keys 'skills.heartbeat.decay'); do
+for decay_key in $($CONFIG --keys 'heartbeat.decay'); do
   OH_DECAY_MAX[$OH_DECAY_COUNT]="$decay_key"
-  OH_DECAY_PRESET[$OH_DECAY_COUNT]=$($CONFIG "skills.heartbeat.decay.${decay_key}.preset")
+  OH_DECAY_PRESET[$OH_DECAY_COUNT]=$($CONFIG "heartbeat.decay.${decay_key}.preset")
   OH_DECAY_COUNT=$((OH_DECAY_COUNT + 1))
 done
 
@@ -180,7 +180,7 @@ kvido state increment heartbeat.iteration_count
 kvido state set heartbeat.last_heartbeat "$TIMESTAMP"
 
 # Planner throttle — run every N-th iteration (default 3)
-PLANNING_INTERVAL=$($CONFIG 'skills.planner.planning_interval')
+PLANNING_INTERVAL=$($CONFIG 'planner.planning_interval')
 if (( PLANNING_INTERVAL < 1 )); then PLANNING_INTERVAL=1; fi
 if (( ITERATION % PLANNING_INTERVAL == 0 )); then
   PLANNER_DUE="true"
@@ -189,7 +189,7 @@ else
 fi
 
 # Dashboard generation (non-fatal — log errors to stderr)
-DASH_ENABLED=$($CONFIG 'skills.dashboard.enabled' 'true')
+DASH_ENABLED=$($CONFIG 'dashboard.enabled' 'true')
 if [[ "$DASH_ENABLED" != "false" ]]; then
   "$SCRIPT_DIR/generate-dashboard.sh" 2>/dev/null || echo "ERROR: generate-dashboard.sh failed (exit $?)" >&2
 fi

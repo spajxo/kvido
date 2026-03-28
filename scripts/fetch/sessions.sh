@@ -16,7 +16,7 @@ set -euo pipefail
 CONFIG="kvido config"
 
 # ── Config ────────────────────────────────────────────────────────────────────
-IDLE_THRESHOLD_MIN=$($CONFIG 'sources.sessions.idle_threshold_min')
+IDLE_THRESHOLD_MIN=$($CONFIG 'sessions.idle_threshold_min')
 IDLE_THRESHOLD_SEC=$(( IDLE_THRESHOLD_MIN * 60 ))
 
 # ── Date argument ──────────────────────────────────────────────────────────────
