@@ -63,10 +63,10 @@ Use this limit instead of the fixed "max 5" in subsequent steps.
 - Read Slack DM channel via MCP: `slack_read_channel` (last 20 messages)
 - Check existing tasks for dedup:
   ```bash
-  kvido task list triage --source self-improver
-  kvido task list todo --source self-improver
-  kvido task list in-progress --source self-improver \
-  | while read -r TASK_ID SLUG; do
+  { kvido task list triage --source self-improver
+    kvido task list todo --source self-improver
+    kvido task list in-progress --source self-improver
+  } | while read -r TASK_ID SLUG; do
     TASK_DATA=$(kvido task read "$TASK_ID" 2>/dev/null) || continue
     eval "$(echo "$TASK_DATA" | grep -E '^(TITLE|STATUS)=')"
     echo "#$TASK_ID $SLUG | $TITLE | $STATUS"
