@@ -47,7 +47,7 @@ The `user:` prefix means the message is from the workspace owner (you). The `bot
 
 The script automatically: increments iteration_count, sets last_heartbeat, reads Slack DM.
 
-Read current state via `kvido current get`. Review recent activity via `kvido log list --today --format human --limit 20`.
+Read current state via `kvido current get`. Review recent activity via `kvido log list --today --format human --limit 20` on planner ticks (`PLANNER_DUE=true`), or `--limit 5` on non-planner ticks.
 
 ### Recovery check
 
