@@ -6,8 +6,8 @@
 #   1. kvido log list (unified activity log)
 #   2. kvido state (heartbeat.* keys)
 #   3. state/current.md
-#   4. state/tasks/ (local task files)
-#   5. state/tasks/*/*.md (full task data for task list/detail view)
+#   4. tasks/ (local task files)
+#   5. tasks/*/*.md (full task data for task list/detail view)
 
 set -euo pipefail
 
@@ -176,7 +176,7 @@ fi
 # ---------------------------------------------------------------------------
 # Source 6: Full task data for task list/detail views
 # ---------------------------------------------------------------------------
-TASKS_DIR="$STATE_DIR/tasks"
+TASKS_DIR="$KVIDO_HOME/tasks"
 TASKS_JSON="[]"
 
 _read_fm() {

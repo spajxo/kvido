@@ -7,6 +7,8 @@
 #   state/heartbeat-state.json → state/state.json (heartbeat.* keys)
 #   state/planner-state.json → state/state.json (planner.* keys)
 #   state/source-health.json → state/state.json (source-health.* keys)
+#   state/tasks/ → tasks/ (v0.29.0)
+#   state/task_counter → tasks/task_counter (v0.29.0)
 
 set -euo pipefail
 
@@ -93,6 +95,25 @@ if [[ -f "$OLD_SOURCE_HEALTH" ]]; then
   rm "$OLD_SOURCE_HEALTH"
   rm -f "${OLD_SOURCE_HEALTH}.lock"
   migrated=1
+fi
+
+# Migrate state/tasks/ → tasks/ (v0.29.0)
+OLD_TASKS_DIR="${KVIDO_HOME}/state/tasks"
+NEW_TASKS_DIR="${KVIDO_HOME}/tasks"
+if [[ -d "$OLD_TASKS_DIR" && ! -d "$NEW_TASKS_DIR" ]]; then
+  mv "$OLD_TASKS_DIR" "$NEW_TASKS_DIR"
+  migrated=1
+  echo "migrate: moved state/tasks/ → tasks/" >&2
+fi
+
+# Migrate state/task_counter → tasks/task_counter (v0.29.0)
+OLD_COUNTER="${KVIDO_HOME}/state/task_counter"
+NEW_COUNTER="${KVIDO_HOME}/tasks/task_counter"
+if [[ -f "$OLD_COUNTER" && ! -f "$NEW_COUNTER" ]]; then
+  mkdir -p "$NEW_TASKS_DIR"
+  mv "$OLD_COUNTER" "$NEW_COUNTER"
+  migrated=1
+  echo "migrate: moved state/task_counter → tasks/task_counter" >&2
 fi
 
 if [[ "$migrated" -eq 1 ]]; then

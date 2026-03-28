@@ -132,7 +132,8 @@ Create missing directories:
 
 ```bash
 mkdir -p $KVIDO_HOME/memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
-mkdir -p $KVIDO_HOME/state/tasks/{triage,todo,in-progress,done,failed,cancelled}
+mkdir -p $KVIDO_HOME/instructions
+mkdir -p $KVIDO_HOME/tasks/{triage,todo,in-progress,done,failed,cancelled}
 ```
 
 For each missing file, create with minimal content:

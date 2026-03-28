@@ -35,10 +35,10 @@ fi
 ITER=$(kvido state get heartbeat.iteration_count 2>/dev/null || echo 0)
 echo "- Heartbeat iteration: $ITER"
 
-if [[ -d "$KVIDO_HOME/state/tasks" ]]; then
-  TODO=$(find "$KVIDO_HOME/state/tasks/todo/" -name "*.md" 2>/dev/null | wc -l || echo 0)
-  WIP_T=$(find "$KVIDO_HOME/state/tasks/in-progress/" -name "*.md" 2>/dev/null | wc -l || echo 0)
-  TRIAGE=$(find "$KVIDO_HOME/state/tasks/triage/" -name "*.md" 2>/dev/null | wc -l || echo 0)
+if [[ -d "$KVIDO_HOME/tasks" ]]; then
+  TODO=$(find "$KVIDO_HOME/tasks/todo/" -name "*.md" 2>/dev/null | wc -l || echo 0)
+  WIP_T=$(find "$KVIDO_HOME/tasks/in-progress/" -name "*.md" 2>/dev/null | wc -l || echo 0)
+  TRIAGE=$(find "$KVIDO_HOME/tasks/triage/" -name "*.md" 2>/dev/null | wc -l || echo 0)
   echo "- Tasks: ${TODO} todo, ${WIP_T} in-progress, ${TRIAGE} triage"
 fi
 

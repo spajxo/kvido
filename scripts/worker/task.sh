@@ -21,7 +21,7 @@
 set -euo pipefail
 
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-TASKS_DIR="${TASKS_DIR:-${KVIDO_HOME}/state/tasks}"
+TASKS_DIR="${TASKS_DIR:-${KVIDO_HOME}/tasks}"
 STATUSES="triage todo in-progress done failed cancelled"
 
 # shellcheck source=../lib.sh
@@ -126,7 +126,7 @@ _now() {
 }
 
 _next_id() {
-  local counter_file="$KVIDO_HOME/state/task_counter"
+  local counter_file="$KVIDO_HOME/tasks/task_counter"
   local id=0
   [[ -f "$counter_file" ]] && id=$(cat "$counter_file")
   id=$((id + 1))
@@ -504,7 +504,7 @@ cmd_count() {
 }
 
 cmd_migrate() {
-  local counter_file="$KVIDO_HOME/state/task_counter"
+  local counter_file="$KVIDO_HOME/tasks/task_counter"
   local all_tasks=()
 
   # Collect all tasks without numeric prefix

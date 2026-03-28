@@ -123,5 +123,5 @@ If anything fails:
 
 ## User Instructions
 
-Read user-specific instructions: `kvido memory read chat-agent 2>/dev/null || true`
+Read user-specific instructions: `kvido instructions read chat-agent 2>/dev/null || true`
 Apply any additional rules or overrides.
