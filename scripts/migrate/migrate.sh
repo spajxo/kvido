@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# migrate.sh — One-time lazy migration from old state files to unified state
+# migrate.sh — One-time lazy migrations from old formats to new
 # Called from heartbeat.sh on startup. Idempotent.
 #
 # Migrates:
+#   settings.json keys: sources.* → *, skills.* → * (v0.28.0)
 #   state/heartbeat-state.json → state/state.json (heartbeat.* keys)
 #   state/planner-state.json → state/state.json (planner.* keys)
 #   state/source-health.json → state/state.json (source-health.* keys)
@@ -12,11 +13,18 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 STATE_SH="$(cd "$SCRIPT_DIR/../.." && pwd)/scripts/state/state.sh"
+CONFIG_KEYS_SH="$SCRIPT_DIR/config-keys.sh"
 
 OLD_HEARTBEAT="${KVIDO_HOME}/state/heartbeat-state.json"
 OLD_PLANNER="${KVIDO_HOME}/state/planner-state.json"
 
 migrated=0
+
+# Migrate settings.json config keys (v0.28.0)
+if [[ -f "$CONFIG_KEYS_SH" ]]; then
+  bash "$CONFIG_KEYS_SH"
+  migrated=1
+fi
 
 # Migrate heartbeat-state.json
 if [[ -f "$OLD_HEARTBEAT" ]]; then
