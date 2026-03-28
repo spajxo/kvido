@@ -102,7 +102,31 @@ For markdown/agent definitions check:
 - Consistent formatting and structure
 - No hardcoded user-specific values (repo names, usernames) baked in — use template variables
 
-### Step 4: Update task and return output
+### Step 4: Post review comment on the PR/MR
+
+After composing the review body, post it as a comment so the author sees the findings directly in the PR/MR.
+
+Build the review body from the findings:
+- First line: `REVIEW PASSED` or `REVIEW FAILED`
+- Blocking issues (if any): numbered list with `[BUG]`, `[SECURITY]`, etc. labels
+- Advisory items (if any): brief bulleted list
+
+Post the comment:
+
+For GitHub:
+```bash
+gh pr review {{PR_NUMBER}} --repo {{REPO}} --comment --body "$REVIEW_BODY"
+```
+
+For GitLab:
+```bash
+glab mr note {{PR_NUMBER}} --repo {{REPO}} --message "$REVIEW_BODY" 2>/dev/null \
+  || glab mr note {{PR_NUMBER}} --message "$REVIEW_BODY"
+```
+
+If neither CLI is available (e.g. diff was fetched via `git diff` fallback), skip posting — the agent still returns full NL output for heartbeat delivery.
+
+### Step 5: Update task and return output
 
 Move the task to the appropriate status:
 
