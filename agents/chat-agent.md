@@ -44,14 +44,17 @@ If the message contains an action verb with scope > 1 lookup ("go through", "wri
 3. Call:
    ```bash
    TASK_SLUG=$(kvido task create \
+     --title "<short task title>" \
      --instruction "<instruction>" \
      --size <s|m|l|xl> \
      --priority <urgent|high|medium|low> \
      --source slack \
      --source-ref "<message ts>")
-   TASK_ID=$(kvido task read "$TASK_SLUG" | grep '^TASK_ID=' | cut -d'"' -f2)
+   TASK_DATA=$(kvido task read "$TASK_SLUG")
+   TASK_ID=$(echo "$TASK_DATA" | grep '^TASK_ID=' | cut -d'"' -f2)
+   TASK_TITLE=$(echo "$TASK_DATA" | grep '^TITLE=' | cut -d'"' -f2)
    ```
-4. Return: `"Reply: Added to queue as #$TASK_ID ($TASK_SLUG). Thread: $THREAD_TS. Type: chat-reply."`
+4. Return: `"Reply: Added to queue as #$TASK_ID — $TASK_TITLE. Thread: $THREAD_TS. Type: chat-reply."`
 5. Don't try to process the task yourself.
 
 ### Triage approval (via text)
@@ -78,7 +81,7 @@ If the user asks to review the triage inbox:
    ```bash
    kvido task read <id>
    ```
-   Format per item: `[N/total] #<id> <slug>: <title> — priority: <p>, size: <s>, added: <date>`
+   Format per item: `[N/total] #<id> <title> — priority: <p>, size: <s>, added: <date>`
 
 3. Ask user for decision per item: yes (approve) / later (defer) / no (reject).
 

@@ -164,7 +164,7 @@ For each `DISPATCH` line, dispatch the agent with `run_in_background: true`:
 3. Dispatch agent (`run_in_background: true`)
 4. Log: `kvido log add heartbeat dispatch --message "<agent>"`
 
-**Worker specifics:** `DISPATCH worker <id> [model=<model>]` — parse the numeric task ID and optional `model=` token from the DISPATCH line (default: `sonnet` if absent). Read task first (`kvido task read "$id"`), if SOURCE_REF is set send ack via `kvido slack reply`, then `kvido task move "$id" in-progress`. Pass the resolved model name as the `model` parameter to the Agent tool when dispatching the worker. Pass both `TASK_ID` (numeric) and `TASK_SLUG` (from task read output) to the worker agent.
+**Worker specifics:** `DISPATCH worker <id> [model=<model>]` — parse the numeric task ID and optional `model=` token from the DISPATCH line (default: `sonnet` if absent). Read task first (`kvido task read "$id"`), if SOURCE_REF is set send ack via `kvido slack reply`, then `kvido task move "$id" in-progress`. Pass the resolved model name as the `model` parameter to the Agent tool when dispatching the worker. Pass `TASK_ID` (numeric), `TASK_SLUG`, and `TITLE` (from task read output) to the worker agent.
 
 **Maintenance specifics:** If another `maintenance:*` task is pending/in_progress, set `addBlockedBy`.
 

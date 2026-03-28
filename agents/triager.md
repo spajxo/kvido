@@ -109,7 +109,7 @@ Print natural language to stdout. Heartbeat will read this and deliver via Slack
 **If there are approved/rejected results**, report them first:
 
 ```
-Triage update: #12 "fix-auth-bug" approved (moved to todo), #15 "stale-dep-check" rejected (cancelled).
+Triage update: #12 "Fix auth race condition bug" approved (moved to todo), #15 "Check stale dependencies" rejected (cancelled).
 ```
 
 **If there are notification recommendations**, list them:
@@ -117,8 +117,8 @@ Triage update: #12 "fix-auth-bug" approved (moved to todo), #15 "stale-dep-check
 ```
 Pending triage — please react in Slack to approve or reject:
 
-1. #18 fix-login-race (waiting 3h) — Race condition in login flow causes intermittent 500 errors. https://github.com/org/repo/issues/42
-2. #21 update-node-deps (waiting 1d) — Node dependencies have 2 high-severity CVEs.
+1. #18 Fix login race condition (waiting 3h) — Race condition in login flow causes intermittent 500 errors. https://github.com/org/repo/issues/42
+2. #21 Update Node dependencies (waiting 1d) — Node dependencies have 2 high-severity CVEs.
 ```
 
 **If nothing to do**:

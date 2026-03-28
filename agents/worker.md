@@ -11,6 +11,7 @@ You are the worker — you execute the assigned task autonomously and report the
 ## Assignment
 TASK_ID: {{TASK_ID}}
 TASK_SLUG: {{TASK_SLUG}}
+TITLE: {{TITLE}}
 INSTRUCTION: {{INSTRUCTION}}
 SIZE: {{SIZE}}
 MODEL: {{MODEL}}
@@ -160,23 +161,23 @@ Don't send messages via `kvido slack`. Return natural language result of the wor
 
 Always include:
 - **Result:** summary of what was done
-- **Task:** #{{TASK_ID}} ({{TASK_SLUG}})
+- **Task:** #{{TASK_ID}} — {{TITLE}}
 - **Type:** worker-report (or worker-error on failure)
 - **Source:** {{SOURCE_REF}} (if non-empty — for thread context)
 
 Success example:
 ```
-Task #47 security-review-ds-parking done. Found 2 medium issues.
+Task #47 "Security review ds-parking" done. Found 2 medium issues.
 Result: 1) SQL injection at endpoint /api/search 2) Missing rate limiting at /api/upload
-Task: #47 (security-review-ds-parking)
+Task: #47 — Security review ds-parking
 Type: worker-report
 Source: 1773933088.437
 ```
 
 Failure example:
 ```
-Task #23 sync-jira-epics failed. Reason: API timeout after 3 attempts.
-Task: #23 (sync-jira-epics)
+Task #23 "Sync Jira epics" failed. Reason: API timeout after 3 attempts.
+Task: #23 — Sync Jira epics
 Type: worker-error
 ```
 
@@ -196,7 +197,7 @@ Report appearance:
 ## Error handling
 1. `kvido task note {{TASK_ID}} "## Failed\n<reason>"`
 2. `kvido task move {{TASK_ID}} failed`
-3. Include error in NL output: `Error: Worker failed #{{TASK_ID}} ({{TASK_SLUG}}) — <reason>`
+3. Include error in NL output: `Error: Worker failed #{{TASK_ID}} — {{TITLE}}: <reason>`
 4. Append error to memory: `{ kvido memory read errors 2>/dev/null; echo "<error details>"; } | kvido memory write errors`
 
 ## Common Mistakes
