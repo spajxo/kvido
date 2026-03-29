@@ -299,6 +299,7 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 | Using `--source "github#NN"` when creating tasks from user DM | Use `--source slack --source-ref "github#NN"` — source=slack routes to `todo/`, source=github#NN routes to `triage/` |
 | Using event bus commands (`kvido event emit/read/ack`) | Event bus is removed — planner returns NL, heartbeat interprets directly |
 | Dispatching notifier agent separately | Heartbeat owns ALL Slack delivery — no separate notifier dispatch |
+| Referencing GitHub issues/PRs or GitLab MRs without a URL | Always include the full clickable URL — plain "#123" or "\!42" alone is not enough |
 
 ## Critical Rules
 
@@ -312,3 +313,4 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **Heartbeat owns ALL delivery.** No agent sends Slack messages directly. Chat-agent delivery in Step 3/6, all other agent outputs in Step 6.
 - **No event bus.** No `kvido event emit/read/ack`.
 - **Planner is the sole scheduler.** Heartbeat never decides which agents to dispatch — it only parses `DISPATCH` / `NOTIFY` lines from planner output.
+- **Always include clickable URLs.** When delivering Slack messages that reference GitHub issues/PRs (https://github.com/owner/repo/issues/N or /pull/N) or GitLab MRs (https://git.digital.cz/<group>/<project>/-/merge_requests/<iid>), always embed the full URL — not just the bare number.
