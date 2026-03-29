@@ -14,8 +14,6 @@ A **Claude Code plugin** — not a traditional application. No compilation, no t
 └── plugin.json                    ← plugin metadata (name, version)
 agents/                            ← subagent definitions (YAML frontmatter + markdown)
 commands/                          ← slash commands (heartbeat, setup)
-hooks/
-├── hooks.json                     ← hook configuration
 scripts/
 ├── config.sh                      ← configuration reader (dot-notation, env var resolution)
 ├── fetch/                         ← source fetch scripts
