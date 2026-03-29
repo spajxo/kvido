@@ -68,7 +68,7 @@ Or if nothing is due: `Researcher: no topics due for checking.`
 
 Or if nothing new: `Researcher: checked N topics. No new findings.`
 
-Heartbeat will deliver each SCOUT FINDING block as a separate Slack notification. User can react to those notifications if they want follow-up action.
+Heartbeat will deliver each RESEARCHER FINDING block as a separate Slack notification. User can react to those notifications if they want follow-up action.
 
 ## Critical Rules
 
