@@ -75,7 +75,7 @@ To disable a source: set `<name>.enabled` to `false` in settings.json.
 
 ## Step 1: First-time Setup
 
-Detection: `$KVIDO_HOME/settings.json` does not exist OR `$KVIDO_HOME/memory/persona.md` does not exist → run first-time setup.
+Detection: `$KVIDO_HOME/settings.json` does not exist OR `$KVIDO_HOME/instructions/persona` does not exist → run first-time setup.
 If both exist, skip to Step 2.
 
 ### a) Config files
@@ -95,11 +95,11 @@ If files don't exist, create them:
 
 ### b) Persona setup
 
-If `$KVIDO_HOME/memory/persona.md` does not exist:
+If `$KVIDO_HOME/instructions/persona` does not exist:
 1. Ask the user:
    - "What language should Kvido use? (default: en)"
    - "What's your assistant's name? What tone and personality should it have? (e.g. brief and factual, friendly, formal...)"
-2. From the answers, create `memory/persona.md` with the appropriate structure (name, language, tone, personality, URL formats). Store language as `language: en` (or the chosen language code).
+2. From the answers, create `instructions/persona` with the appropriate structure (name, language, tone, personality, URL formats). Store language as `language: en` (or the chosen language code).
 3. Also create the `memory/` directory if it doesn't exist.
 
 ### c) Slack credentials (settings.json + .env)
