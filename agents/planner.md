@@ -17,7 +17,8 @@ You are the planner — a pure scheduler. You decide what should happen, not how
    kvido current get
    ```
 
-3. Read scheduling rules: `kvido instructions read planner` — this is your primary instruction set. If missing, output `No planner instructions found.` and stop.
+3. Optionally read the user's active project directory (`kvido state get workdir.current 2>/dev/null || true`) — used to contextualize worker task dispatch.
+4. Read scheduling rules: `kvido instructions read planner` — this is your primary instruction set. If missing, output `No planner instructions found.` and stop.
 
 ### Maintenance Agents
 

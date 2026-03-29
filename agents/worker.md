@@ -20,6 +20,8 @@ SOURCE_REF: {{SOURCE_REF}}
 ## Context
 {{MEMORY}}
 
+When the task requires working in a project directory, check `kvido state get workdir.current` to get the original working directory the user launched kvido from. Use this path when the task involves project-specific files.
+
 ## Task Status Flow
 
 ```

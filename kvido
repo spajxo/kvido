@@ -92,10 +92,22 @@ _exec_claude_prompt() {
     set -a; source "$KVIDO_HOME/.env"; set +a
   fi
 
+  # Capture original working directory before cd to KVIDO_HOME.
+  # Store in state so agents can read it via: kvido state get workdir.current
+  local original_dir="$PWD"
+  kvido state set workdir.current "$original_dir" 2>/dev/null || true
+
   local args=(
     --name "${KVIDO_NAME:-kvido}"
     --permission-mode "${KVIDO_PERMISSION_MODE:-default}"
   )
+
+  # Pass original directory as --add-dir so agents can access project files
+  # even though Claude Code's CWD is $KVIDO_HOME (for unified memory scoping).
+  # Skip if user ran kvido from KVIDO_HOME itself (no extra dir needed).
+  if [[ "$original_dir" != "$KVIDO_HOME" ]]; then
+    args+=( --add-dir "$original_dir" )
+  fi
 
   if [[ -n "${KVIDO_EXTRA_ARGS:-}" ]]; then
     # shellcheck disable=SC2086
@@ -131,6 +143,9 @@ _exec_claude_prompt() {
   printf '\033[H\033[2J'      # clear for claude
 
   export KVIDO_SESSION=1
+  # cd to KVIDO_HOME so Claude Code memory is scoped to a single consistent
+  # directory regardless of where the user invoked kvido from.
+  cd "$KVIDO_HOME"
   exec claude "${args[@]}" "$prompt"
 }
 

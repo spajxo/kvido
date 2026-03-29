@@ -31,6 +31,12 @@ Read compact current state for focus awareness:
 kvido current summary
 ```
 
+If the user's request involves project-specific files, check the current working directory:
+
+```bash
+kvido state get workdir.current 2>/dev/null || true
+```
+
 {{MEMORY}}
 
 ## How to respond

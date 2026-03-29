@@ -62,7 +62,23 @@ All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
 - `settings.json` — configuration (JSON, parsed via `scripts/config.sh`)
 - `.env` — secrets (Slack tokens, channel IDs)
 
-The `kvido` CLI exports `$KVIDO_HOME` and all scripts resolve state/memory paths from there. PWD stays as the project directory. Config is at `$KVIDO_HOME/settings.json`.
+The `kvido` CLI exports `$KVIDO_HOME` and all scripts resolve state/memory paths from there. Config is at `$KVIDO_HOME/settings.json`.
+
+## KVIDO_WORKDIR
+
+When the user runs `kvido` from a project directory (not from `$KVIDO_HOME`), the wrapper:
+
+1. Captures the original `$PWD` before changing directories.
+2. Saves it to state: `kvido state set workdir.current "$PWD"`.
+3. Passes it to Claude via `--add-dir "$PWD"` so Claude can read project files.
+4. Changes CWD to `$KVIDO_HOME` — this ensures Claude Code memory (CLAUDE.md, conversation history) is always scoped to one consistent location.
+
+Agents read the original project directory via:
+```bash
+kvido state get workdir.current 2>/dev/null || true
+```
+
+If the user launched `kvido` from `$KVIDO_HOME` itself, `workdir.current` is not set and `--add-dir` is skipped.
 
 ## Assistant Behavior
 
