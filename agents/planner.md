@@ -84,6 +84,20 @@ After reading all tasks, compare them:
 - If two tasks have nearly identical titles or instructions targeting the same artifact: flag as duplicate.
 - Action: cancel the lower-priority or older duplicate via `kvido task note <slug> "Duplicate of #<id>"` + `kvido task move <slug> cancelled`.
 
+**Cross-queue dedup for PR/MR review tasks:** For any todo or triage task whose `SOURCE` field references a PR/MR (e.g. `github:org/repo#123` or `gitlab:group/repo!42`), also check if a done or cancelled task already exists with the same `SOURCE` value:
+
+```bash
+# For a task with source="github:spajxo/kvido#171":
+for status in done cancelled; do
+  kvido task list "$status" | while read tid slug; do
+    src=$(kvido task read "$tid" 2>/dev/null | grep "^source=" | cut -d= -f2-)
+    [[ "$src" == "github:spajxo/kvido#171" ]] && echo "DUPLICATE:$tid"
+  done
+done
+```
+
+If a match is found: cancel the todo/triage task (`kvido task note <id> "Duplicate — PR already reviewed in #<matched_id>"` + `kvido task move <id> cancelled`). This prevents stale PR review requests from re-entering the queue after the PR was already handled.
+
 ### Dependency Awareness
 
 Check task `INSTRUCTION` and `WAITING_ON` fields:

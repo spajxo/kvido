@@ -47,6 +47,22 @@ New MR where I am reviewer, no matching task found via `kvido task list triage -
 Dedup: check existing tasks with `kvido task list triage --source gitlab --source-ref <repo>!<IID>`.
 Repos with type: knowledge-base → skip triage detection.
 
+**Done/Cancelled dedup:** Before creating a new triage task for a PR/MR review, also check `done/` and `cancelled/` queues. If any task there has the same `source` field value (e.g. `gitlab:group/repo!<IID>`), skip creation — the PR was already reviewed. This prevents duplicate code-review tasks from re-appearing after merge or close.
+
+```bash
+# Example check before kvido task create for MR !IID in repo "group/project":
+SOURCE_REF="gitlab:group/project!<IID>"
+for status in done cancelled; do
+  existing=$(kvido task list "$status" | while read tid slug; do
+    src=$(kvido task read "$tid" 2>/dev/null | grep "^source=" | cut -d= -f2-)
+    [[ "$src" == "$SOURCE_REF" ]] && echo "$tid"
+  done)
+  [[ -n "$existing" ]] && echo "SKIP: already $status as task $existing" && continue 2
+done
+# Only reach here if no match found — safe to create
+kvido task create --title "..." --source "$SOURCE_REF" ...
+```
+
 #### Notification Rules
 - MR CI failure → template: event, level: immediate
 - MR approved/merged → template: event, level: normal
