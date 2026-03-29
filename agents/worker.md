@@ -20,6 +20,17 @@ SOURCE_REF: {{SOURCE_REF}}
 ## Context
 {{MEMORY}}
 
+## Working Directory (workdir.current)
+
+When the task requires working in a project directory, read the original working directory via:
+```bash
+kvido state get workdir.current 2>/dev/null || true
+```
+
+This value is set by the kvido wrapper when the user launches `kvido` from a project directory (not from `$KVIDO_HOME`). The wrapper captures the original `$PWD`, stores it in state, and passes it to Claude Code via `--add-dir` so you can access project files even though the running environment's CWD is `$KVIDO_HOME`.
+
+If the user launched `kvido` from `$KVIDO_HOME` itself, `workdir.current` is empty (or missing). In that case, you are already running from the project context if a project directory is available via `--add-dir`.
+
 ## Task Status Flow
 
 ```
