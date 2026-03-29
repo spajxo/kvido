@@ -96,7 +96,7 @@ _html_escape() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
 # ---------------------------------------------------------------------------
 # Source 3: current.md (full content, rendered as structured HTML)
 # ---------------------------------------------------------------------------
-CURRENT_FILE="$STATE_DIR/current.md"
+CURRENT_FILE="$KVIDO_HOME/memory/current.md"
 CURRENT_HTML=""
 
 if [[ -f "$CURRENT_FILE" ]]; then
