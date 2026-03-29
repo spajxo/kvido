@@ -217,7 +217,7 @@ When flushing batched notifications:
 | worker | `:hourglass_flowing_sand: Working on <title>...` | `:white_check_mark: Done: <title> — <duration>` | `:x: Failed: <title> — <summary>` |
 | planner | `:hourglass_flowing_sand: Planner scanning...` | `planner-summary` template (see Per-agent delivery) | `:x: Planner failed — <error>` |
 
-Chat-agent uses ack reactions only (see above), not status edits.
+Chat uses ack reactions only (see above), not status edits.
 
 ### Urgency classification
 
@@ -349,7 +349,7 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **Task tools (`TaskCreate`/`TaskList`/`TaskUpdate`) are the single source of truth** for dispatch tracking. No file-based locks.
 - **Concurrency via dependencies.** Same-group tasks use `blockedBy`. Max 1 concurrent per group (maintenance, worker, chat). Planner runs foreground. Other agents run in background.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
-- **Heartbeat owns ALL delivery.** No agent sends Slack messages directly. Chat-agent delivery in Step 3/6, all other agent outputs in Step 6.
+- **Heartbeat owns ALL delivery.** No agent sends Slack messages directly. Chat delivery in Step 3/6, all other agent outputs in Step 6.
 - **No event bus.** No `kvido event emit/read/ack`.
 - **Planner is the sole scheduler.** Heartbeat never decides which agents to dispatch — it only parses `DISPATCH` / `NOTIFY` lines from planner output.
 - **Always include clickable URLs.** When delivering Slack messages that reference GitHub issues/PRs (https://github.com/owner/repo/issues/N or /pull/N) or GitLab MRs (https://git.digital.cz/<group>/<project>/-/merge_requests/<iid>), always embed the full URL — not just the bare number.

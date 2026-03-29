@@ -173,7 +173,7 @@ The free-form message contains the substance — what was done, findings, branch
 **Fallback:** If `Type:` field is missing, heartbeat treats the output as `worker-report` and delivers as-is with `normal` level.
 ---
 
-### 2.4 Chat-agent
+### 2.4 Chat
 
 **Purpose:** Responds to non-trivial Slack DM messages from the owner.
 
