@@ -95,6 +95,10 @@ _exec_claude_prompt() {
   # Capture original working directory before cd to KVIDO_HOME.
   # Store in state so agents can read it via: kvido state get workdir.current
   local original_dir="$PWD"
+  # State write failures are safe to ignore (2>/dev/null || true) because:
+  # - If state write fails, agents simply won't have workdir context
+  # - Claude Code still has access to the original dir via --add-dir
+  # - This is a best-effort feature, not critical to execution
   kvido state set workdir.current "$original_dir" 2>/dev/null || true
 
   local args=(
@@ -105,7 +109,12 @@ _exec_claude_prompt() {
   # Pass original directory as --add-dir so agents can access project files
   # even though Claude Code's CWD is $KVIDO_HOME (for unified memory scoping).
   # Skip if user ran kvido from KVIDO_HOME itself (no extra dir needed).
-  if [[ "$original_dir" != "$KVIDO_HOME" ]]; then
+  # Use canonical paths to handle symlinks and path variations correctly.
+  local canonical_home
+  local canonical_dir
+  canonical_home="$(cd "$KVIDO_HOME" 2>/dev/null && pwd)" || canonical_home="$KVIDO_HOME"
+  canonical_dir="$(cd "$original_dir" 2>/dev/null && pwd)" || canonical_dir="$original_dir"
+  if [[ "$canonical_dir" != "$canonical_home" ]]; then
     args+=( --add-dir "$original_dir" )
   fi
 

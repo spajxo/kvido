@@ -31,11 +31,17 @@ Read compact current state for focus awareness:
 kvido current summary
 ```
 
+## Working Directory (workdir.current)
+
 If the user's request involves project-specific files, check the current working directory:
 
 ```bash
-kvido state get workdir.current 2>/dev/null || true
+WORKDIR=$(kvido state get workdir.current 2>/dev/null || echo "")
 ```
+
+The kvido wrapper captures the original working directory when the user launches `kvido` from a project directory. This is stored in `workdir.current` and passed to Claude Code via `--add-dir`, allowing access to project files even though the running environment's CWD is `$KVIDO_HOME`.
+
+If `workdir.current` is empty (or the state read fails), it means either the user launched `kvido` from `$KVIDO_HOME` itself, or the state write failed but the project directory is still accessible via `--add-dir`.
 
 {{MEMORY}}
 
