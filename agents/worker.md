@@ -189,6 +189,7 @@ Source: {{SOURCE_REF}}
 | Continuing past timeout | Check elapsed time; if > `task_timeout_minutes`, emit partial result and move to `failed/` |
 | Pushing to main in worktree mode | Always push to feature branch. Never push directly to main. |
 | Branching worktree from a feature branch instead of the default branch | Always base on the default branch. Run ancestry check before pushing. |
+| Referencing GitHub issues/PRs or GitLab MRs without URL in NL output | Always include full clickable URL — heartbeat will include it in Slack delivery. Plain "#123" is not actionable. |
 
 ## User Instructions
 
