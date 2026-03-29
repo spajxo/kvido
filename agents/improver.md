@@ -42,7 +42,7 @@ Before generating new proposals, evaluate the results of previous ones.
 
 4. Write metrics to learnings (append via `{ kvido memory read learnings 2>/dev/null; echo "..."; } | kvido memory write learnings`):
    ```markdown
-   ### Self-improver metrics (YYYY-MM-DD)
+   ### Improver metrics (YYYY-MM-DD)
    - Acceptance rate (7d): X% (Y implemented, Z rejected)
    - Rejected patterns: [brief description of what was rejected]
    ```
