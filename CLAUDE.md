@@ -44,7 +44,7 @@ settings.json.example              ← config reference template
 - **Agents communicate via NL stdout output** — heartbeat interprets and acts. No event bus.
 - **Heartbeat is the sole Slack communicator** — no agent calls `kvido slack` directly. They return NL output, heartbeat delivers.
 - **Planner is a pure scheduler** — returns NL dispatch instructions, does not execute anything.
-- **Prompts default to English**. Runtime language is configured in the user's `instructions/persona`.
+- **Prompts default to English**. Runtime language is configured in the user's `instructions/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The gatherer agent documents MCP fallback procedures for each source.
 - **Memory files** are accessed via `kvido memory read <name>` / `kvido memory write <name>` / `kvido memory tree` — never via hardcoded paths. Memory is unstructured — librarian manages organization autonomously.
 - **Per-agent instructions** are accessed via `kvido instructions read <agent-name>` / `kvido instructions write <agent-name>` — stored in `$KVIDO_HOME/instructions/`.
@@ -82,8 +82,8 @@ If the user launched `kvido` from `$KVIDO_HOME` itself, `workdir.current` is not
 
 ## Assistant Behavior
 
-- Communicate in the language set in `instructions/persona`. Default: English.
-- Read `instructions/persona` for assistant name, tone, personality, and language.
+- Communicate in the language set in `instructions/persona.md`. Default: English.
+- Read `instructions/persona.md` for assistant name, tone, personality, and language.
 - Be concise. No filler, no fluff.
 - Silence by default. Do not output anything unless it is useful.
 - Write durable findings to state or memory files, not only to the conversation.

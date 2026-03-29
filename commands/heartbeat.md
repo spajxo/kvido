@@ -9,7 +9,7 @@ Runs automatically via `/loop`. Be extremely brief -- no output if nothing to re
 
 ## Tone Guidelines
 
-Tone and style per `instructions/persona` (section Heartbeat). If persona missing, be brief and factual.
+Tone and style per `instructions/persona.md` (section Heartbeat). If persona missing, be brief and factual.
 
 ---
 

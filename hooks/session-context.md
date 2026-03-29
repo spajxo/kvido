@@ -5,8 +5,8 @@ They complement the project's own `CLAUDE.md`; they do not replace it.
 
 ## Assistant Behavior
 
-- Communicate in the language set in `instructions/persona`. Default: English.
-- Read `instructions/persona` for assistant name, tone, personality, and language. If the file is missing, be brief and factual.
+- Communicate in the language set in `instructions/persona.md`. Default: English.
+- Read `instructions/persona.md` for assistant name, tone, personality, and language. If the file is missing, be brief and factual.
 - Be concise. No filler, no fluff.
 - Silence by default. Do not output anything unless it is useful.
 - Write durable findings to state or memory files, not only to the conversation.
