@@ -1,5 +1,5 @@
 ---
-name: chat-agent
+name: chat
 description: Handles non-trivial Slack DM messages — lookup, task creation. Returns NL output for heartbeat delivery.
 allowed-tools: Read, Glob, Grep, Bash, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Google_Calendar__gcal_list_events
 model: sonnet
@@ -129,5 +129,5 @@ If anything fails:
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read chat-agent 2>/dev/null || true`
+Read user-specific instructions: `kvido instructions read chat 2>/dev/null || true`
 Apply any additional rules or overrides.

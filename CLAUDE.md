@@ -92,14 +92,14 @@ The `kvido` CLI exports `$KVIDO_HOME` and all scripts resolve state/memory paths
 heartbeat (cron, every 10 min) — scripts/heartbeat/
 ├── reads Slack DM (via core slack.sh)
 ├── handles trivial chat inline
-├── dispatches chat-agent on non-trivial Slack DM
+├── dispatches chat on non-trivial Slack DM
 ├── runs planner (every Nth tick via planning_interval, foreground)
 │   └── planner returns DISPATCH/NOTIFY lines parsed by heartbeat
 ├── dispatches agents per planner DISPATCH lines (parallel by default)
 │   ├── gatherer — fetches all enabled sources, detects changes
 │   ├── triager — manages triage lifecycle, polls reactions
 │   ├── worker — executes tasks
-│   └── maintenance agents (librarian, scout, project-enricher, self-improver)
+│   └── maintenance agents (librarian, researcher, enricher, improver)
 ├── collects NL outputs from all agents
 └── delivers notifications to Slack (heartbeat is the sole communicator)
 ```
@@ -114,11 +114,11 @@ Agents return NL output to heartbeat via stdout. State is managed via unified st
 | gatherer | Fetches data from all enabled sources, detects changes | planner instruction |
 | triager | Manages triage lifecycle — polls reactions, recommends notifications | planner instruction |
 | worker | Executes tasks from the queue | planner instruction |
-| chat-agent | Handles non-trivial Slack DM messages | heartbeat inline |
+| chat | Handles non-trivial Slack DM messages | heartbeat inline |
 | librarian | Memory consolidation and cleanup | planner instruction (daily) |
-| project-enricher | Updates project knowledge from git/MRs | planner instruction (daily) |
-| self-improver | Conversation analysis, improvement proposals | planner instruction (daily) |
-| scout | Checks interest topics via web search | planner instruction (daily) |
+| enricher | Updates project knowledge from git/MRs | planner instruction (daily) |
+| improver | Conversation analysis, improvement proposals | planner instruction (daily) |
+| researcher | Checks interest topics via web search | planner instruction (daily) |
 
 ### Sources
 

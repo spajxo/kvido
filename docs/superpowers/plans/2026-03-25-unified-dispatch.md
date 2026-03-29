@@ -35,8 +35,8 @@ Change the "Instruction" column from worker task instructions to `Dispatch:` dir
 | Task | Trigger | Instruction | Size/Priority |
 |------|---------|-------------|---------------|
 | Librarian | Not yet run today (check `last_librarian_date`, max 1/day) | `Dispatch: librarian` | — |
-| Enricher | Oldest project in memory/projects/ > 7 days | `Dispatch: project-enricher PROJECT=<project>` | — |
-| Self-improver | Not yet run today | `Dispatch: self-improver` | — |
+| Enricher | Oldest project in memory/projects/ > 7 days | `Dispatch: enricher PROJECT=<project>` | — |
+| Improver | Not yet run today | `Dispatch: improver` | — |
 
 Remove Size/Priority values — maintenance agents are dispatched directly, not queued as worker tasks, so size/priority don't apply.
 
@@ -89,7 +89,7 @@ kvido planner-state timestamp set last_librarian_date "$(date -Iseconds)"
 For enricher, include the target project:
 
 ```
-Dispatch: project-enricher PROJECT=<project-slug>
+Dispatch: enricher PROJECT=<project-slug>
 ```
 
 Safety: if `maintenance:<agent>` is already pending/in_progress (check via `kvido task list` or note in planner-state), skip the dispatch to avoid duplicates.
@@ -230,10 +230,10 @@ Grep for stale references across all three modified files:
 
 Confirm these agents have `model:` in their YAML frontmatter:
 - `agents/librarian.md` (expect: sonnet)
-- `agents/self-improver.md` (expect: sonnet)
-- `agents/project-enricher.md` (expect: haiku)
+- `agents/improver.md` (expect: sonnet)
+- `agents/enricher.md` (expect: haiku)
 - `agents/planner.md` (expect: sonnet)
-- `agents/chat-agent.md` (check what model is set)
+- `agents/chat.md` (check what model is set)
 
 No changes needed — just verify the dispatch loop will find what it expects.
 

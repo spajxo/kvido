@@ -18,10 +18,10 @@ Default: yesterday. Parses JSONL session files. Output per project:
 ```bash
 kvido sessions-messages [YYYY-MM-DD]
 ```
-Default: today. Extracts user messages + retry patterns. Max ~2000 lines. For self-improver agent.
+Default: today. Extracts user messages + retry patterns. Max ~2000 lines. For improver agent.
 
 #### Schedule
 - morning: fetch (yesterday)
 - heartbeat: skip
-- heartbeat-maintenance: fetch-messages (today) — for self-improver agent
+- heartbeat-maintenance: fetch-messages (today) — for improver agent
 - eod: fetch (today)

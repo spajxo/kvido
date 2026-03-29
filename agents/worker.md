@@ -34,7 +34,7 @@ triage/ → todo/ → in-progress/ → done/
 - `task_id: <auto-incrementing integer>`
 - `priority: urgent|high|medium|low`
 - `size: s|m|l|xl`
-- `source: planner|slack|recurring|self-improver|manual|jira|interests`
+- `source: planner|slack|recurring|improver|manual|jira|interests`
 - `source_ref: <slack ts, jira key, commit hash>`
 - `waiting_on: <what is being waited on>`
 - `recurring: <trigger JSON>`

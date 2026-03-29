@@ -13,8 +13,8 @@
     "triage",
     "worker",
     "librarian",
-    "scout",
-    "chat-agent"
+    "researcher",
+    "chat"
   ],
   "author": {
     "name": "Pavel Stejskal"

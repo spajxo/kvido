@@ -19,7 +19,7 @@ Just type `kvido` in your terminal, leave it running, and interact through Slack
 
 ```
 heartbeat (cron, every 10 min)
-├── reads Slack DM → trivial: reply inline / non-trivial: dispatch chat-agent
+├── reads Slack DM → trivial: reply inline / non-trivial: dispatch chat
 ├── checks worker queue → dispatch worker if task pending
 └── every Nth tick → dispatch planner
     └── gatherer fetches all enabled sources (gitlab, jira, slack, calendar, gmail, sessions)

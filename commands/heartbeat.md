@@ -97,7 +97,7 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <id> fail
      - Send ack: `kvido slack reply dm <ts> chat --var message="One moment..."` (thread under the new message)
      - `TaskCreate` subject `chat:<ts>` with `addBlockedBy` pointing to the active chat task (stays `pending`)
 
-   **Task creation from user DM:** When the chat-agent (or heartbeat inline) creates a task from a user's Slack DM request, always use `--source slack`. If the request references a GitHub issue or PR, pass it via `--source-ref "github#NN"` (not `--source`). This ensures user-initiated tasks go directly to `todo/` (bypassing triage).
+   **Task creation from user DM:** When the chat agent (or heartbeat inline) creates a task from a user's Slack DM request, always use `--source slack`. If the request references a GitHub issue or PR, pass it via `--source-ref "github#NN"` (not `--source`). This ensures user-initiated tasks go directly to `todo/` (bypassing triage).
 
    ```bash
    # Correct
@@ -108,7 +108,7 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <id> fail
 
    Update: `kvido state set heartbeat.last_chat_ts "<ts>"` + `kvido state set heartbeat.last_interaction_ts "$(date -Iseconds)"`
 
-4. **Agent completion:** When a dispatched chat-agent completes (background task finishes), in the next heartbeat iteration:
+4. **Agent completion:** When a dispatched chat agent completes (background task finishes), in the next heartbeat iteration:
    - `TaskList` -- find `chat:*` tasks with status `in_progress`
    - Since the agent has already finished, proceed to **Step 6** for output processing and delivery
    - After delivery is processed, mark chat task as `completed` via `TaskUpdate`
@@ -181,7 +181,7 @@ Non-trivial chat from Step 3 creates `chat:<ts>` tasks. These are dispatched her
 
 If `chat:*` task is `pending` with no blockers:
 - `TaskUpdate` → `in_progress`
-- Dispatch chat-agent (`run_in_background: true`)
+- Dispatch chat (`run_in_background: true`)
 - Log: `kvido log add heartbeat dispatch --message "chat:<ts>"`
 
 ---
@@ -197,8 +197,8 @@ Heartbeat is the single owner of Slack message delivery. No agent or worker may 
 #### Chat ack lifecycle
 When heartbeat detects a new chat message:
 1. `kvido slack react <ts> eyes` — immediate ack
-2. Dispatch chat-agent
-3. Deliver chat-agent reply
+2. Dispatch chat
+3. Deliver chat reply
 4. `kvido slack unreact <ts> eyes` — remove ack
 
 #### Digest threading
@@ -217,7 +217,7 @@ When flushing batched notifications:
 | worker | `:hourglass_flowing_sand: Working on <title>...` | `:white_check_mark: Done: <title> — <duration>` | `:x: Failed: <title> — <summary>` |
 | planner | `:hourglass_flowing_sand: Planner scanning...` | `planner-summary` template (see Per-agent delivery) | `:x: Planner failed — <error>` |
 
-Chat-agent uses ack reactions only (see above), not status edits.
+Chat uses ack reactions only (see above), not status edits.
 
 ### Urgency classification
 
@@ -249,13 +249,13 @@ Chat-agent uses ack reactions only (see above), not status edits.
 
 | Agent | Template | Level | Notes |
 |-------|----------|-------|-------|
-| chat-agent | `chat` | always immediate | Extract `ORIGINAL_TS` from task subject `chat:<ts>`. If agent returns `Thread` non-empty: `kvido slack reply dm <Thread> chat --var message="<Reply>"`. If `Thread` empty: `kvido slack reply dm <ORIGINAL_TS> chat --var message="<Reply>"`. After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
+| chat | `chat` | always immediate | Extract `ORIGINAL_TS` from task subject `chat:<ts>`. If agent returns `Thread` non-empty: `kvido slack reply dm <Thread> chat --var message="<Reply>"`. If `Thread` empty: `kvido slack reply dm <ORIGINAL_TS> chat --var message="<Reply>"`. After delivery, check for `pending` chat tasks → dispatch next (FIFO) |
 | planner | `planner-summary` | `normal` | See **Planner summary composition** below. Edit status message to `planner-summary` template result (replacing the `:hourglass_flowing_sand:` message). |
 | worker | `worker-report` | `high` for error, else `normal` | Pass worker output (up to routing fields) as `--var message="..."`. If `Source:` is a Slack `ts`, reply in that thread. |
 | gatherer | `event` | per urgency rules | Parse findings, each as separate notification |
 | triager | `triage-item` | `immediate` | For triage items needing user attention, save returned `ts` to task frontmatter: `kvido task update <id> triage_slack_ts <ts>` |
 | maintenance | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
-| scout | `event` | per scout's suggested urgency in each finding block | Split output by `SCOUT FINDING:` markers — deliver each finding as a separate notification |
+| researcher | `event` | per researcher's suggested urgency in each finding block | Split output by `RESEARCHER FINDING:` markers — deliver each finding as a separate notification |
 
 #### Planner summary composition
 
@@ -330,7 +330,7 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 | Mistake | Fix |
 |---------|-----|
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
-| Dispatching chat-agent for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
+| Dispatching chat for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
 | Dispatching agent when same-group task is pending/in_progress | Use `blockedBy` dependencies, dispatch skips blocked tasks |
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 2 |
 | Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |
@@ -349,7 +349,7 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **Task tools (`TaskCreate`/`TaskList`/`TaskUpdate`) are the single source of truth** for dispatch tracking. No file-based locks.
 - **Concurrency via dependencies.** Same-group tasks use `blockedBy`. Max 1 concurrent per group (maintenance, worker, chat). Planner runs foreground. Other agents run in background.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
-- **Heartbeat owns ALL delivery.** No agent sends Slack messages directly. Chat-agent delivery in Step 3/6, all other agent outputs in Step 6.
+- **Heartbeat owns ALL delivery.** No agent sends Slack messages directly. Chat delivery in Step 3/6, all other agent outputs in Step 6.
 - **No event bus.** No `kvido event emit/read/ack`.
 - **Planner is the sole scheduler.** Heartbeat never decides which agents to dispatch — it only parses `DISPATCH` / `NOTIFY` lines from planner output.
 - **Always include clickable URLs.** When delivering Slack messages that reference GitHub issues/PRs (https://github.com/owner/repo/issues/N or /pull/N) or GitLab MRs (https://git.digital.cz/<group>/<project>/-/merge_requests/<iid>), always embed the full URL — not just the bare number.
