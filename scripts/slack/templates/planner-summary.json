@@ -1,0 +1,6 @@
+[
+  {"type":"section","text":{"type":"mrkdwn","text":":clipboard: *Planner tick #{{iteration}}*\n━━━━━━━━━━━━━━━━\n{{dispatches}}\n:bar_chart: Queue: {{queue_stats}}\n:arrow_right: Next up: {{next_up}}\n:eyes: Triage: {{triage_count}} items waiting\n{{skipped}}"}},
+  {"type":"context","elements":[
+    {"type":"mrkdwn","text":"{{timestamp}}"}
+  ]}
+]
