@@ -52,7 +52,7 @@ For each task in the triage queue:
    ```bash
    for status in done cancelled; do
      kvido task list "$status" | while read task_id slug; do
-       src=$(kvido task read "$task_id" 2>/dev/null | grep "^source=" | cut -d= -f2-)
+       src=$(kvido task read "$task_id" 2>/dev/null | grep "^SOURCE=" | cut -d= -f2- | tr -d '"')
        [[ "$src" == "<source_of_triage_task>" ]] && echo "DUPLICATE:$task_id"
      done
    done

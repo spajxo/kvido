@@ -90,7 +90,7 @@ After reading all tasks, compare them:
 # For a task with source="github:spajxo/kvido#171":
 for status in done cancelled; do
   kvido task list "$status" | while read tid slug; do
-    src=$(kvido task read "$tid" 2>/dev/null | grep "^source=" | cut -d= -f2-)
+    src=$(kvido task read "$tid" 2>/dev/null | grep "^SOURCE=" | cut -d= -f2- | tr -d '"')
     [[ "$src" == "github:spajxo/kvido#171" ]] && echo "DUPLICATE:$tid"
   done
 done
