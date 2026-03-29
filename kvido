@@ -124,23 +124,7 @@ _exec_claude_prompt() {
     printf '    \033[2mkvido v%s\033[0m\n' "$kvido_version"
   }
 
-  # Collect context in background
-  local _build_ctx="$KVIDO_ROOT/hooks/build-context.sh"
-  if [[ ! -f "$_build_ctx" ]]; then
-    echo "ERROR: build-context.sh not found: $_build_ctx" >&2
-    exit 1
-  fi
-  KVIDO_PROJECT="$PWD" bash "$_build_ctx" > "$KVIDO_HOME/state/session-context.md" 2>/dev/null &
-  local ctx_pid=$!
-
-  # Animate owl while waiting (minimum 2s)
-  while kill -0 "$ctx_pid" 2>/dev/null || (( ($(date +%s%N) - start_ts) / 1000000 < 2000 )); do
-    _draw_owl "${eyes[$frame]}"
-    frame=$(( (frame + 1) % ${#eyes[@]} ))
-    sleep 0.3
-  done
-  wait "$ctx_pid" 2>/dev/null || true
-
+  # Show owl splash
   _draw_owl "o,o"
   sleep 0.4
   printf '\033[?25h'          # show cursor

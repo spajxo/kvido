@@ -14,12 +14,6 @@ A **Claude Code plugin** — not a traditional application. No compilation, no t
 └── plugin.json                    ← plugin metadata (name, version)
 agents/                            ← subagent definitions (YAML frontmatter + markdown)
 commands/                          ← slash commands (heartbeat, setup)
-hooks/
-├── hooks.json                     ← SessionStart, PreCompact hooks
-├── build-context.sh               ← generates session context markdown
-├── session-start.sh               ← SessionStart hook
-├── pre-compact.sh                 ← PreCompact hook
-└── session-context.md             ← runtime instructions injected at session start
 scripts/
 ├── config.sh                      ← configuration reader (dot-notation, env var resolution)
 ├── fetch/                         ← source fetch scripts
@@ -61,7 +55,7 @@ settings.json.example              ← config reference template
 ## KVIDO_HOME
 
 All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
-- `state/` — ephemeral runtime (current.md, session-context.md, log.jsonl, state.json, dashboard.html)
+- `state/` — ephemeral runtime (current.md, log.jsonl, state.json, dashboard.html)
 - `tasks/` — task queue (`<status>/<id>-<slug>.md` files, task_counter)
 - `instructions/` — per-agent instruction files (read via `kvido instructions read <agent>`)
 - `memory/` — persistent, unstructured (memory.md, journals, projects, weekly, learnings) — librarian manages organization
@@ -69,6 +63,28 @@ All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
 - `.env` — secrets (Slack tokens, channel IDs)
 
 The `kvido` CLI exports `$KVIDO_HOME` and all scripts resolve state/memory paths from there. PWD stays as the project directory. Config is at `$KVIDO_HOME/settings.json`.
+
+## Assistant Behavior
+
+- Communicate in the language set in `memory/persona.md`. Default: English.
+- Read `memory/persona.md` for assistant name, tone, personality, and language.
+- Be concise. No filler, no fluff.
+- Silence by default. Do not output anything unless it is useful.
+- Write durable findings to state or memory files, not only to the conversation.
+- Always include full clickable URLs for MRs, Jira issues, and similar references.
+- Run `/kvido:setup` when runtime files are missing or the environment looks broken.
+
+## Context Loading
+
+- Runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`).
+- Treat the current working directory as the project context and `$KVIDO_HOME` as Kvido runtime state.
+- Before making workflow decisions, read:
+  - `memory/memory.md`
+  - `memory/index.md` (if present) — overview of what's stored in memory; use it to decide which files to read — don't load everything
+  - `kvido current get`
+  - `kvido state get` (unified state store; replaces heartbeat-state and planner-state)
+- Review recent activity with `kvido log list --today --format human`.
+- Use `kvido config 'key.subkey'` for configuration lookups instead of parsing files directly.
 
 ## Runtime architecture
 
@@ -134,6 +150,28 @@ CLI: `kvido task <create|read|move|list|count|find|note> [args]` (delegates to `
 Entry point: `./kvido` (symlinked to `~/.local/bin/kvido` via `kvido --install`). Resolves plugin root from `CLAUDE_PLUGIN_ROOT` → script directory → plugin registry fallback.
 
 Key commands: `kvido heartbeat`, `kvido task ...`, `kvido state ...`, `kvido config ...`, `kvido slack ...`, `kvido log ...`, `kvido memory ...`, `kvido instructions ...`, `kvido dashboard`. Run `kvido --help` for full reference.
+
+## Natural Language Triggers
+
+Certain user phrases trigger specific kvido actions:
+
+### Sleep Mode
+
+Patterns: `going to sleep`, `good night`, `pause`, `sleep` and similar.
+
+Action: `kvido state set heartbeat.sleep_until <value>`. Default: tomorrow 06:00.
+
+### Heartbeat Loop
+
+Patterns: `start heartbeat`, `set up loop`, `heartbeat loop`, `loop heartbeat` and similar.
+
+Action: run `/loop 10m /kvido:heartbeat`.
+
+### Dashboard
+
+Patterns: `show dashboard`, `open dashboard`, `dashboard`, `status`, `overview` and similar.
+
+Action: regenerate and open the dashboard.
 
 ## Working on this codebase
 
