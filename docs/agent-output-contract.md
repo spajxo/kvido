@@ -203,7 +203,7 @@ The `Reply:` value is free-form text written in the tone from `persona.md`. Hear
 
 ---
 
-### 2.5 Maintenance agents (librarian, project-enricher, self-improver, scout)
+### 2.5 Maintenance agents (librarian, enricher, improver, researcher)
 
 Maintenance agents return a brief summary line. Heartbeat delivers via the `maintenance` template, falling back to `event` template if `maintenance` is not found.
 
@@ -219,7 +219,7 @@ Or if nothing needed:
 Librarian: no cleanup needed.
 ```
 
-#### Project-enricher
+#### Enricher
 
 ```
 Enriched: <project> — <what changed>
@@ -231,7 +231,7 @@ Or:
 Enriched: <project> — no changes
 ```
 
-#### Self-improver
+#### Improver
 
 ```
 Outcome review: X% acceptance (Y/Z in 7d). Local: N tasks (<categories>). Plugin: M GitHub issues. Skill drafts: K. Adaptive limit: L.
@@ -243,16 +243,16 @@ Or if no proposals:
 Outcome review: X% acceptance. No proposals.
 ```
 
-#### Scout
+#### Researcher
 
 ```
-Scout: checked 3 topics. New findings: "<topic>" (triage task created). No changes: "<topic>", "<topic>".
+Researcher: checked 3 topics. New findings: "<topic>" (triage task created). No changes: "<topic>", "<topic>".
 ```
 
 Or:
 
 ```
-Scout: no topics due for checking.
+Researcher: no topics due for checking.
 ```
 
 **Delivery:** Heartbeat uses `maintenance` template. If the template does not exist, falls back to `event` with `--var severity_bar=:large_yellow_circle:`.
@@ -289,7 +289,7 @@ duration_ms: N
 
 Heartbeat parses planner output line by line. Each recognized prefix (`DISPATCH`, `DISPATCH_AFTER`, `NOTIFY`) triggers the corresponding action. Unrecognized lines are ignored.
 
-### Field extraction (worker, chat-agent)
+### Field extraction (worker, chat)
 
 Heartbeat scans for `Key: value` patterns. Fields are case-sensitive. Unknown fields are ignored.
 
@@ -322,8 +322,8 @@ These invariants hold across all agents:
 | gatherer | `event` | per urgency suggestion | standalone or digest |
 | triager | `triage-item` | `immediate` | standalone |
 | worker | `worker-report` | `normal` (success) / `high` (failure) | source thread if `Source:` is set |
-| chat-agent | `chat` | `immediate` | `Thread:` field |
+| chat | `chat` | `immediate` | `Thread:` field |
 | librarian | `maintenance` → fallback `event` | per delivery rules | standalone |
-| project-enricher | `maintenance` → fallback `event` | per delivery rules | standalone |
-| self-improver | `maintenance` → fallback `event` | per delivery rules | standalone |
-| scout | `maintenance` → fallback `event` | per delivery rules | standalone |
+| enricher | `maintenance` → fallback `event` | per delivery rules | standalone |
+| improver | `maintenance` → fallback `event` | per delivery rules | standalone |
+| researcher | `maintenance` → fallback `event` | per delivery rules | standalone |

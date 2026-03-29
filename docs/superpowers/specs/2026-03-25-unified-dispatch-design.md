@@ -5,7 +5,7 @@
 
 ## Problem
 
-Maintenance agents (librarian, enricher, self-improver) are dispatched via the worker task queue. Planner creates a worker task with an instruction like "Consolidation mode. Read agents/librarian.md", heartbeat dispatches the worker agent, and the worker reads the instruction and acts as the maintenance agent. This means the agent runs with the worker's model and tools — the agent definition's `model` and `tools` frontmatter is ignored.
+Maintenance agents (librarian, enricher, improver) are dispatched via the worker task queue. Planner creates a worker task with an instruction like "Consolidation mode. Read agents/librarian.md", heartbeat dispatches the worker agent, and the worker reads the instruction and acts as the maintenance agent. This means the agent runs with the worker's model and tools — the agent definition's `model` and `tools` frontmatter is ignored.
 
 Additionally, heartbeat has separate dispatch logic for each agent type (planner, worker, chat) spread across Steps 3-5, each with its own concurrency checks.
 
@@ -21,8 +21,8 @@ Planner Step 7 stops creating worker tasks via `kvido task create` for maintenan
 
 ```
 Dispatch: librarian
-Dispatch: self-improver
-Dispatch: project-enricher PROJECT=my-project
+Dispatch: improver
+Dispatch: enricher PROJECT=my-project
 ```
 
 No `MODE=` parameter — agents determine their own mode based on current state. The only parameter is enricher's `PROJECT=` (planner selects the project based on staleness).
@@ -104,7 +104,7 @@ Exception: `worker:*` tasks also run `kvido task move <slug> failed` for orphane
 
 ### Unchanged
 
-- Agent definitions (librarian, self-improver, project-enricher) — model/tools already defined in frontmatter
+- Agent definitions (librarian, improver, enricher) — model/tools already defined in frontmatter
 - `heartbeat.sh` — pure data gathering, no dispatch logic
 - `kvido task create` — still used for user-defined scheduled tasks from `memory/planner.md`
 - Worker agent — still processes tasks from the queue

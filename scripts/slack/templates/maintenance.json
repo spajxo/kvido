@@ -1,5 +1,5 @@
 [
-  {"type":"section","text":{"type":"mrkdwn","text":":stethoscope: *Maintenance*\n━━━━━━━━━━━━━━━━\n*librarian* {{librarian}} · *enricher* {{enricher}}\n*self-improver* {{self_improver}} · *health* {{health}}"}},
+  {"type":"section","text":{"type":"mrkdwn","text":":stethoscope: *Maintenance*\n━━━━━━━━━━━━━━━━\n*librarian* {{librarian}} · *enricher* {{enricher}}\n*improver* {{improver}} · *health* {{health}}"}},
   {"type":"context","elements":[
     {"type":"mrkdwn","text":"{{timestamp}}"}
   ]}

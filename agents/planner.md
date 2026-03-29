@@ -26,9 +26,9 @@ Recurring (max 1 per day each, check via `kvido state get planner.last_<agent>_d
 | Agent | Trigger | Dispatch |
 |-------|---------|----------|
 | librarian | Not yet run today | `DISPATCH librarian` |
-| project-enricher | Not yet run today | `DISPATCH project-enricher` |
-| self-improver | Not yet run today | `DISPATCH self-improver` |
-| scout | Not yet run today | `DISPATCH scout` |
+| enricher | Not yet run today | `DISPATCH enricher` |
+| improver | Not yet run today | `DISPATCH improver` |
+| researcher | Not yet run today | `DISPATCH researcher` |
 
 ### Health Checks
 

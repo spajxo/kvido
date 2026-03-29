@@ -1,5 +1,5 @@
 ---
-name: project-enricher
+name: enricher
 description: Lightweight project knowledge update — git activity, Jira, MR status. Use during maintenance heartbeat.
 allowed-tools: Read, Grep, Bash, Write
 model: haiku
@@ -25,5 +25,5 @@ Return: "Enriched: <project> — <what changed>" or "Enriched: <project> — no 
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read project-enricher 2>/dev/null || true`
+Read user-specific instructions: `kvido instructions read enricher 2>/dev/null || true`
 Apply any additional rules or overrides.
