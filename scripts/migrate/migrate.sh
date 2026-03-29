@@ -9,6 +9,8 @@
 #   state/source-health.json → state/state.json (source-health.* keys)
 #   state/tasks/ → tasks/ (v0.29.0)
 #   state/task_counter → tasks/task_counter (v0.29.0)
+#   memory/persona.md → instructions/persona.md
+#   state/current.md → memory/current.md
 
 set -euo pipefail
 
@@ -16,6 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 STATE_SH="$(cd "$SCRIPT_DIR/../.." && pwd)/scripts/state/state.sh"
 CONFIG_KEYS_SH="$SCRIPT_DIR/config-keys.sh"
+FILE_MIGRATIONS_SH="$SCRIPT_DIR/file-migrations.sh"
 
 OLD_HEARTBEAT="${KVIDO_HOME}/state/heartbeat-state.json"
 OLD_PLANNER="${KVIDO_HOME}/state/planner-state.json"
@@ -25,6 +28,12 @@ migrated=0
 # Migrate settings.json config keys (v0.28.0)
 if [[ -f "$CONFIG_KEYS_SH" ]]; then
   bash "$CONFIG_KEYS_SH"
+  migrated=1
+fi
+
+# Migrate file locations
+if [[ -f "$FILE_MIGRATIONS_SH" ]]; then
+  bash "$FILE_MIGRATIONS_SH"
   migrated=1
 fi
 
