@@ -154,6 +154,28 @@ Entry point: `./kvido` (symlinked to `~/.local/bin/kvido` via `kvido --install`)
 
 Key commands: `kvido heartbeat`, `kvido task ...`, `kvido state ...`, `kvido config ...`, `kvido slack ...`, `kvido log ...`, `kvido memory ...`, `kvido instructions ...`, `kvido dashboard`. Run `kvido --help` for full reference.
 
+## Natural Language Triggers
+
+Certain user phrases trigger specific kvido actions:
+
+### Sleep Mode
+
+Patterns: `going to sleep`, `good night`, `pause`, `sleep` and similar.
+
+Action: `kvido state set heartbeat.sleep_until <value>`. Default: tomorrow 06:00.
+
+### Heartbeat Loop
+
+Patterns: `start heartbeat`, `set up loop`, `heartbeat loop`, `loop heartbeat` and similar.
+
+Action: run `/loop 10m /kvido:heartbeat`.
+
+### Dashboard
+
+Patterns: `show dashboard`, `open dashboard`, `dashboard`, `status`, `overview` and similar.
+
+Action: regenerate and open the dashboard.
+
 ## Working on this codebase
 
 - Edit agent .md files and commands directly — no build step

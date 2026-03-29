@@ -1,4 +1,4 @@
-#\!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # PreCompact hook — injects dynamic session state summary before compaction.
