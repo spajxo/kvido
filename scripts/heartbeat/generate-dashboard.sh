@@ -5,7 +5,7 @@
 # Data sources:
 #   1. kvido log list (unified activity log)
 #   2. kvido state (heartbeat.* keys)
-#   3. state/current.md
+#   3. memory/current.md
 #   4. tasks/ (local task files)
 #   5. tasks/*/*.md (full task data for task list/detail view)
 

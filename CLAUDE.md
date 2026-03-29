@@ -55,10 +55,10 @@ settings.json.example              ← config reference template
 ## KVIDO_HOME
 
 All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
-- `state/` — ephemeral runtime (current.md, log.jsonl, state.json, dashboard.html)
+- `state/` — ephemeral runtime (log.jsonl, state.json, dashboard.html)
 - `tasks/` — task queue (`<status>/<id>-<slug>.md` files, task_counter)
 - `instructions/` — per-agent instruction files (read via `kvido instructions read <agent>`)
-- `memory/` — persistent, unstructured (memory.md, journals, projects, weekly, learnings) — librarian manages organization
+- `memory/` — persistent, unstructured (memory.md, current.md, journals, projects, weekly, learnings) — librarian manages organization
 - `settings.json` — configuration (JSON, parsed via `scripts/config.sh`)
 - `.env` — secrets (Slack tokens, channel IDs)
 
