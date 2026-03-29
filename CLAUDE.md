@@ -15,8 +15,7 @@ A **Claude Code plugin** — not a traditional application. No compilation, no t
 agents/                            ← subagent definitions (YAML frontmatter + markdown)
 commands/                          ← slash commands (heartbeat, setup)
 hooks/
-├── hooks.json                     ← PreCompact hook
-└── pre-compact.sh                 ← PreCompact hook (injects dynamic state on compaction)
+├── hooks.json                     ← hook configuration
 scripts/
 ├── config.sh                      ← configuration reader (dot-notation, env var resolution)
 ├── fetch/                         ← source fetch scripts
