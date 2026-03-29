@@ -1,5 +1,5 @@
 [
-  {"type":"section","text":{"type":"mrkdwn","text":"{{severity_bar}} :{{emoji}}: *{{title}}*\n{{description}}"}},
+  {"type":"section","text":{"type":"mrkdwn","text":"{{severity_bar}} {{emoji}} *{{title}}*\n{{description}}"}},
   {"type":"context","elements":[
     {"type":"mrkdwn","text":"{{source}} · {{reference}} · {{timestamp}}"}
   ]}
