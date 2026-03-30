@@ -104,6 +104,18 @@ if [[ -f "$CURRENT_FILE" ]]; then
   CURRENT_HTML=$(awk '
     BEGIN { in_section=0; has_content=0; buf=""; in_table=0; table_buf="" }
     /^# / { next }
+    /^### / {
+      if (in_table) {
+        buf = buf "</table>\n"
+        in_table=0
+      }
+      if (in_section && has_content) buf = buf "\n"
+      title = substr($0, 5)
+      gsub(/&/, "\\&amp;", title); gsub(/</, "\\&lt;", title); gsub(/>/, "\\&gt;", title)
+      buf = buf "<h3>" title "</h3>"
+      has_content=1
+      next
+    }
     /^## / {
       if (in_table) {
         buf = buf "</table>\n"
@@ -112,7 +124,7 @@ if [[ -f "$CURRENT_FILE" ]]; then
       if (in_section && has_content) print buf "</div>"
       title = substr($0, 4)
       gsub(/&/, "\\&amp;", title); gsub(/</, "\\&lt;", title); gsub(/>/, "\\&gt;", title)
-      buf = "<div class=\"current-section\"><h3>" title "</h3>"
+      buf = "<div class=\"current-section\"><h2>" title "</h2>"
       in_section=1; has_content=0
       next
     }
