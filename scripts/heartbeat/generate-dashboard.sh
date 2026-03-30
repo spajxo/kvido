@@ -102,18 +102,74 @@ CURRENT_HTML=""
 if [[ -f "$CURRENT_FILE" ]]; then
   # Convert markdown to structured HTML sections
   CURRENT_HTML=$(awk '
-    BEGIN { in_section=0; has_content=0; buf="" }
+    BEGIN { in_section=0; has_content=0; buf=""; in_table=0; table_buf="" }
     /^# / { next }
+    /^### / {
+      if (in_table) {
+        buf = buf "</table>\n"
+        in_table=0
+      }
+      if (in_section && has_content) buf = buf "\n"
+      title = substr($0, 5)
+      gsub(/&/, "\\&amp;", title); gsub(/</, "\\&lt;", title); gsub(/>/, "\\&gt;", title)
+      buf = buf "<h3>" title "</h3>"
+      has_content=1
+      next
+    }
     /^## / {
+      if (in_table) {
+        buf = buf "</table>\n"
+        in_table=0
+      }
       if (in_section && has_content) print buf "</div>"
       title = substr($0, 4)
       gsub(/&/, "\\&amp;", title); gsub(/</, "\\&lt;", title); gsub(/>/, "\\&gt;", title)
-      buf = "<div class=\"current-section\"><h3>" title "</h3>"
+      buf = "<div class=\"current-section\"><h2>" title "</h2>"
       in_section=1; has_content=0
       next
     }
-    /^$/ { if (in_section && has_content) buf = buf "<br>"; next }
+    /^$/ {
+      if (in_table) {
+        buf = buf "</table>\n"
+        in_table=0
+      }
+      if (in_section && has_content) buf = buf "<br>"
+      next
+    }
+    /^\|.*\|$/ {
+      # Markdown table row
+      if (!in_table) {
+        buf = buf "<table class=\"markdown-table\">\n<tbody>\n"
+        in_table=1
+      }
+      # Parse table cells
+      gsub(/^\|/, "", $0); gsub(/\|$/, "", $0)
+      gsub(/&/, "\\&amp;"); gsub(/</, "\\&lt;"); gsub(/>/, "\\&gt;")
+      # Check if separator row (dashes) BEFORE writing <tr>
+      n_cells = split($0, cells, "|")
+      is_sep = 0
+      for (i=1; i<=n_cells; i++) {
+        cell = cells[i]
+        gsub(/^[ ]+/, "", cell); gsub(/[ ]+$/, "", cell)
+        if (match(cell, /^[-: ]+$/)) { is_sep = 1; break }
+      }
+      if (is_sep) next
+      buf = buf "<tr>"
+      for (i=1; i<=n_cells; i++) {
+        cell = cells[i]
+        # Trim leading/trailing spaces
+        gsub(/^[ ]+/, "", cell); gsub(/[ ]+$/, "", cell)
+        buf = buf "<td>" cell "</td>"
+      }
+      buf = buf "</tr>\n"
+      has_content=1
+      next
+    }
     {
+      if (in_table) {
+        buf = buf "</table>\n"
+        in_table=0
+      }
       gsub(/&/, "\\&amp;"); gsub(/</, "\\&lt;"); gsub(/>/, "\\&gt;")
       # Render markdown checkboxes
       if (match($0, /^- \[x\] /)) {
@@ -147,7 +203,10 @@ if [[ -f "$CURRENT_FILE" ]]; then
       buf = buf $0 "\n"
       has_content=1
     }
-    END { if (in_section && has_content) print buf "</div>" }
+    END {
+      if (in_table) buf = buf "</table>\n"
+      if (in_section && has_content) print buf "</div>"
+    }
   ' "$CURRENT_FILE")
 fi
 
@@ -811,6 +870,25 @@ function md(text) {
   // bold/italic
   s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // markdown tables
+  s = s.replace(/(\|[^\n]+\|[ \t]*\n?)+/g, function(tableMatch) {
+    var lines = tableMatch.trim().split('\n');
+    var html = '<table class="markdown-table"><tbody>';
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      // skip separator rows (contain only dashes, colons, pipes)
+      if (/^\|[\s\-:|\s]*\|$/.test(line)) continue;
+      // parse table row
+      var cells = line.split('|').slice(1, -1);
+      html += '<tr>';
+      for (var j = 0; j < cells.length; j++) {
+        html += '<td>' + esc(cells[j].trim()) + '</td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    return html;
+  });
   // list items
   s = s.replace(/^- (.+)$/gm, '<li>$1</li>');
   // wrap consecutive <li> in <ul>
