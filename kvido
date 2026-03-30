@@ -145,9 +145,12 @@ _exec_claude_prompt() {
     printf '    \033[2mkvido v%s\033[0m\n' "$kvido_version"
   }
 
-  # Show owl splash
-  _draw_owl "o,o"
-  sleep 0.4
+  # Show owl splash — cycle through eye frames
+  for eye in "${eyes[@]}"; do
+    _draw_owl "$eye"
+    sleep 0.15
+  done
+  sleep 0.3
   printf '\033[?25h'          # show cursor
   printf '\033[H\033[2J'      # clear for claude
 
