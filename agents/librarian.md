@@ -43,7 +43,12 @@ Reflect on accumulated memory and tighten it.
   - Verbose project entries → shorten to one-liners
   - Never delete: "Who I am", "People"
 - Mark stale: project files not updated in 14+ days → `<!-- STALE -->`
-- Auto-memory sync: scan all `MEMORY.md` files via `find ~/.claude/projects -name "MEMORY.md" 2>/dev/null` and read referenced files. Extract user facts → `kvido memory write people/_index`. Extract feedback rules → `kvido memory write learnings` with Pattern-Key: feedback/<name>. Read only, never overwrite.
+- Auto-memory sync: read all auto-memory files from `~/.claude/projects/*/memory/`. Start with `kvido memory read index` to see which projects and files are already tracked, then read individual files directly with the Read tool — do not use shell loops or `cat`. Prioritize files from projects matching `*kvido*` or `*-home-*--config-kvido*`. Skip `MEMORY.md` index files (they just point to other files). Classify each file by content:
+  - `feedback_*.md` → extract as feedback rules → `kvido memory write learnings` with `Pattern-Key: feedback/<name>`
+  - Files with user identity facts (name, timezone, preferences, communication style) → `kvido memory write people/_index`
+  - Files describing kvido projects, tasks, or assistant behavior → check against `kvido memory read projects/assistant` and update if new
+  - Architecture, module-map, strategy files for non-kvido projects → skip
+  Read only, never overwrite existing kvido memory with project-specific facts. Dedup: if a fact is already captured under the same Pattern-Key or people entry, skip it.
 
 Always finish with Index mode.
 

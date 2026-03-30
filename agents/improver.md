@@ -73,6 +73,85 @@ Use this limit instead of the fixed "max 5" in subsequent steps.
   done
   ```
 
+### 1b. Read Claude Code Auto-Memory
+
+After reading session messages and Slack, also read Claude Code auto-memory files. These contain user-corrected preferences, feedback, and project context that Claude Code saved automatically during sessions.
+
+#### How to read
+
+Read all `*.md` files under `~/.claude/projects/*/memory/` directly using the Read tool. Do not use shell loops or `cat` — use the Read tool for each file. Start by reading `~/.claude/projects/*/memory/MEMORY.md` indexes to discover which projects have memory, then read individual `feedback_*.md` and other files that look relevant. Prioritize directories matching `*kvido*` or `*-home-*--config-kvido*`.
+
+#### Classify each file
+
+| File pattern | Type | Default relevance |
+|---|---|---|
+| `feedback_*.md` | feedback | high — user already validated |
+| `MEMORY.md` | index | skip (it's a table of contents, not raw facts) |
+| Files with user facts (name, timezone, preferences) | user | medium |
+| Files referencing kvido or assistant | project | high |
+| Architecture, module maps, strategy for other projects | reference | low — skip |
+
+#### What to extract
+
+For each file worth reading:
+
+1. **Check if already in kvido memory** — run `kvido memory read` and compare to existing entries. Skip if the insight is already captured.
+
+2. **Classify the insight:**
+   - `type: feedback` with kvido-relevant content → candidate for kvido instruction improvement
+   - Cross-project preference (formatting, workflow, tool usage) → high-value candidate
+   - Project-specific info about non-kvido codebases → not relevant, skip
+
+3. **Assess relevance to kvido agents:**
+   - Does it affect how heartbeat, planner, or worker should behave?
+   - Does it describe a pattern the improver itself missed?
+   - Is it a constraint/rule that should be in an instruction file?
+
+#### Integration into analysis
+
+- Treat auto-memory feedback files as **additional pattern evidence** in Step 2
+- A `feedback_*.md` file from a kvido-related project counts as **high confidence** (equivalent to 3+ repetitions) — user already confirmed it was important enough to save
+- Cross-project preferences (e.g., formatting rules, tool usage rules) count as **medium confidence**
+- Propose `MEMORY` type task if the insight should be added to kvido memory
+- Propose `AGENT` type task if the insight reveals a missing kvido instruction override (e.g., add to `instructions/heartbeat.md` or `instructions/worker.md`)
+
+#### Dedup against existing instructions
+
+Before proposing, check if the insight is already captured. Read these via `kvido memory read` and the Read tool:
+- `kvido memory read` — existing kvido memory
+- `~/.config/kvido/instructions/heartbeat.md`
+- `~/.config/kvido/instructions/planner.md`
+- `~/.config/kvido/instructions/improver.md`
+- `~/.config/kvido/instructions/worker.md`
+
+If the rule already exists → skip. If partially captured → propose refinement only.
+
+#### Proposal format for auto-memory-sourced insights
+
+Use standard proposal format with a note on source:
+
+```bash
+kvido task create \
+  --title "[SELF-IMPROVE/MEMORY] <description>" \
+  --instruction "Auto-memory source: <project>/<filename>
+
+<original feedback content>
+
+Proposed action: <what to add/update in kvido memory or instructions>
+
+File: instructions/<agent>.md OR memory/<key>" \
+  --source improver \
+  --priority low
+```
+
+#### Volume limit
+
+- Max 3 additional proposals from auto-memory per run (on top of the adaptive limit from Step 0)
+- Prioritize kvido-related projects: directories matching `*kvido*` or `*-home-*--config-kvido*`
+- Skip pure reference files (architecture docs, module maps, strategy files for other projects)
+
+---
+
 ### 2. Look for patterns
 
 **Frustration:**
