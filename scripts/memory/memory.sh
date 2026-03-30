@@ -4,6 +4,7 @@
 #
 # Usage:
 #   memory.sh write <name>           → stdin → file (creates parent dirs)
+#   memory.sh append <name>          → stdin → appended to file (creates if missing)
 #   memory.sh tree                   → tree structure with absolute root path
 #   memory.sh search <query>         → grep all .md files for query, show matches
 #   memory.sh list [--type <type>]   → list memory files, optionally filter by frontmatter type
@@ -39,6 +40,7 @@ Usage: kvido memory <subcommand> [args]
 
 Subcommands:
   write <name>             Write stdin to memory file (creates parent dirs)
+  append <name>            Append stdin to memory file (creates if missing)
   tree                     Show memory directory structure
   search <query>           Search all memory files for query (grep, case-insensitive)
   list [--type <type>]     List memory files; filter by frontmatter type field
@@ -52,6 +54,7 @@ Note: 'read' subcommand was removed — agents read files directly via the Read 
 
 Examples:
   echo "new content" | kvido memory write notes
+  echo "extra line" | kvido memory append notes
   kvido memory tree
   kvido memory search "gitlab"
   kvido memory list
@@ -69,6 +72,12 @@ HELP
     FILE="$(_resolve "$2")"
     mkdir -p "$(dirname "$FILE")"
     cat > "$FILE"
+    ;;
+  append)
+    [[ -z "${2:-}" ]] && { echo "Usage: memory.sh append <name>" >&2; exit 1; }
+    FILE="$(_resolve "$2")"
+    mkdir -p "$(dirname "$FILE")"
+    cat >> "$FILE"
     ;;
   tree)
     if [[ ! -d "$MEMORY_DIR" ]]; then
@@ -152,6 +161,7 @@ Usage: memory.sh <command> [args]
 
 Commands:
   write <name>             Write stdin to memory file
+  append <name>            Append stdin to memory file
   tree                     Show memory directory structure
   search <query>           Search all memory files for query
   list [--type <type>]     List memory files, optionally filter by frontmatter type

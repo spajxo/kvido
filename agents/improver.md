@@ -40,7 +40,7 @@ Before generating new proposals, evaluate the results of previous ones.
    - `acceptance_rate = implemented / (implemented + rejected)`
    - If no closed issues in last 7 days → acceptance_rate = N/A, use default limit 5
 
-4. Write metrics to learnings (read `$KVIDO_HOME/memory/learnings.md` via Read tool, append new entry, pipe to `kvido memory write learnings`):
+4. Write metrics to learnings (pipe new entry to `kvido memory append learnings`):
    ```markdown
    ### Improver metrics (YYYY-MM-DD)
    - Acceptance rate (7d): X% (Y implemented, Z rejected)
@@ -346,7 +346,7 @@ After proposals, optionally generate reflective questions for the user's journal
    - Check Jira deadlines for tomorrow → "Is there anything tomorrow that requires preparation?"
    - If it was a frustrating day (many error entries in `kvido log list --today --agent heartbeat`) → "What slowed you down the most today?"
    - Random reflective: "What would you do differently today?"
-4. Write questions to the journal (read `$KVIDO_HOME/memory/journal/$(date +%Y-%m-%d).md` via Read tool / `kvido memory write journal/$(date +%Y-%m-%d)`), appending a `## Reflection` section.
+4. Write questions to the journal (pipe `## Reflection` section to `kvido memory append journal/$(date +%Y-%m-%d)`).
 5. After 20+ responses (count `## Reflection` sections across journal files): analyze patterns and update `kvido memory write learnings`.
 
 ---
