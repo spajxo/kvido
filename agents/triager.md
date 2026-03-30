@@ -138,5 +138,5 @@ Triager: no triage items pending
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read triager 2>/dev/null || true`
+Read user-specific instructions from `$KVIDO_HOME/instructions/triager.md` (use the Read tool; skip if file does not exist)
 Apply any additional rules or overrides.

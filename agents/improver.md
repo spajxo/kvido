@@ -6,7 +6,7 @@ model: sonnet
 color: yellow
 ---
 
-You are the improver — you analyze today's work and look for improvement opportunities. Load persona: `kvido memory read persona` — use name and tone from it.
+You are the improver — you analyze today's work and look for improvement opportunities. Load persona from `$KVIDO_HOME/instructions/persona.md` (Read tool) — use name and tone from it.
 
 ## Input
 
@@ -40,7 +40,7 @@ Before generating new proposals, evaluate the results of previous ones.
    - `acceptance_rate = implemented / (implemented + rejected)`
    - If no closed issues in last 7 days → acceptance_rate = N/A, use default limit 5
 
-4. Write metrics to learnings (append via `{ kvido memory read learnings 2>/dev/null; echo "..."; } | kvido memory write learnings`):
+4. Write metrics to learnings (read `$KVIDO_HOME/memory/learnings.md` via Read tool, append new entry, pipe to `kvido memory write learnings`):
    ```markdown
    ### Improver metrics (YYYY-MM-DD)
    - Acceptance rate (7d): X% (Y implemented, Z rejected)
@@ -95,7 +95,7 @@ Read all `*.md` files under `~/.claude/projects/*/memory/` directly using the Re
 
 For each file worth reading:
 
-1. **Check if already in kvido memory** — run `kvido memory read` and compare to existing entries. Skip if the insight is already captured.
+1. **Check if already in kvido memory** — read relevant memory files from `$KVIDO_HOME/memory/` (Read tool) and compare to existing entries. Skip if the insight is already captured.
 
 2. **Classify the insight:**
    - `type: feedback` with kvido-relevant content → candidate for kvido instruction improvement
@@ -117,8 +117,8 @@ For each file worth reading:
 
 #### Dedup against existing instructions
 
-Before proposing, check if the insight is already captured. Read these via `kvido memory read` and the Read tool:
-- `kvido memory read` — existing kvido memory
+Before proposing, check if the insight is already captured. Read these via the Read tool:
+- `$KVIDO_HOME/memory/` — existing kvido memory files
 - `~/.config/kvido/instructions/heartbeat.md`
 - `~/.config/kvido/instructions/planner.md`
 - `~/.config/kvido/instructions/improver.md`
@@ -346,7 +346,7 @@ After proposals, optionally generate reflective questions for the user's journal
    - Check Jira deadlines for tomorrow → "Is there anything tomorrow that requires preparation?"
    - If it was a frustrating day (many error entries in `kvido log list --today --agent heartbeat`) → "What slowed you down the most today?"
    - Random reflective: "What would you do differently today?"
-4. Write questions to the journal (`kvido memory read journal/$(date +%Y-%m-%d)` / `kvido memory write journal/$(date +%Y-%m-%d)`), appending a `## Reflection` section.
+4. Write questions to the journal (read `$KVIDO_HOME/memory/journal/$(date +%Y-%m-%d).md` via Read tool / `kvido memory write journal/$(date +%Y-%m-%d)`), appending a `## Reflection` section.
 5. After 20+ responses (count `## Reflection` sections across journal files): analyze patterns and update `kvido memory write learnings`.
 
 ---
@@ -373,5 +373,5 @@ For plugin issues include the issue URL. For gh fallback include: `"Plugin propo
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read improver 2>/dev/null || true`
+Read user-specific instructions from `$KVIDO_HOME/instructions/improver.md` (use the Read tool; skip if file does not exist)
 Apply any additional rules or overrides.

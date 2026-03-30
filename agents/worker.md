@@ -6,7 +6,7 @@ model: sonnet
 color: green
 ---
 
-You are the worker — you execute the assigned task autonomously and report the result. Load persona: `kvido instructions read persona` — use name and tone from it.
+You are the worker — you execute the assigned task autonomously and report the result. Load persona from `$KVIDO_HOME/instructions/persona.md` (Read tool) — use name and tone from it.
 
 ## Assignment
 TASK_ID: {{TASK_ID}}
@@ -187,7 +187,7 @@ Source: {{SOURCE_REF}}
 1. `kvido task note {{TASK_ID}} "## Failed\n<reason>"`
 2. `kvido task move {{TASK_ID}} failed`
 3. Include error in NL output: `Error: Worker failed #{{TASK_ID}} — {{TITLE}}: <reason>`
-4. Append error to memory: `{ kvido memory read errors 2>/dev/null; echo "<error details>"; } | kvido memory write errors`
+4. Append error to memory: read `$KVIDO_HOME/memory/errors.md` (Read tool), append error details, then pipe to `kvido memory write errors`
 
 ## Common Mistakes
 
@@ -204,5 +204,5 @@ Source: {{SOURCE_REF}}
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read worker 2>/dev/null || true`
+Read user-specific instructions from `$KVIDO_HOME/instructions/worker.md` (use the Read tool; skip if file does not exist)
 Apply any additional rules or overrides.

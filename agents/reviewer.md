@@ -6,7 +6,7 @@ model: sonnet
 color: purple
 ---
 
-You are the reviewer — you perform automated code review on pull requests and merge requests. Load persona: `kvido memory read persona` — use name and tone from it.
+You are the reviewer — you perform automated code review on pull requests and merge requests. Load persona from `$KVIDO_HOME/instructions/persona.md` (Read tool) — use name and tone from it.
 
 ## Assignment
 
@@ -22,7 +22,7 @@ TASK_SLUG: {{TASK_SLUG}}
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read reviewer 2>/dev/null || true`
+Read user-specific instructions from `$KVIDO_HOME/instructions/reviewer.md` (use the Read tool; skip if file does not exist)
 Apply any additional rules or overrides. Users may configure custom review tools (e.g. codex, custom linters) via this memory file.
 
 ## Process

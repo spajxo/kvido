@@ -3,11 +3,13 @@
 # Storage: $KVIDO_HOME/memory/ (markdown files)
 #
 # Usage:
-#   memory.sh read <name>            → cat file to stdout (exit 1 if missing)
 #   memory.sh write <name>           → stdin → file (creates parent dirs)
 #   memory.sh tree                   → tree structure with absolute root path
 #   memory.sh search <query>         → grep all .md files for query, show matches
 #   memory.sh list [--type <type>]   → list memory files, optionally filter by frontmatter type
+#
+# Note: 'read' subcommand removed — agents should use the Read tool directly
+#       with path $KVIDO_HOME/memory/<name>.md
 
 set -euo pipefail
 
@@ -36,7 +38,6 @@ kvido memory — persistent memory file access
 Usage: kvido memory <subcommand> [args]
 
 Subcommands:
-  read <name>              Print memory file to stdout (exit 1 if missing)
   write <name>             Write stdin to memory file (creates parent dirs)
   tree                     Show memory directory structure
   search <query>           Search all memory files for query (grep, case-insensitive)
@@ -46,8 +47,10 @@ Subcommands:
 File names resolve to $KVIDO_HOME/memory/<name>.md (auto-appends .md).
 Path traversal (.. or absolute paths) is rejected.
 
+Note: 'read' subcommand was removed — agents read files directly via the Read tool
+      with absolute path \$KVIDO_HOME/memory/<name>.md
+
 Examples:
-  kvido memory read persona
   echo "new content" | kvido memory write notes
   kvido memory tree
   kvido memory search "gitlab"
@@ -57,13 +60,9 @@ HELP
     exit 0
     ;;
   read)
-    [[ -z "${2:-}" ]] && { echo "Usage: memory.sh read <name>" >&2; exit 1; }
-    FILE="$(_resolve "$2")"
-    if [[ ! -f "$FILE" ]]; then
-      echo "ERROR: memory file not found: $FILE" >&2
-      exit 1
-    fi
-    cat "$FILE"
+    echo "DEPRECATED: 'kvido memory read' has been removed." >&2
+    echo "Use the Read tool directly with path: \$KVIDO_HOME/memory/<name>.md" >&2
+    exit 1
     ;;
   write)
     [[ -z "${2:-}" ]] && { echo "Usage: memory.sh write <name>" >&2; exit 1; }
@@ -152,11 +151,12 @@ HELP
 Usage: memory.sh <command> [args]
 
 Commands:
-  read <name>              Read memory file to stdout
   write <name>             Write stdin to memory file
   tree                     Show memory directory structure
   search <query>           Search all memory files for query
   list [--type <type>]     List memory files, optionally filter by frontmatter type
+
+Note: 'read' was removed — use the Read tool with \$KVIDO_HOME/memory/<name>.md
 
 Run 'kvido memory --help' for details.
 USAGE

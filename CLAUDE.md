@@ -46,8 +46,8 @@ settings.json.example              ← config reference template
 - **Planner is a pure scheduler** — returns NL dispatch instructions, does not execute anything.
 - **Prompts default to English**. Runtime language is configured in the user's `instructions/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The gatherer agent documents MCP fallback procedures for each source.
-- **Memory files** are accessed via `kvido memory read <name>` / `kvido memory write <name>` / `kvido memory tree` — never via hardcoded paths. Memory is unstructured — librarian manages organization autonomously.
-- **Per-agent instructions** are accessed via `kvido instructions read <agent-name>` / `kvido instructions write <agent-name>` — stored in `$KVIDO_HOME/instructions/`.
+- **Memory files** are read directly via the Read tool (`$KVIDO_HOME/memory/<name>.md`) and written via `kvido memory write <name>`. Use `kvido memory tree` to list. Memory is unstructured — librarian manages organization autonomously.
+- **Per-agent instructions** are read directly via the Read tool (`$KVIDO_HOME/instructions/<agent-name>.md`) and written via `kvido instructions write <agent-name>`.
 - **Agent instructions** are self-contained in `agents/*.md` files. The gatherer agent contains all source fetch instructions inline.
 - **Sources are toggled** via `sources.<name>.enabled` in `settings.json` (default: `true`). No separate plugin installation needed.
 - **Agent output contract** is formally defined in `docs/agent-output-contract.md` — specifies what heartbeat expects from each agent's stdout output.
@@ -57,7 +57,7 @@ settings.json.example              ← config reference template
 All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
 - `state/` — ephemeral runtime (log.jsonl, state.json, dashboard.html)
 - `tasks/` — task queue (`<status>/<id>-<slug>.md` files, task_counter)
-- `instructions/` — per-agent instruction files (read via `kvido instructions read <agent>`)
+- `instructions/` — per-agent instruction files (read directly via Read tool)
 - `memory/` — persistent, unstructured (memory.md, current.md, journals, projects, weekly, learnings) — librarian manages organization
 - `settings.json` — configuration (JSON, parsed via `scripts/config.sh`)
 - `.env` — secrets (Slack tokens, channel IDs)

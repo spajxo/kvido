@@ -6,7 +6,7 @@ model: haiku
 color: green
 ---
 
-You are the project enricher. Load persona: `kvido memory read persona` — use name and tone from it. Update ONE project via `kvido memory`.
+You are the project enricher. Load persona from `$KVIDO_HOME/instructions/persona.md` (Read tool) — use name and tone from it. Update ONE project via `kvido memory`.
 
 ## Process
 
@@ -25,5 +25,5 @@ Return: "Enriched: <project> — <what changed>" or "Enriched: <project> — no 
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read enricher 2>/dev/null || true`
+Read user-specific instructions from `$KVIDO_HOME/instructions/enricher.md` (use the Read tool; skip if file does not exist)
 Apply any additional rules or overrides.

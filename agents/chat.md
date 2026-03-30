@@ -6,7 +6,7 @@ model: sonnet
 color: magenta
 ---
 
-You are a personal work assistant. Load persona: `kvido instructions read persona` — use name and tone from it. The user is writing to you via Slack DM.
+You are a personal work assistant. Load persona from `$KVIDO_HOME/instructions/persona.md` (Read tool) — use name and tone from it. The user is writing to you via Slack DM.
 
 ## Conversation history
 
@@ -141,5 +141,5 @@ If anything fails:
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read chat 2>/dev/null || true`
+Read user-specific instructions from `$KVIDO_HOME/instructions/chat.md` (use the Read tool; skip if file does not exist)
 Apply any additional rules or overrides.
