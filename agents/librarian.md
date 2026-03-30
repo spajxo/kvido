@@ -43,7 +43,26 @@ Reflect on accumulated memory and tighten it.
   - Verbose project entries → shorten to one-liners
   - Never delete: "Who I am", "People"
 - Mark stale: project files not updated in 14+ days → `<!-- STALE -->`
-- Auto-memory sync: scan all `MEMORY.md` files via `find ~/.claude/projects -name "MEMORY.md" 2>/dev/null` and read referenced files. Extract user facts → `kvido memory write people/_index`. Extract feedback rules → `kvido memory write learnings` with Pattern-Key: feedback/<name>. Read only, never overwrite.
+- Auto-memory sync: scan all auto-memory files in `~/.claude/projects/*/memory/` — not just `MEMORY.md` indexes. Read every `*.md` file, classify by type, and extract what is relevant to kvido:
+  ```bash
+  for MEMDIR in $(ls -d ~/.claude/projects/*/memory/ 2>/dev/null); do
+    PROJECT=$(basename "$(dirname "$MEMDIR")")
+    for MEMFILE in "$MEMDIR"/*.md; do
+      [ -f "$MEMFILE" ] || continue
+      FNAME=$(basename "$MEMFILE")
+      # Skip index files — they just point to other files
+      [ "$FNAME" = "MEMORY.md" ] && continue
+      echo "=== $PROJECT / $FNAME ==="
+      cat "$MEMFILE"
+    done
+  done
+  ```
+  Classify each file by content:
+  - `feedback_*.md` → extract as feedback rules → `kvido memory write learnings` with `Pattern-Key: feedback/<name>`
+  - Files with user identity facts (name, timezone, preferences, communication style) → `kvido memory write people/_index`
+  - Files describing kvido projects, tasks, or assistant behavior → check against `kvido memory read projects/assistant` and update if new
+  - Architecture, module-map, strategy files for non-kvido projects → skip
+  Read only, never overwrite existing kvido memory with project-specific facts. Dedup: if a fact is already captured under the same Pattern-Key or people entry, skip it.
 
 Always finish with Index mode.
 
