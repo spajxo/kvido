@@ -158,7 +158,7 @@ _exec_claude_prompt() {
   # cd to KVIDO_HOME so Claude Code memory is scoped to a single consistent
   # directory regardless of where the user invoked kvido from.
   cd "$KVIDO_HOME"
-  exec claude "${args[@]}" "$prompt"
+  exec claude "${args[@]}" -- "$prompt"
 }
 
 case "${1:-}" in
