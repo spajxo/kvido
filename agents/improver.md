@@ -79,18 +79,7 @@ After reading session messages and Slack, also read Claude Code auto-memory file
 
 #### How to read
 
-```bash
-MEMORY_DIRS=$(ls -d ~/.claude/projects/*/memory/ 2>/dev/null)
-for MEMDIR in $MEMORY_DIRS; do
-  PROJECT=$(basename "$(dirname "$MEMDIR")")
-  for MEMFILE in "$MEMDIR"/*.md; do
-    [ -f "$MEMFILE" ] || continue
-    echo "=== Project: $PROJECT | File: $(basename "$MEMFILE") ==="
-    cat "$MEMFILE"
-    echo
-  done
-done
-```
+Read all `*.md` files under `~/.claude/projects/*/memory/` directly using the Read tool. Do not use shell loops or `cat` — use the Read tool for each file. Start by reading `~/.claude/projects/*/memory/MEMORY.md` indexes to discover which projects have memory, then read individual `feedback_*.md` and other files that look relevant. Prioritize directories matching `*kvido*` or `*-home-*--config-kvido*`.
 
 #### Classify each file
 
@@ -128,14 +117,12 @@ For each file worth reading:
 
 #### Dedup against existing instructions
 
-Before proposing, check if the insight is already captured:
-```bash
-kvido memory read 2>/dev/null
-cat ~/.config/kvido/instructions/heartbeat.md 2>/dev/null
-cat ~/.config/kvido/instructions/planner.md 2>/dev/null
-cat ~/.config/kvido/instructions/improver.md 2>/dev/null
-cat ~/.config/kvido/instructions/worker.md 2>/dev/null
-```
+Before proposing, check if the insight is already captured. Read these via `kvido memory read` and the Read tool:
+- `kvido memory read` — existing kvido memory
+- `~/.config/kvido/instructions/heartbeat.md`
+- `~/.config/kvido/instructions/planner.md`
+- `~/.config/kvido/instructions/improver.md`
+- `~/.config/kvido/instructions/worker.md`
 
 If the rule already exists → skip. If partially captured → propose refinement only.
 
