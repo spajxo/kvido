@@ -133,17 +133,20 @@ if [[ -f "$CURRENT_FILE" ]]; then
       # Parse table cells
       gsub(/^\|/, "", $0); gsub(/\|$/, "", $0)
       gsub(/&/, "\\&amp;"); gsub(/</, "\\&lt;"); gsub(/>/, "\\&gt;")
-      buf = buf "<tr>"
+      # Check if separator row (dashes) BEFORE writing <tr>
       n_cells = split($0, cells, "|")
+      is_sep = 0
+      for (i=1; i<=n_cells; i++) {
+        cell = cells[i]
+        gsub(/^[ ]+/, "", cell); gsub(/[ ]+$/, "", cell)
+        if (match(cell, /^[-: ]+$/)) { is_sep = 1; break }
+      }
+      if (is_sep) next
+      buf = buf "<tr>"
       for (i=1; i<=n_cells; i++) {
         cell = cells[i]
         # Trim leading/trailing spaces
         gsub(/^[ ]+/, "", cell); gsub(/[ ]+$/, "", cell)
-        # Check if separator row (dashes)
-        if (match(cell, /^[-: ]+$/)) {
-          # Skip separator rows
-          break
-        }
         buf = buf "<td>" cell "</td>"
       }
       buf = buf "</tr>\n"
@@ -856,9 +859,9 @@ function md(text) {
   s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
   // markdown tables
-  s = s.replace(/(\|[^\n]+\|\n)+/g, function(tableMatch) {
+  s = s.replace(/(\|[^\n]+\|[ \t]*\n?)+/g, function(tableMatch) {
     var lines = tableMatch.trim().split('\n');
-    var html = '<table class="md-table"><tbody>';
+    var html = '<table class="markdown-table"><tbody>';
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();
       // skip separator rows (contain only dashes, colons, pipes)
@@ -867,7 +870,7 @@ function md(text) {
       var cells = line.split('|').slice(1, -1);
       html += '<tr>';
       for (var j = 0; j < cells.length; j++) {
-        html += '<td>' + cells[j].trim() + '</td>';
+        html += '<td>' + esc(cells[j].trim()) + '</td>';
       }
       html += '</tr>';
     }
