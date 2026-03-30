@@ -3,14 +3,11 @@
 # Storage: $KVIDO_HOME/memory/ (markdown files)
 #
 # Usage:
-#   memory.sh write <name>           → stdin → file (creates parent dirs)
-#   memory.sh append <name>          → stdin → appended to file (creates if missing)
-#   memory.sh tree                   → tree structure with absolute root path
 #   memory.sh search <query>         → grep all .md files for query, show matches
 #   memory.sh list [--type <type>]   → list memory files, optionally filter by frontmatter type
 #
-# Note: 'read' subcommand removed — agents should use the Read tool directly
-#       with path $KVIDO_HOME/memory/<name>.md
+# Note: 'read', 'write', 'append', 'tree' subcommands removed — agents should
+#       use the Read/Write tools and Glob tool directly with $KVIDO_HOME/memory/ paths.
 
 set -euo pipefail
 
@@ -39,23 +36,20 @@ kvido memory — persistent memory file access
 Usage: kvido memory <subcommand> [args]
 
 Subcommands:
-  write <name>             Write stdin to memory file (creates parent dirs)
-  append <name>            Append stdin to memory file (creates if missing)
-  tree                     Show memory directory structure
   search <query>           Search all memory files for query (grep, case-insensitive)
   list [--type <type>]     List memory files; filter by frontmatter type field
                            Known types: user, feedback, project, reference
 
 File names resolve to $KVIDO_HOME/memory/<name>.md (auto-appends .md).
-Path traversal (.. or absolute paths) is rejected.
 
-Note: 'read' subcommand was removed — agents read files directly via the Read tool
-      with absolute path \$KVIDO_HOME/memory/<name>.md
+Note: 'read', 'write', 'append', 'tree' subcommands have been removed.
+      Agents should use Read/Write tools and Glob tool directly:
+        Read:   $KVIDO_HOME/memory/<name>.md
+        Write:  Write tool to $KVIDO_HOME/memory/<name>.md
+        Append: echo "..." >> $KVIDO_HOME/memory/<name>.md
+        List:   Glob $KVIDO_HOME/memory/**/*.md
 
 Examples:
-  echo "new content" | kvido memory write notes
-  echo "extra line" | kvido memory append notes
-  kvido memory tree
   kvido memory search "gitlab"
   kvido memory list
   kvido memory list --type feedback
@@ -68,18 +62,24 @@ HELP
     exit 1
     ;;
   write)
+    echo "DEPRECATED: 'kvido memory write' will be removed in a future version." >&2
+    echo "Use the Write tool directly with path: \$KVIDO_HOME/memory/<name>.md" >&2
     [[ -z "${2:-}" ]] && { echo "Usage: memory.sh write <name>" >&2; exit 1; }
     FILE="$(_resolve "$2")"
     mkdir -p "$(dirname "$FILE")"
     cat > "$FILE"
     ;;
   append)
+    echo "DEPRECATED: 'kvido memory append' will be removed in a future version." >&2
+    echo "Use direct file append: echo \"...\" >> \$KVIDO_HOME/memory/<name>.md" >&2
     [[ -z "${2:-}" ]] && { echo "Usage: memory.sh append <name>" >&2; exit 1; }
     FILE="$(_resolve "$2")"
     mkdir -p "$(dirname "$FILE")"
     cat >> "$FILE"
     ;;
   tree)
+    echo "DEPRECATED: 'kvido memory tree' will be removed in a future version." >&2
+    echo "Use the Glob tool with pattern: \$KVIDO_HOME/memory/**/*.md" >&2
     if [[ ! -d "$MEMORY_DIR" ]]; then
       echo "ERROR: memory directory not found: $MEMORY_DIR" >&2
       exit 1
@@ -160,13 +160,11 @@ HELP
 Usage: memory.sh <command> [args]
 
 Commands:
-  write <name>             Write stdin to memory file
-  append <name>            Append stdin to memory file
-  tree                     Show memory directory structure
   search <query>           Search all memory files for query
   list [--type <type>]     List memory files, optionally filter by frontmatter type
 
-Note: 'read' was removed — use the Read tool with \$KVIDO_HOME/memory/<name>.md
+Note: 'read', 'write', 'append', 'tree' were removed — use Read/Write tools
+      and Glob tool directly with \$KVIDO_HOME/memory/ paths.
 
 Run 'kvido memory --help' for details.
 USAGE

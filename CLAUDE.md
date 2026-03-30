@@ -46,7 +46,7 @@ settings.json.example              ← config reference template
 - **Planner is a pure scheduler** — returns NL dispatch instructions, does not execute anything.
 - **Prompts default to English**. Runtime language is configured in the user's `instructions/persona.md`.
 - **Exit code 10** in fetch scripts means "CLI tool not available, use MCP fallback". The gatherer agent documents MCP fallback procedures for each source.
-- **Memory files** are read directly via the Read tool (`$KVIDO_HOME/memory/<name>.md`) and written via `kvido memory write <name>`. Use `kvido memory tree` to list. Memory is unstructured — librarian manages organization autonomously.
+- **Memory files** are read and written directly via the Read/Write tools with `$KVIDO_HOME/memory/<name>.md`. To list, use Glob on `$KVIDO_HOME/memory/**/*.md`. Memory is unstructured — librarian manages organization autonomously.
 - **Per-agent instructions** are read directly via the Read tool (`$KVIDO_HOME/instructions/<agent-name>.md`) and written via `kvido instructions write <agent-name>`.
 - **Agent instructions** are self-contained in `agents/*.md` files. The gatherer agent contains all source fetch instructions inline.
 - **Sources are toggled** via `sources.<name>.enabled` in `settings.json` (default: `true`). No separate plugin installation needed.
@@ -165,7 +165,7 @@ CLI: `kvido task <create|read|move|list|count|find|note> [args]` (delegates to `
 
 Entry point: `./kvido` (symlinked to `~/.local/bin/kvido` via `kvido --install`). Resolves plugin root from `CLAUDE_PLUGIN_ROOT` → script directory → plugin registry fallback.
 
-Key commands: `kvido heartbeat`, `kvido task ...`, `kvido state ...`, `kvido config ...`, `kvido slack ...`, `kvido log ...`, `kvido memory ...`, `kvido instructions ...`, `kvido dashboard`. Run `kvido --help` for full reference.
+Key commands: `kvido heartbeat`, `kvido task ...`, `kvido state ...`, `kvido config ...`, `kvido slack ...`, `kvido log ...`, `kvido instructions ...`, `kvido dashboard`. Run `kvido --help` for full reference.
 
 ## Natural Language Triggers
 

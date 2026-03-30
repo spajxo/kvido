@@ -20,13 +20,13 @@ Sources (in rough priority order):
 3. **Current state** (`kvido current get`) — WIP items, active focus, and pinned items; use as supplementary context to spot what's actively in flight and may not be fully captured in the log
 4. **Existing memory files** — skim for facts that need updating based on today's signal
 
-For each thing worth persisting, write or update the appropriate file via `kvido memory`:
-- Project states → read `$KVIDO_HOME/memory/projects/<project>.md` (Read tool) / `kvido memory write projects/<project>` (update History + Current state; create if new)
-- New people → read `$KVIDO_HOME/memory/people/_index.md` (Read tool) / `kvido memory write people/_index`
-- Decisions → read `$KVIDO_HOME/memory/decisions/_index.md` (Read tool) / `kvido memory write decisions/_index`
-- Errors and patterns → read `$KVIDO_HOME/memory/learnings.md` (Read tool) / `kvido memory write learnings` (dedup via Pattern-Key)
-- Day summary → read `$KVIDO_HOME/memory/this-week.md` (Read tool) / `kvido memory write this-week` (include token usage from log)
-- Key changes → read `$KVIDO_HOME/memory/memory.md` (Read tool) / `kvido memory write memory` sections "Active projects" and "Key decisions"
+For each thing worth persisting, write or update the appropriate file directly via the Write tool:
+- Project states → read `$KVIDO_HOME/memory/projects/<project>.md` (Read tool) / Write tool to `$KVIDO_HOME/memory/projects/<project>.md` (update History + Current state; create if new)
+- New people → read `$KVIDO_HOME/memory/people/_index.md` (Read tool) / Write tool to `$KVIDO_HOME/memory/people/_index.md`
+- Decisions → read `$KVIDO_HOME/memory/decisions/_index.md` (Read tool) / Write tool to `$KVIDO_HOME/memory/decisions/_index.md`
+- Errors and patterns → read `$KVIDO_HOME/memory/learnings.md` (Read tool) / Write tool to `$KVIDO_HOME/memory/learnings.md` (dedup via Pattern-Key)
+- Day summary → read `$KVIDO_HOME/memory/this-week.md` (Read tool) / Write tool to `$KVIDO_HOME/memory/this-week.md` (include token usage from log)
+- Key changes → read `$KVIDO_HOME/memory/memory.md` (Read tool) / Write tool to `$KVIDO_HOME/memory/memory.md` sections "Active projects" and "Key decisions"
 
 Focus on merging signal into existing files rather than creating duplicates. Convert relative dates to absolute. Delete contradicted facts at the source.
 
@@ -36,16 +36,16 @@ Always finish with Index mode.
 
 Reflect on accumulated memory and tighten it.
 
-- Promote recurring lessons: read `$KVIDO_HOME/memory/learnings.md` (Read tool) entries with Recurrence-Count >= 3 and Status: open → promote to `$KVIDO_HOME/memory/memory.md` / `kvido memory write memory` "Learned lessons", set Status: promoted
+- Promote recurring lessons: read `$KVIDO_HOME/memory/learnings.md` (Read tool) entries with Recurrence-Count >= 3 and Status: open → promote to `$KVIDO_HOME/memory/memory.md` / Write tool to `$KVIDO_HOME/memory/memory.md` "Learned lessons", set Status: promoted
 - If memory file exceeds ~100 lines (read `$KVIDO_HOME/memory/memory.md` via Read tool), trim intelligently:
-  - Old decisions → move to `kvido memory write decisions/<slug>`
-  - Old lessons → back to `kvido memory write learnings`
+  - Old decisions → move to `$KVIDO_HOME/memory/decisions/<slug>.md` (Write tool)
+  - Old lessons → back to `$KVIDO_HOME/memory/learnings.md` (Write tool)
   - Verbose project entries → shorten to one-liners
   - Never delete: "Who I am", "People"
 - Mark stale: project files not updated in 14+ days → `<!-- STALE -->`
 - Auto-memory sync: read all auto-memory files from `~/.claude/projects/*/memory/`. Start with `$KVIDO_HOME/memory/index.md` (Read tool) to see which projects and files are already tracked, then read individual files directly with the Read tool — do not use shell loops or `cat`. Prioritize files from projects matching `*kvido*` or `*-home-*--config-kvido*`. Skip `MEMORY.md` index files (they just point to other files). Classify each file by content:
-  - `feedback_*.md` → extract as feedback rules → `kvido memory write learnings` with `Pattern-Key: feedback/<name>`
-  - Files with user identity facts (name, timezone, preferences, communication style) → `kvido memory write people/_index`
+  - `feedback_*.md` → extract as feedback rules → Write tool to `$KVIDO_HOME/memory/learnings.md` with `Pattern-Key: feedback/<name>`
+  - Files with user identity facts (name, timezone, preferences, communication style) → Write tool to `$KVIDO_HOME/memory/people/_index.md`
   - Files describing kvido projects, tasks, or assistant behavior → check against `$KVIDO_HOME/memory/projects/assistant.md` (Read tool) and update if new
   - Architecture, module-map, strategy files for non-kvido projects → skip
   Read only, never overwrite existing kvido memory with project-specific facts. Dedup: if a fact is already captured under the same Pattern-Key or people entry, skip it.
@@ -56,10 +56,10 @@ Always finish with Index mode.
 
 Remove what's no longer useful. Be conservative — delete only what's clearly expired.
 
-- `$KVIDO_HOME/memory/learnings.md` (Read tool) — promoted entries → delete via `kvido memory write learnings`
-- `$KVIDO_HOME/memory/errors.md` (Read tool) — resolved entries older than 30 days → delete via `kvido memory write errors`
-- project files (`kvido memory tree` to list) — history older than 60 days → trim (keep milestones)
-- decisions (`kvido memory tree` to list) — entries older than 90 days → move to `kvido memory write archive/decisions/<slug>`
+- `$KVIDO_HOME/memory/learnings.md` (Read tool) — promoted entries → delete via Write tool to `$KVIDO_HOME/memory/learnings.md`
+- `$KVIDO_HOME/memory/errors.md` (Read tool) — resolved entries older than 30 days → delete via Write tool to `$KVIDO_HOME/memory/errors.md`
+- project files (Glob `$KVIDO_HOME/memory/projects/**/*.md`) — history older than 60 days → trim (keep milestones)
+- decisions (Glob `$KVIDO_HOME/memory/decisions/**/*.md`) — entries older than 90 days → Write tool to `$KVIDO_HOME/memory/archive/decisions/<slug>.md`
 - Activity log — `kvido log purge --before $(date -d '7 days ago' +%Y-%m-%d) --archive`
 
 Always finish with Index mode.
@@ -68,9 +68,9 @@ Always finish with Index mode.
 
 Regenerate the memory index — a concise table of contents of everything in memory.
 
-1. `kvido memory tree` to see what exists
+1. Glob `$KVIDO_HOME/memory/**/*.md` to see what exists
 2. Skim existing files via the Read tool (`$KVIDO_HOME/memory/<name>.md`) to understand current state
-3. Write index via `kvido memory write index`:
+3. Write index via Write tool to `$KVIDO_HOME/memory/index.md`:
    - Max 80 lines, ~2KB. It's an **index**, not a dump.
    - Each entry: one line under ~150 chars: `- [Title](relative/path.md) — one-line hook` (paths relative to memory/)
    - Group by category (Projects, Decisions, Learnings, People, Journal, Weekly)

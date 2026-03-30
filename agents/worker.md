@@ -187,7 +187,7 @@ Source: {{SOURCE_REF}}
 1. `kvido task note {{TASK_ID}} "## Failed\n<reason>"`
 2. `kvido task move {{TASK_ID}} failed`
 3. Include error in NL output: `Error: Worker failed #{{TASK_ID}} — {{TITLE}}: <reason>`
-4. Append error to memory: pipe error details to `kvido memory append errors`
+4. Append error to memory: `echo "<error details>" >> $KVIDO_HOME/memory/errors.md`
 
 ## Common Mistakes
 
