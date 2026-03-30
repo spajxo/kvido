@@ -101,7 +101,7 @@ All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`), created by
 |------|---------|
 | `settings.json` | Sources config — Slack channels, GitLab repos, Jira projects, Gmail filters. See `settings.json.example` for reference. |
 | `.env` | Credentials — `SLACK_BOT_TOKEN`, `SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`, `SLACK_USER_NAME`. Optional: `ATLASSIAN_CLOUD_ID`, `ATLASSIAN_SITE`. |
-| `memory/persona.md` | Assistant name, personality, language, tone. |
+| `instructions/persona.md` | Assistant name, personality, language, tone. |
 
 Config is read at runtime via `kvido config 'dot.key'` — never parse `settings.json` directly.
 
