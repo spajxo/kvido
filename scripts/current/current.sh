@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# current.sh — read/write state/current.md with section-level operations
+# current.sh — read/write memory/current.md with section-level operations
 set -euo pipefail
 
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-STATE_FILE="${KVIDO_HOME}/state/current.md"
+STATE_FILE="${KVIDO_HOME}/memory/current.md"
 
 # shellcheck source=../lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
@@ -209,7 +209,7 @@ cmd="${1:-}"
 case "$cmd" in
   --help|-h)
     cat <<'HELP'
-kvido current — read/write current focus state (state/current.md)
+kvido current — read/write current focus state (memory/current.md)
 
 Usage: kvido current <subcommand> [--section <name>] [args...]
 
