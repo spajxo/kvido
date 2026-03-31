@@ -120,21 +120,42 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <id> fail
 
 **Throttle:** `heartbeat.sh` outputs `PLANNER_DUE=true|false` based on `planning_interval` config (default 3 — every 3rd iteration).
 
-If `PLANNER_DUE=true`: invoke skill `kvido:heartbeat-planner` and follow its instructions.
-Otherwise: skip to Step 5.
+If `PLANNER_DUE=true` and no `planner` task is pending/in_progress:
+1. `TaskCreate` subject `planner`
+2. `TaskUpdate` → `in_progress`
+3. Send status message: `kvido slack send dm planner-scanning`
+4. Dispatch planner agent via **Agent tool** (foreground — wait for completion): `kvido:planner`
+5. Read planner's NL output
+6. Log: `kvido log add heartbeat dispatch --message "planner"` with token/duration from `<usage>` tag
+7. Mark planner task as `completed` via `TaskUpdate`
+
+The planner output uses structured lines (parsed in Step 5):
+
+```
+DISPATCH gatherer
+DISPATCH triager
+DISPATCH worker 86 model=sonnet
+DISPATCH librarian
+DISPATCH_AFTER triager gatherer
+NOTIFY stale-worker 42
+```
+
+If the planner returns nothing or "No dispatches needed.", skip planner-originated dispatches in Step 5. Still proceed to Step 5 for pending `chat:*` tasks and to Step 6 for completed background agents.
+
+If `PLANNER_DUE=false`: skip to Step 5.
 
 ---
 
 ## Step 5: Dispatch Agents
 
-If planner returned DISPATCH or NOTIFY lines, or pending `chat:*` tasks exist (from Step 3): invoke skill `kvido:heartbeat-dispatch` and follow its instructions.
+If planner returned DISPATCH or NOTIFY lines, or pending `chat:*` tasks exist (from Step 3): read `$CLAUDE_PLUGIN_ROOT/skills/heartbeat-dispatch.md` (Read tool) and follow its instructions.
 Otherwise: skip to Step 6.
 
 ---
 
 ## Step 6: Collect Outputs & Deliver
 
-Invoke skill `kvido:heartbeat-deliver` if ANY of these are true:
+If ANY of these are true, read `$CLAUDE_PLUGIN_ROOT/skills/heartbeat-deliver.md` (Read tool) and follow its instructions:
 - Background agent tasks completed this iteration (`TaskList` shows `in_progress` tasks whose agents returned)
 - Planner completed this iteration (planner summary needs to be delivered)
 - Batched `notify:*` tasks are pending flush (planner tick triggers flush)
