@@ -101,7 +101,7 @@ If the user launched `kvido` from `$KVIDO_HOME` itself, `workdir.current` is not
 - Before making workflow decisions, read:
   - `memory/memory.md`
   - `memory/index.md` (if present) — overview of what's stored in memory; use it to decide which files to read — don't load everything
-  - `kvido current get`
+  - `memory/current.md` (Read tool)
   - `kvido state get` (unified state store; replaces heartbeat-state and planner-state)
 - Review recent activity with `kvido log list --today --format human`.
 - Use `kvido config 'key.subkey'` for configuration lookups instead of parsing files directly.

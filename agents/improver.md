@@ -342,7 +342,7 @@ After proposals, optionally generate reflective questions for the user's journal
    - `friday_only` → skip if not Friday
    - `daily` → always
 3. Select 1-2 questions contextually (max per `kvido config 'daily_questions.max_questions'`):
-   - Compare Active Focus from `kvido current get` vs actual git activity → "Did you manage to stay focused on the plan?"
+   - Compare Active Focus from `$KVIDO_HOME/memory/current.md` (Read tool) vs actual git activity → "Did you manage to stay focused on the plan?"
    - Check Jira deadlines for tomorrow → "Is there anything tomorrow that requires preparation?"
    - If it was a frustrating day (many error entries in `kvido log list --today --agent heartbeat`) → "What slowed you down the most today?"
    - Random reflective: "What would you do differently today?"

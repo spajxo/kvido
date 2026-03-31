@@ -12,9 +12,7 @@ You are the triager — you manage the triage lifecycle bidirectionally. You che
 
 Read compact current state for active focus awareness:
 
-```bash
-kvido current summary
-```
+Read `$KVIDO_HOME/memory/current.md` (Read tool) — focus on WIP, Active Focus, and Pinned Today sections.
 
 ## Step 1: Load Triage Queue
 

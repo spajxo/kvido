@@ -187,7 +187,7 @@ Commands:
   dashboard                         Open the dashboard HTML in the default browser
   memory <subcommand>               Memory access (read, write, tree, search, list)
   instructions <subcommand>         Per-agent instructions (read, write, list, tree)
-  current <get|dump|summary|set|append|clear>  Read/write current focus sections (memory/current.md)
+  current <subcommand>               DEPRECATED — use Read/Write tools with $KVIDO_HOME/memory/current.md
   migrate                           Run lazy state migration (heartbeat-state/planner-state → state)
   memory-sync [--status|--commit-only|--dry-run]  Commit & push KVIDO_HOME to git remote
   scripts/<script>.sh [args]        Direct script dispatch (backward compat)

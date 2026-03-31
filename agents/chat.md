@@ -28,7 +28,7 @@ If empty, the message is top-level — reply flat to the channel.
 Read compact current state for focus awareness:
 
 ```bash
-kvido current summary
+Read `$KVIDO_HOME/memory/current.md` (Read tool) — focus on WIP, Active Focus, and Pinned Today sections
 ```
 
 ## Working Directory (workdir.current)
