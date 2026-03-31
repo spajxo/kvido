@@ -1,6 +1,6 @@
 ---
 name: heartbeat-planner
-description: Heartbeat Step 4 — run planner as foreground subagent, parse DISPATCH/NOTIFY output. Load when PLANNER_DUE=true.
+description: This skill should be activated during heartbeat Step 4 when PLANNER_DUE=true. It runs the planner as a foreground subagent and parses DISPATCH/NOTIFY output lines for downstream dispatch.
 ---
 
 Run the planner as a **foreground subagent** (wait for completion). The planner evaluates state, schedules, and pending work, then returns natural language output describing what should happen this tick.

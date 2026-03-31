@@ -1,9 +1,9 @@
 ---
 name: heartbeat-dispatch
-description: Heartbeat Step 5 — dispatch agents per planner DISPATCH lines and pending chat tasks. Load when DISPATCH lines exist or chat:* tasks are pending.
+description: This skill should be activated during heartbeat Step 5 when DISPATCH lines exist from the planner or chat:* tasks are pending. It parses planner output and dispatches agents in parallel or sequentially, including pending chat tasks.
 ---
 
-Parse planner output from Step 4 line by line. Handle each line type:
+Parse planner output from Step 4 line by line. For the DISPATCH/NOTIFY line format specification, see `heartbeat-planner` skill. Handle each line type:
 
 ### `DISPATCH <agent>` — parallel by default
 
