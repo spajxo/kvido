@@ -171,11 +171,13 @@ if [[ -f "$CURRENT_FILE" ]]; then
         in_table=0
       }
       gsub(/&/, "\\&amp;"); gsub(/</, "\\&lt;"); gsub(/>/, "\\&gt;")
-      # Render markdown checkboxes
+      # Render markdown checkboxes (as list items)
       if (match($0, /^- \[x\] /)) {
-        $0 = "<span class=\"check done\">✓</span> " substr($0, 7)
+        $0 = "<div class=\"current-item check-item done\"><span class=\"check done\">✓</span> " substr($0, 7) "</div>"
+        buf = buf $0 "\n"; has_content=1; next
       } else if (match($0, /^- \[ \] /)) {
-        $0 = "<span class=\"check todo\">○</span> " substr($0, 7)
+        $0 = "<div class=\"current-item check-item\"><span class=\"check todo\">○</span> " substr($0, 7) "</div>"
+        buf = buf $0 "\n"; has_content=1; next
       }
       # Render list items
       if (match($0, /^- /)) {
@@ -519,19 +521,23 @@ tbody tr:last-child td { border-bottom: none; }
 .empty { color: var(--muted); font-style: italic; font-size: 0.82em; padding: 8px 0; }
 
 /* Current state card */
-.current-section { margin-bottom: 14px; }
+.current-section { margin-bottom: 14px; margin-top: 18px; }
+.current-section:first-child { margin-top: 0; }
 .current-section:last-child { margin-bottom: 0; }
 .current-section h3 {
   color: var(--accent); font-size: 0.78em; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; margin-bottom: 6px; padding-bottom: 4px;
+  letter-spacing: 0.06em; margin-top: 12px; margin-bottom: 6px; padding-bottom: 4px;
   border-bottom: 1px solid var(--border-subtle);
 }
+.current-section h3:first-child { margin-top: 0; }
 .current-item { color: var(--text); font-size: 0.88em; line-height: 1.5; padding: 2px 0 2px 12px; border-left: 2px solid var(--border-subtle); margin-bottom: 2px; }
 .current-item:hover { border-left-color: var(--accent); background: rgba(122,162,247,0.03); }
 .current-item.numbered { border-left-color: var(--warning); }
 .current-section strong { color: var(--text-bright); }
 .current-section code { background: var(--bg-raised); padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
-.check { font-weight: 700; margin-right: 4px; }
+.check-item { border-left-color: var(--muted); }
+.check-item.done { border-left-color: var(--success); opacity: 0.7; text-decoration: line-through; text-decoration-color: var(--muted); }
+.check { font-weight: 700; margin-right: 4px; display: inline-block; width: 1.2em; text-align: center; }
 .check.done { color: var(--success); }
 .check.todo { color: var(--muted); }
 
