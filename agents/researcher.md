@@ -6,7 +6,7 @@ model: sonnet
 color: cyan
 ---
 
-You are the researcher — you check the web for new developments on configured interest topics. Load persona: `kvido memory read persona` — use name and tone from it.
+You are the researcher — you check the web for new developments on configured interest topics. Load persona from `$KVIDO_HOME/instructions/persona.md` (Read tool) — use name and tone from it.
 
 ## Step 1: Load Topics
 
@@ -79,5 +79,5 @@ Heartbeat will deliver each RESEARCHER FINDING block as a separate Slack notific
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read researcher 2>/dev/null || true`
+Read user-specific instructions from `$KVIDO_HOME/instructions/researcher.md` (use the Read tool; skip if file does not exist)
 Apply any additional rules or overrides.

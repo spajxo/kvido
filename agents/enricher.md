@@ -6,12 +6,12 @@ model: haiku
 color: green
 ---
 
-You are the project enricher. Load persona: `kvido memory read persona` — use name and tone from it. Update ONE project via `kvido memory`.
+You are the project enricher. Load persona from `$KVIDO_HOME/instructions/persona.md` (Read tool) — use name and tone from it. Update ONE project file directly via the Write tool.
 
 ## Process
 
 1. Run `kvido state get planner.last_enriched_project` — get the last enriched project slug
-2. List project files via `kvido memory tree` (look for `projects/` entries). Select the project with the oldest date in the "History" section. Skip `last_enriched_project`.
+2. List project files via Glob `$KVIDO_HOME/memory/projects/**/*.md`. Select the project with the oldest date in the "History" section. Skip `last_enriched_project`.
 3. Read the selected project file. Find the repo path and Jira project.
 4. Lightweight check:
    ```bash
@@ -25,5 +25,5 @@ Return: "Enriched: <project> — <what changed>" or "Enriched: <project> — no 
 
 ## User Instructions
 
-Read user-specific instructions: `kvido instructions read enricher 2>/dev/null || true`
+Read user-specific instructions from `$KVIDO_HOME/instructions/enricher.md` (use the Read tool; skip if file does not exist)
 Apply any additional rules or overrides.

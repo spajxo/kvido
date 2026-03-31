@@ -3,10 +3,12 @@
 # Storage: $KVIDO_HOME/instructions/ (markdown files)
 #
 # Usage:
-#   instructions.sh read <name>            → cat file to stdout (exit 1 if missing)
 #   instructions.sh write <name>           → stdin → file (creates parent dirs)
 #   instructions.sh list                   → list instruction files
 #   instructions.sh tree                   → tree structure with absolute root path
+#
+# Note: 'read' subcommand removed — agents should use the Read tool directly
+#       with path $KVIDO_HOME/instructions/<name>.md
 
 set -euo pipefail
 
@@ -35,7 +37,6 @@ kvido instructions — per-agent instruction file access
 Usage: kvido instructions <subcommand> [args]
 
 Subcommands:
-  read <name>              Print instruction file to stdout (exit 1 if missing)
   write <name>             Write stdin to instruction file (creates parent dirs)
   list                     List instruction files
   tree                     Show instruction directory structure
@@ -47,8 +48,10 @@ Per-agent instructions are read by agents at startup. Users can customize
 agent behavior by writing instruction files named after the agent
 (e.g. `kvido instructions write worker`).
 
+Note: 'read' subcommand was removed — agents read files directly via the Read tool
+      with absolute path \$KVIDO_HOME/instructions/<name>.md
+
 Examples:
-  kvido instructions read worker
   echo "Always use conventional commits" | kvido instructions write worker
   kvido instructions list
   kvido instructions tree
@@ -56,13 +59,9 @@ HELP
     exit 0
     ;;
   read)
-    [[ -z "${2:-}" ]] && { echo "Usage: instructions.sh read <name>" >&2; exit 1; }
-    FILE="$(_resolve "$2")"
-    if [[ ! -f "$FILE" ]]; then
-      echo "ERROR: instruction file not found: $FILE" >&2
-      exit 1
-    fi
-    cat "$FILE"
+    echo "DEPRECATED: 'kvido instructions read' has been removed." >&2
+    echo "Use the Read tool directly with path: \$KVIDO_HOME/instructions/<name>.md" >&2
+    exit 1
     ;;
   write)
     [[ -z "${2:-}" ]] && { echo "Usage: instructions.sh write <name>" >&2; exit 1; }
@@ -107,10 +106,11 @@ HELP
 Usage: instructions.sh <command> [args]
 
 Commands:
-  read <name>              Read instruction file to stdout
   write <name>             Write stdin to instruction file
   list                     List instruction files
   tree                     Show instruction directory structure
+
+Note: 'read' was removed — use the Read tool with \$KVIDO_HOME/instructions/<name>.md
 
 Run 'kvido instructions --help' for details.
 USAGE
