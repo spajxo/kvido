@@ -64,23 +64,18 @@ Set by the kvido wrapper when launched from a project directory; empty if launch
 
 3. **Execute** the task per `{{INSTRUCTION}}`. Work autonomously.
 
-4. **Pre-push ancestry check** (worktree mode — always on):
-   ```bash
-   git fetch origin
-   DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/@@' || git remote show origin | grep 'HEAD branch' | cut -d: -f2 | tr -d ' ' | sed 's@^@origin/@')
-   MERGE_BASE=$(git merge-base HEAD "$DEFAULT_BRANCH")
-   MAIN_TIP=$(git rev-parse "$DEFAULT_BRANCH")
-   if [[ "$MERGE_BASE" != "$MAIN_TIP" ]]; then
-     echo "ERROR: Branch is not based on $DEFAULT_BRANCH."
-     exit 1
-   fi
-   ```
-   If this check fails: do NOT push. Report failure — the worktree was created from the wrong base.
-
-5. **Commit and push** (worktree mode):
+4. **If in worktree mode** (isolated git copy — heartbeat sets `isolation: "worktree"`):
+   - Pre-push ancestry check:
+     ```bash
+     git fetch origin
+     DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/@@' || git remote show origin | grep 'HEAD branch' | cut -d: -f2 | tr -d ' ' | sed 's@^@origin/@')
+     MERGE_BASE=$(git merge-base HEAD "$DEFAULT_BRANCH")
+     MAIN_TIP=$(git rev-parse "$DEFAULT_BRANCH")
+     [[ "$MERGE_BASE" != "$MAIN_TIP" ]] && echo "ERROR: Branch not based on $DEFAULT_BRANCH" && exit 1
+     ```
    - Commit with conventional commit message (feat/fix/chore)
-   - `git push -u origin HEAD`
-   - User creates the MR manually
+   - `git push -u origin HEAD` — user creates MR manually
+   - Never push directly to the default branch
 
 6. **Log and close:**
    - `kvido log add worker complete --message "#{{TASK_ID}}: <summary>" --task_id "{{TASK_ID}}"`

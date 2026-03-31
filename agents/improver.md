@@ -88,6 +88,7 @@ Used in Steps 1, 1b, and 4. Before proposing anything:
 - Read relevant `$KVIDO_HOME/memory/` files
 - If the rule already exists → skip. If partially captured → propose refinement only.
 - Check `state/plugin-proposals/*.md` for existing fallback proposals
+- If `GITHUB_ISSUES_ENABLED` is `true`, check open GitHub issues: `gh issue list --repo spajxo/kvido --label "improver" --state open --json title --jq '.[].title' 2>/dev/null` — skip if similar title exists
 
 ---
 
