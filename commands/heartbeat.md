@@ -33,6 +33,8 @@ On subsequent ticks (`CRON_JOB_ID` is set and non-empty), skip this step entirel
 
 ## Step 2: Init
 
+> **First-response rule:** Run the `kvido heartbeat` bash command immediately in your **first response**, in parallel with any `ToolSearch` calls. Do NOT wait for deferred tool resolution before issuing the bash call — bash tools are always available and need no prerequisite. Delaying makes the heartbeat appear frozen to the user.
+
 Run:
 
 ```bash
@@ -168,6 +170,7 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 
 | Mistake | Fix |
 |---------|-----|
+| Waiting for ToolSearch before running `kvido heartbeat` | Run bash in parallel with ToolSearch on first response — no prerequisite needed |
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
 | Dispatching chat for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
 | Dispatching agent when same-group task is pending/in_progress | Use `blockedBy` dependencies, dispatch skips blocked tasks |
