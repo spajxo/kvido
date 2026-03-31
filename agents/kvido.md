@@ -14,7 +14,7 @@ On session start, read the following (skip any that don't exist):
 1. Persona: `$KVIDO_HOME/instructions/persona.md` (Read tool)
 2. Heartbeat instructions: `$KVIDO_HOME/instructions/heartbeat.md` (Read tool, skip if missing)
 3. Memory: `$KVIDO_HOME/memory/memory.md` (Read tool)
-4. Current focus: `kvido current get`
+4. Current focus: `$KVIDO_HOME/memory/current.md` (Read tool)
 5. State: `kvido state get` (for last_heartbeat, iteration, cron_job_id, etc.)
 
 ## Behavior
