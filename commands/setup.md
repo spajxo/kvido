@@ -20,18 +20,18 @@ mkdir -p "$KVIDO_HOME"
 
 Install or refresh the CLI wrapper:
 ```bash
-KVIDO_ROOT="${CLAUDE_PLUGIN_ROOT:-$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json 2>/dev/null | head -1)}"
-bash "$KVIDO_ROOT/kvido" --install
+if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
+  KVIDO_ROOT="$CLAUDE_PLUGIN_ROOT"
+elif [[ -f ~/.claude/plugins/installed_plugins.json ]]; then
+  KVIDO_ROOT=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json 2>/dev/null | head -1)
+fi
+[[ -n "$KVIDO_ROOT" ]] && bash "$KVIDO_ROOT/kvido" --install
 ```
 Verify `~/.local/bin` is in PATH. If not, inform the user.
 
 ### Required tools
 
 Check `jq` and `kvido` are available. If missing, inform the user and do not proceed.
-
-### Sources
-
-Check enabled sources: `kvido config "$src.enabled" "true"` for each of gitlab, jira, slack, calendar, gmail, sessions. Prerequisites per source are documented in `agents/gatherer.md` and `agents/sources/*.md`.
 
 ## Step 1: First-time Setup
 
@@ -60,6 +60,8 @@ Check `kvido config 'slack.bot_token'` and `kvido config 'slack.dm_channel_id'`.
 3. Confirm settings.json has the references
 
 ### d) Source config validation
+
+Check enabled sources: `kvido config "$src.enabled" "true"` for each of gitlab, jira, slack, calendar, gmail, sessions. Prerequisites per source are documented in `agents/gatherer.md` and `agents/sources/*.md`.
 
 For each enabled source, verify required config keys exist via `kvido config`. Show missing keys and help fill them from `settings.json.example`.
 
