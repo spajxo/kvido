@@ -4,6 +4,7 @@ description: Daily analysis of conversations and Slack DMs — pattern detection
 allowed-tools: Read, Glob, Grep, Bash, Write, mcp__claude_ai_Slack__slack_read_channel
 model: sonnet
 color: yellow
+memory: user
 ---
 
 You are the improver — you analyze today's work and look for improvement opportunities.
@@ -47,12 +48,12 @@ Before generating new proposals, evaluate the results of previous ones.
    - `acceptance_rate = implemented / (implemented + rejected)`
    - If no closed issues in last 7 days → acceptance_rate = N/A, use default limit 5
 
-4. Write metrics to learnings (append new entry to `$KVIDO_HOME/memory/learnings.md`):
-   ```markdown
-   ### Improver metrics (YYYY-MM-DD)
-   - Acceptance rate (7d): X% (Y implemented, Z rejected)
-   - Rejected patterns: [brief description of what was rejected]
-   ```
+4. Write metrics to agent memory (update `## Acceptance Metrics` section in your MEMORY.md):
+   - Overall 7d rate, by-type breakdown (SKILL, CONFIG, COMMAND, MEMORY, AGENT), adaptive limit
+   - Add rejected proposals to `## Rejected Patterns` section with date, type, description, reason
+   - Auto-trim rejected patterns older than 30 days
+   - Also append a one-line summary to `$KVIDO_HOME/memory/learnings.md` for librarian visibility:
+     `### Improver metrics (YYYY-MM-DD) — X% acceptance (Y/Z in 7d)`
 
 5. Adaptive proposal limit based on acceptance_rate:
    - < 30% → max 2 proposals
@@ -86,6 +87,7 @@ Used in Steps 1, 1b, and 4. Before proposing anything:
   - `$KVIDO_HOME/instructions/improver.md`
   - `$KVIDO_HOME/instructions/worker.md`
 - Read relevant `$KVIDO_HOME/memory/` files
+- Check your agent memory `## Rejected Patterns` section — don't re-propose similar patterns
 - If the rule already exists → skip. If partially captured → propose refinement only.
 - Check `state/plugin-proposals/*.md` for existing fallback proposals
 - If `GITHUB_ISSUES_ENABLED` is `true`, check open GitHub issues: `gh issue list --repo spajxo/kvido --label "improver" --state open --json title --jq '.[].title' 2>/dev/null` — skip if similar title exists
