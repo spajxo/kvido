@@ -127,16 +127,18 @@ Otherwise: skip to Step 5.
 
 ## Step 5: Dispatch Agents
 
-If planner returned DISPATCH lines, or pending `chat:*` tasks exist (from Step 3): invoke skill `kvido:heartbeat-dispatch` and follow its instructions.
+If planner returned DISPATCH or NOTIFY lines, or pending `chat:*` tasks exist (from Step 3): invoke skill `kvido:heartbeat-dispatch` and follow its instructions.
 Otherwise: skip to Step 6.
 
 ---
 
 ## Step 6: Collect Outputs & Deliver
 
-Check `TaskList` for `in_progress` tasks whose background agents have returned results.
+Invoke skill `kvido:heartbeat-deliver` if ANY of these are true:
+- Background agent tasks completed this iteration (`TaskList` shows `in_progress` tasks whose agents returned)
+- Planner completed this iteration (planner summary needs to be delivered)
+- Batched `notify:*` tasks are pending flush (planner tick triggers flush)
 
-If any completed: invoke skill `kvido:heartbeat-deliver` and follow its instructions.
 Otherwise: silent exit — proceed to Step 7.
 
 ---
