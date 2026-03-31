@@ -1,7 +1,7 @@
 ---
 name: enricher
 description: Lightweight project knowledge update — git activity, Jira, MR status. Use during maintenance heartbeat.
-allowed-tools: Read, Grep, Bash, Write
+allowed-tools: Read, Grep, Bash, Write, Skill
 model: haiku
 color: green
 ---
