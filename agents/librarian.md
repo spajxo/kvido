@@ -41,7 +41,7 @@ Reflect on accumulated memory and tighten it.
 - Promote recurring lessons: `learnings.md` entries with Recurrence-Count >= 3 and Status: open → promote to `memory.md` "Learned lessons", set Status: promoted
 - If `memory.md` exceeds ~100 lines, trim: old decisions → `decisions/<slug>.md`, old lessons → back to `learnings.md`, verbose project entries → one-liners. Never delete: "Who I am", "People"
 - Mark stale: project files not updated in 14+ days → `<!-- STALE -->`
-- Agent-memory sync: read `~/.claude/agent-memory/*/MEMORY.md` files (Read tool). Extract cross-cutting insights into shared memory. Read-only — never overwrite or delete agent-memory files. Each agent manages its own MEMORY.md.
+- Agent-memory sync: first discover agent memory files via `Glob ~/.claude/agent-memory/*/MEMORY.md`, then read each found file (Read tool). Extract cross-cutting insights into shared memory. Read-only — never overwrite or delete agent-memory files. Each agent manages its own MEMORY.md.
 - Auto-memory sync: read all `~/.claude/projects/*/memory/` files (Read tool — no shell loops). Start with index files to discover projects, then individual files. Prioritize `*kvido*` or `*-home-*--config-kvido*`. Skip `MEMORY.md` index files. Classify:
   - `feedback_*.md` → extract as feedback rules → `learnings.md` with `Pattern-Key: feedback/<name>`
   - User identity facts → `people/_index.md`

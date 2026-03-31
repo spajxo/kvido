@@ -176,12 +176,13 @@ Type: reviewer-error
 
 ## Agent Memory
 
-Update your agent memory as you review code:
-- Code style patterns per project/repo (naming conventions, formatting preferences)
-- Recurring review issues (common mistakes in specific codebases)
-- Project conventions you discover (architecture patterns, testing approaches)
-- Quality patterns (what typically passes vs fails review)
+Update your agent memory as you review code. Always tag entries with the repo name (e.g. `[spajxo/kvido]`) to avoid cross-repo contamination:
+- `[repo] Code style:` naming conventions, formatting preferences
+- `[repo] Common issues:` recurring mistakes in that codebase
+- `[repo] Conventions:` architecture patterns, testing approaches
+- `[repo] Quality patterns:` what typically passes vs fails review
 
+When reviewing, consult only entries matching the current repo. Don't apply patterns from other repos.
 Don't duplicate facts from `$KVIDO_HOME/memory/` — agent memory is for review-specific knowledge.
 
 ## Critical Rules
