@@ -118,25 +118,26 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <id> fail
 
 ## Step 4: Run Planner
 
-If `PLANNER_DUE=true`: load skill `kvido:heartbeat-planner` and follow its instructions.
+**Throttle:** `heartbeat.sh` outputs `PLANNER_DUE=true|false` based on `planning_interval` config (default 3 — every 3rd iteration).
 
+If `PLANNER_DUE=true`: invoke skill `kvido:heartbeat-planner` and follow its instructions.
 Otherwise: skip to Step 5.
 
 ---
 
 ## Step 5: Dispatch Agents
 
-If planner returned `DISPATCH` lines, or `chat:*` tasks are pending: load skill `kvido:heartbeat-dispatch` and follow its instructions.
-
+If planner returned DISPATCH lines, or pending `chat:*` tasks exist (from Step 3): invoke skill `kvido:heartbeat-dispatch` and follow its instructions.
 Otherwise: skip to Step 6.
 
 ---
 
 ## Step 6: Collect Outputs & Deliver
 
-If any background agent tasks completed this iteration: load skill `kvido:heartbeat-deliver` and follow its instructions.
+Check `TaskList` for `in_progress` tasks whose background agents have returned results.
 
-Otherwise: silent exit.
+If any completed: invoke skill `kvido:heartbeat-deliver` and follow its instructions.
+Otherwise: silent exit — proceed to Step 7.
 
 ---
 
