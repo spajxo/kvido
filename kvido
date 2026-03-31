@@ -158,7 +158,7 @@ _exec_claude_prompt() {
   # cd to KVIDO_HOME so Claude Code memory is scoped to a single consistent
   # directory regardless of where the user invoked kvido from.
   cd "$KVIDO_HOME"
-  exec claude "${args[@]}" -- "$prompt"
+  exec claude --agent kvido:kvido "${args[@]}" -- "$prompt"
 }
 
 case "${1:-}" in
@@ -177,7 +177,7 @@ case "${1:-}" in
 Usage: kvido [command] [args...]
 
 Commands:
-  (none)                            Launch Claude with /loop 10m /kvido:heartbeat
+  (none)                            Launch Claude with heartbeat agent + /loop 10m /kvido:heartbeat
   heartbeat                         Run heartbeat data gather
   task <subcommand> [args]          Manage tasks (list, find, move, note, update, create...)
   state <subcommand>                Read/write unified state store (get, set, increment, delete, list)
