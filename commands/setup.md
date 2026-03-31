@@ -16,119 +16,54 @@ KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 mkdir -p "$KVIDO_HOME"
 ```
 
-All state, memory, config, and .env files live in `$KVIDO_HOME` (default: `~/.config/kvido`).
-
 ### kvido CLI
 
-Install or refresh the `kvido` CLI wrapper in `~/.local/bin/`:
-
+Install or refresh the CLI wrapper:
 ```bash
-# Prefer CLAUDE_PLUGIN_ROOT (set by Claude Code in plugin context)
-if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
-  KVIDO_ROOT="$CLAUDE_PLUGIN_ROOT"
-else
-  KVIDO_ROOT=$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json 2>/dev/null | head -1)
-fi
+KVIDO_ROOT="${CLAUDE_PLUGIN_ROOT:-$(jq -r '.plugins | to_entries[] | select(.key | startswith("kvido@")) | .value[0].installPath' ~/.claude/plugins/installed_plugins.json 2>/dev/null | head -1)}"
 bash "$KVIDO_ROOT/kvido" --install
 ```
-
-This always refreshes `~/.local/bin/kvido` to a wrapper that prefers `CLAUDE_PLUGIN_ROOT` at runtime and falls back to the registry for standalone shell invocations.
-
 Verify `~/.local/bin` is in PATH. If not, inform the user.
 
 ### Required tools
 
-```bash
-for cmd in jq kvido; do
-  if command -v "$cmd" &>/dev/null; then
-    echo "OK: $cmd $(command -v $cmd)"
-  else
-    echo "MISSING: $cmd — required"
-  fi
-done
-```
-
-If a required tool is missing, inform the user and offer installation. Do not proceed until required prerequisites are met.
+Check `jq` and `kvido` are available. If missing, inform the user and do not proceed.
 
 ### Sources
 
-Check which sources are enabled in configuration:
-```bash
-for src in gitlab jira slack calendar gmail sessions; do
-  enabled=$(kvido config "$src.enabled" "true" 2>/dev/null || echo "true")
-  echo "$src: $enabled"
-done
-```
-
-For each enabled source, validate prerequisites and config keys. The setup requirements per source are documented in `agents/gatherer.md` (Setup section for each source):
-
-| Source | Prerequisites | Required Config |
-|--------|---------------|-----------------|
-| gitlab | glab | gitlab.repos |
-| jira | acli or Atlassian MCP | jira.projects |
-| slack | Slack Bot Token | slack.bot_token, slack.dm_channel_id, slack.channels or slack.dm_channels |
-| calendar | Google Calendar MCP | — |
-| gmail | gws or Gmail MCP | gmail.watch_query |
-| sessions | — | — |
-
-To disable a source: set `<name>.enabled` to `false` in settings.json.
+Check enabled sources: `kvido config "$src.enabled" "true"` for each of gitlab, jira, slack, calendar, gmail, sessions. Prerequisites per source are documented in `agents/gatherer.md` and `agents/sources/*.md`.
 
 ## Step 1: First-time Setup
 
-Detection: `$KVIDO_HOME/settings.json` does not exist OR `$KVIDO_HOME/instructions/persona.md` does not exist → run first-time setup.
-If both exist, skip to Step 2.
+Detection: `$KVIDO_HOME/settings.json` or `$KVIDO_HOME/instructions/persona.md` does not exist → run first-time setup. If both exist, skip to Step 2.
 
 ### a) Config files
 
-If files don't exist, create them:
+If missing, create:
 - `$KVIDO_HOME/settings.json` — copy `settings.json.example` from the plugin
-- `$KVIDO_HOME/.env` — create with empty values (these are the secrets referenced from settings.json):
-  ```
-  SLACK_BOT_TOKEN=
-  SLACK_DM_CHANNEL_ID=
-  SLACK_USER_ID=
-  SLACK_USER_NAME=
-  ```
+- `$KVIDO_HOME/.env` — create with empty `SLACK_BOT_TOKEN`, `SLACK_DM_CHANNEL_ID`, `SLACK_USER_ID`, `SLACK_USER_NAME`
 
-`settings.json` references these env vars using `"$ENV_VAR"` syntax (e.g. `"slack.bot_token": "$SLACK_BOT_TOKEN"`).
-`kvido config` resolves the references automatically from `.env`.
+`settings.json` references env vars using `"$ENV_VAR"` syntax. `kvido config` resolves them from `.env`.
 
 ### b) Persona setup
 
 If `$KVIDO_HOME/instructions/persona.md` does not exist:
-1. Ask the user:
-   - "What language should Kvido use? (default: en)"
-   - "What's your assistant's name? What tone and personality should it have? (e.g. brief and factual, friendly, formal...)"
-2. From the answers, create `instructions/persona.md` with the appropriate structure (name, language, tone, personality, URL formats). Store language as `language: en` (or the chosen language code).
-3. Also create the `memory/` directory if it doesn't exist.
+1. Ask: language (default: en), assistant name, tone/personality
+2. Create `instructions/persona.md` with appropriate structure
+3. Create `memory/` directory if missing
 
-### c) Slack credentials (settings.json + .env)
+### c) Slack credentials
 
-Check that Slack credentials resolve correctly:
-```bash
-kvido config 'slack.bot_token'
-kvido config 'slack.dm_channel_id'
-```
-If these return empty or fail:
-1. Explain the two-file approach: secrets live in `.env`, settings.json references them with `"$VAR_NAME"` syntax
-2. Help the user fill in `.env` with actual token and channel values
-3. Confirm that `settings.json` has the `"$SLACK_BOT_TOKEN"` references (default from `settings.json.example`)
+Check `kvido config 'slack.bot_token'` and `kvido config 'slack.dm_channel_id'`. If empty:
+1. Explain: secrets in `.env`, settings.json references them with `"$VAR_NAME"` syntax
+2. Help fill `.env` with actual values
+3. Confirm settings.json has the references
 
-### d) Source plugin config validation
+### d) Source config validation
 
-For each enabled source, verify that `settings.json` contains the required config keys (see Step 0 table). Use `kvido config` to check.
-
-For each missing config:
-1. Show which keys are missing and what they configure
-2. Offer to help fill them in (show examples from `settings.json.example`)
-3. If the user provides values, update the corresponding keys in `settings.json`
-
-Skip this step for plugins that are not installed.
-
+For each enabled source, verify required config keys exist via `kvido config`. Show missing keys and help fill them from `settings.json.example`.
 
 ## Step 2: Structure Bootstrap
-
-Create missing directories:
 
 ```bash
 mkdir -p $KVIDO_HOME/memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
@@ -136,120 +71,44 @@ mkdir -p $KVIDO_HOME/instructions
 mkdir -p $KVIDO_HOME/tasks/{triage,todo,in-progress,done,failed,cancelled}
 ```
 
-For each missing file, create with minimal content:
-- `$KVIDO_HOME/memory/memory.md` → `# Memory` + sections (Who I am, Active projects, Key decisions, Lessons learned, People)
-- `$KVIDO_HOME/memory/this-week.md` → `# Week YYYY-Www`
-- `$KVIDO_HOME/memory/learnings.md` → `# Learnings`
-- `$KVIDO_HOME/memory/errors.md` → `# Errors`
-- `$KVIDO_HOME/memory/people/_index.md` → `# People`
-- `$KVIDO_HOME/memory/decisions/_index.md` → `# Decisions`
-- Heartbeat state: `kvido state list heartbeat.` — if empty, initialize via `kvido state set heartbeat.iteration_count 0` etc.
-- Planner state: `kvido state get planner.last_run` — state initializes lazily if missing
-- Source health: `kvido state list source-health.` — initializes lazily
+Create missing files with minimal content:
+- `memory/memory.md` → `# Memory` + sections (Who I am, Active projects, Key decisions, Lessons learned, People)
+- `memory/this-week.md` → `# Week YYYY-Www`
+- `memory/learnings.md` → `# Learnings`
+- `memory/errors.md` → `# Errors`
+- `memory/people/_index.md` → `# People`
+- `memory/decisions/_index.md` → `# Decisions`
+- Heartbeat state: initialize `heartbeat.iteration_count 0` etc. if empty
+- Planner/source-health state: initializes lazily
 
 ## Step 3: Planning Bootstrap
 
-If `$KVIDO_HOME/memory/planner.md` does not exist, create it with default content:
+If `$KVIDO_HOME/instructions/planner.md` does not exist, create with default content including:
+- Morning briefing rule (workday, after wh_start)
+- EOD journal rule (workday, after 16:00)
+- Friday weekly summary rule
 
-```markdown
-# Planner — personal instructions
-
-Add your personal instructions for the planner here.
-
-## Examples
-- 11:00: Remind me to take a stretch break
-- Monday: Review the status of all open MRs from last week
-
-## Scheduled Rules
-
-### Morning briefing
-- Trigger: workday, after wh_start, not yet today
-- Actions:
-  1. Gather data from all sources (full fetch)
-  2. Summarize yesterday's work, overnight changes
-  3. Show today's calendar + recommendations
-  4. Set focus by writing `$KVIDO_HOME/memory/current.md` (Write tool)
-  5. Run log purge: kvido log purge --before today --archive
-- Deliver: slack (template: morning)
-- Track: `kvido state set planner.last_morning_date <date>`
-
-### EOD journal
-- Trigger: workday, after 16:00 (or user invokes), not yet today
-- Actions:
-  1. Gather data from all sources
-  2. Create journal in memory/journal/YYYY-MM-DD.md
-  3. Worklog check (Jira — compare time vs logged)
-  4. Dispatch librarian for memory extraction
-  5. Update current focus by writing `$KVIDO_HOME/memory/current.md` (Write tool) — clear focus, set notes for tomorrow
-  6. Reset iteration count: `kvido state set heartbeat.iteration_count 0`
-- Deliver: slack (template: eod)
-- Track: `kvido state set planner.last_eod_date <date>`
-
-### Friday weekly summary
-- Trigger: friday, after EOD journal
-- Actions:
-  1. Read all journals from this week
-  2. Create weekly summary in memory/weekly/YYYY-Www.md
-  3. Archive journals older than 14 days
-- Deliver: slack (template: event)
-```
+Template should include trigger conditions, actions (gather, summarize, journal, focus update via Write tool to `memory/current.md`), delivery template names, and state tracking keys.
 
 ## Step 4: EOD Catch-up
 
-Check `memory/journal/` — if a journal is missing for days where git activity exists:
-- Dispatch librarian: "Extraction mode for YYYY-MM-DD. Create a catch-up journal from available data."
+Check `memory/journal/` — if missing for days with git activity, dispatch librarian: "Extraction mode for YYYY-MM-DD."
 
 ## Step 5: Rotation
 
-### Weekly
-If `memory/this-week.md` contains a previous week:
-- Move content to `memory/weekly/YYYY-Www.md`
-- Reset to the current week
-
-### Archive
-- Journals older than 14 days → `memory/archive/journal/`
-- Weeklies older than 8 weeks → `memory/archive/weekly/`
-- Decisions older than 90 days → `memory/archive/decisions/`
+- **Weekly:** If `memory/this-week.md` is from previous week → move to `memory/weekly/YYYY-Www.md`, reset
+- **Archive:** Journals > 14d → `archive/journal/`, weeklies > 8w → `archive/weekly/`, decisions > 90d → `archive/decisions/`
 
 ## Step 6: Health Check
 
-### Slack config check
-Verify that Slack credentials resolve correctly via `kvido config`:
-```bash
-kvido config 'slack.bot_token'
-kvido config 'slack.dm_channel_id'
-kvido config 'slack.user_id'
-kvido config 'slack.user_name'
-```
-If any return empty → log warning. Remind user to fill `.env` with actual values.
-
-### Binary check
-```bash
-command -v jq &>/dev/null || echo "WARNING: jq not found"
-```
-
-### Config validation
-Run `kvido config --validate` to check config format. For each enabled source, verify required keys exist (see Step 0 table). Log warnings for missing keys.
-
-### Source health
-For each enabled source that has a health capability (gitlab, jira, slack, gmail), run the health check and write results via `kvido state set source-health.<name>.status <ok|error>` + `kvido state set source-health.<name>.timestamp "$(date -Iseconds)"`.
-
-Skip disabled sources or those without a health capability.
-
-### Git connectivity
-For each repo in `settings.json` (only if gitlab source is enabled):
-```bash
-test -d <path>/.git || echo "WARNING: repo <name> missing at <path>"
-```
-
-### Uncommitted assistant changes
-```bash
-git status --porcelain
-```
-If non-empty → warning.
+1. **Slack:** Verify `kvido config 'slack.bot_token'`, `slack.dm_channel_id`, `slack.user_id`, `slack.user_name` resolve. Log warnings for empty values.
+2. **Config:** `kvido config --validate` for format. Check required keys per enabled source.
+3. **Source health:** For enabled sources with health capability, run check and write `source-health.<name>.status` to state.
+4. **Git:** For gitlab repos, verify `.git` exists at configured paths.
+5. **Uncommitted changes:** `git status --porcelain` — warn if non-empty.
 
 ## Output
 
-If everything is OK → "Setup complete: all good"
-If files were created → list what was created
-If catch-up was performed → list what was filled in
+- All OK → "Setup complete: all good"
+- Files created → list what was created
+- Catch-up performed → list what was filled in
