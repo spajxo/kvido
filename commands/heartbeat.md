@@ -47,7 +47,7 @@ The `user:` prefix means the message is from the workspace owner (you). The `bot
 
 The script automatically: increments iteration_count, sets last_heartbeat, reads Slack DM.
 
-Read current state via `kvido current get`. Review recent activity via `kvido log list --today --format human --limit 20` on planner ticks (`PLANNER_DUE=true`), or `--limit 5` on non-planner ticks.
+Read current state from `$KVIDO_HOME/memory/current.md` (Read tool). Review recent activity via `kvido log list --today --format human --limit 20` on planner ticks (`PLANNER_DUE=true`), or `--limit 5` on non-planner ticks.
 
 ### Recovery check
 
@@ -86,7 +86,7 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <id> fail
      kvido task note <id|slug> "Cancelled via chat"
      kvido task move <id|slug> cancelled
      ```
-   - Simple status questions answerable from `kvido current get` and `kvido log list --today`
+   - Simple status questions answerable from `$KVIDO_HOME/memory/current.md` (Read tool) and `kvido log list --today`
 
    For trivial: compose response, create `notify:chat:<ts>` task via `TaskCreate` (mark in_progress via `TaskUpdate`), deliver via `kvido slack reply dm <ts> chat --var message="<response>"` (use the message `ts` as the thread root — this threads the reply under the original message), mark task completed via `TaskUpdate`. Log: `kvido log add chat inline --message "<summary>"`
 

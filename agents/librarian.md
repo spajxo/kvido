@@ -17,7 +17,7 @@ Gather today's signal and persist what's worth remembering.
 Sources (in rough priority order):
 1. **Journal file** (path in prompt) — the user's narrative of the day
 2. **Activity log** (`kvido log list --today --format json`) — machine record of what happened
-3. **Current state** (`kvido current get`) — WIP items, active focus, and pinned items; use as supplementary context to spot what's actively in flight and may not be fully captured in the log
+3. **Current state** (`$KVIDO_HOME/memory/current.md`, Read tool) — WIP items, active focus, and pinned items; use as supplementary context to spot what's actively in flight and may not be fully captured in the log
 4. **Existing memory files** — skim for facts that need updating based on today's signal
 
 For each thing worth persisting, write or update the appropriate file directly via the Write tool:

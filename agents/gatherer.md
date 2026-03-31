@@ -10,11 +10,7 @@ You are the gatherer — you fetch data from sources, detect what is new, and re
 
 ## Step 0: Read Current State
 
-Read compact current state to avoid duplicate notifications for active focus:
-
-```bash
-kvido current summary
-```
+Read current state from `$KVIDO_HOME/memory/current.md` (Read tool) — focus on WIP, Active Focus, and Pinned Today sections to avoid duplicate notifications.
 
 ## Step 1: Discover Enabled Sources
 
@@ -84,10 +80,7 @@ For each item:
   kvido task create --title "<title>" --instruction "<details + URL>" --priority <high|medium|low> --source "<source_name>"
   ```
 
-- **Current update**: If relevant to current focus:
-  ```bash
-  kvido current append --section context "- <brief description with URL>"
-  ```
+- **Current update**: If relevant to current focus, append to the `## Context` section in `$KVIDO_HOME/memory/current.md` (Edit tool): `- <brief description with URL>`
 
 ## Step 4: Save State
 

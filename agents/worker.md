@@ -123,7 +123,7 @@ source_ref: "1773933088.437"
 
 ## What Worker must not do
 - Push to remote repositories without an explicit instruction in the task
-- Modify current context (owned by heartbeat — use `kvido current get` to read, never write directly)
+- Modify current context (owned by heartbeat — read `$KVIDO_HOME/memory/current.md` via Read tool, never write directly)
 - Dispatch additional workers (no worker → worker chaining)
 - Send more than 3 Slack messages per task
 - Continue if task is in done/failed/cancelled (check at start)
@@ -195,7 +195,7 @@ Source: {{SOURCE_REF}}
 |---------|-----|
 | Sending Slack messages directly via `kvido slack` | Worker returns NL output — heartbeat handles all delivery |
 | Chaining workers (dispatching another worker from worker) | Forbidden. Create a follow-up task via `kvido task create` instead. |
-| Writing current context directly | Owned by heartbeat. Read via `kvido current get`. Worker logs via `kvido log add` and writes task notes. |
+| Writing current context directly | Owned by heartbeat. Read `$KVIDO_HOME/memory/current.md` (Read tool). Worker logs via `kvido log add` and writes task notes. |
 | Skipping cancel check at start | Always `kvido task find {{TASK_ID}}` first — task may have been cancelled while queued |
 | Continuing past timeout | Check elapsed time; if > `task_timeout_minutes`, emit partial result and move to `failed/` |
 | Pushing to main in worktree mode | Always push to feature branch. Never push directly to main. |

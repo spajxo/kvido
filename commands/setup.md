@@ -168,7 +168,7 @@ Add your personal instructions for the planner here.
   1. Gather data from all sources (full fetch)
   2. Summarize yesterday's work, overnight changes
   3. Show today's calendar + recommendations
-  4. Set focus via `kvido current set`
+  4. Set focus by writing `$KVIDO_HOME/memory/current.md` (Write tool)
   5. Run log purge: kvido log purge --before today --archive
 - Deliver: slack (template: morning)
 - Track: `kvido state set planner.last_morning_date <date>`
@@ -180,7 +180,7 @@ Add your personal instructions for the planner here.
   2. Create journal in memory/journal/YYYY-MM-DD.md
   3. Worklog check (Jira — compare time vs logged)
   4. Dispatch librarian for memory extraction
-  5. Update current focus via `kvido current set` (clear focus, set notes for tomorrow)
+  5. Update current focus by writing `$KVIDO_HOME/memory/current.md` (Write tool) — clear focus, set notes for tomorrow
   6. Reset iteration count: `kvido state set heartbeat.iteration_count 0`
 - Deliver: slack (template: eod)
 - Track: `kvido state set planner.last_eod_date <date>`
