@@ -14,6 +14,10 @@ A **Claude Code plugin** — not a traditional application. No compilation, no t
 └── plugin.json                    ← plugin metadata (name, version)
 agents/                            ← subagent definitions (YAML frontmatter + markdown)
 commands/                          ← slash commands (heartbeat, setup)
+skills/
+├── heartbeat-planner.md           ← Step 4: planner dispatch (lazy-loaded)
+├── heartbeat-dispatch.md          ← Step 5: agent dispatch (lazy-loaded)
+└── heartbeat-deliver.md           ← Step 6: output collection & delivery (lazy-loaded)
 scripts/
 ├── config.sh                      ← configuration reader (dot-notation, env var resolution)
 ├── fetch/                         ← source fetch scripts
@@ -105,18 +109,20 @@ If the user launched `kvido` from `$KVIDO_HOME` itself, `workdir.current` is not
 ## Runtime architecture
 
 ```
-heartbeat (cron, every 10 min) — scripts/heartbeat/
+kvido wrapper → claude --agent kvido:heartbeat → /loop 10m /kvido:heartbeat
+│
+heartbeat (cron, every 10 min) — commands/heartbeat.md
 ├── reads Slack DM (via core slack.sh)
 ├── handles trivial chat inline
 ├── dispatches chat on non-trivial Slack DM
-├── runs planner (every Nth tick via planning_interval, foreground)
+├── runs planner (skill: kvido:heartbeat-planner, loaded when PLANNER_DUE=true)
 │   └── planner returns DISPATCH/NOTIFY lines parsed by heartbeat
-├── dispatches agents per planner DISPATCH lines (parallel by default)
+├── dispatches agents (skill: kvido:heartbeat-dispatch, loaded when DISPATCH lines exist)
 │   ├── gatherer — fetches all enabled sources, detects changes
 │   ├── triager — manages triage lifecycle, polls reactions
 │   ├── worker — executes tasks
 │   └── maintenance agents (librarian, researcher, enricher, improver)
-├── collects NL outputs from all agents
+├── collects outputs & delivers (skill: kvido:heartbeat-deliver, loaded when agents complete)
 └── delivers notifications to Slack (heartbeat is the sole communicator)
 ```
 
