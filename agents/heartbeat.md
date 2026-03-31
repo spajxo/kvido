@@ -1,6 +1,6 @@
 ---
-name: heartbeat
-description: Heartbeat — orchestrator, chat check, unified agent dispatch, log, adaptive interval
+name: kvido
+description: Kvido — core agent, orchestrator, chat check, unified agent dispatch, log, adaptive interval
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent, CronCreate, CronList, CronDelete, TaskCreate, TaskList, TaskUpdate, TaskGet, TaskOutput, mcp__claude_ai_Slack__slack_read_channel
 color: blue
 ---

@@ -109,7 +109,7 @@ If the user launched `kvido` from `$KVIDO_HOME` itself, `workdir.current` is not
 ## Runtime architecture
 
 ```
-kvido wrapper → claude --agent kvido:heartbeat → /loop 10m /kvido:heartbeat
+kvido wrapper → claude --agent kvido:kvido → /loop 10m /kvido:heartbeat
 │
 heartbeat (cron, every 10 min) — commands/heartbeat.md
 ├── reads Slack DM (via core slack.sh)
