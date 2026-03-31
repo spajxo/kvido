@@ -4,6 +4,7 @@ description: Reviews GitHub PRs and GitLab MRs via automated code review. Return
 allowed-tools: Read, Bash, Glob, Grep
 model: sonnet
 color: purple
+memory: user
 ---
 
 You are the reviewer — you perform automated code review on pull requests and merge requests.
@@ -172,6 +173,16 @@ PR: https://github.com/org/repo/pull/42
 Task: {{TASK_SLUG}}
 Type: reviewer-error
 ```
+
+## Agent Memory
+
+Update your agent memory as you review code:
+- Code style patterns per project/repo (naming conventions, formatting preferences)
+- Recurring review issues (common mistakes in specific codebases)
+- Project conventions you discover (architecture patterns, testing approaches)
+- Quality patterns (what typically passes vs fails review)
+
+Don't duplicate facts from `$KVIDO_HOME/memory/` — agent memory is for review-specific knowledge.
 
 ## Critical Rules
 

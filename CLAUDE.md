@@ -44,6 +44,7 @@ settings.json.example              ← config reference template
 - **Per-agent instructions** are at `$KVIDO_HOME/instructions/<agent-name>.md` (Read tool to read, `kvido instructions write` to write).
 - **Agent instructions** are self-contained in `agents/*.md` files. Each agent has a `## Context Loading` block listing what to read at start.
 - **Sources are toggled** via `<name>.enabled` in `settings.json` (default: `true`). Details in `agents/gatherer.md` and `agents/sources/*.md`.
+- **Agent-memory** (`memory: user`) gives agents persistent per-agent knowledge at `~/.claude/agent-memory/<name>/`. Used for operational self-knowledge (patterns, calibration, preferences). Shared `$KVIDO_HOME/memory/` remains for facts, projects, and decisions. Agents: kvido, chat, planner, improver, reviewer.
 
 ## KVIDO_HOME
 
