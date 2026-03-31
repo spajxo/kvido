@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Checks configured interest topics for new findings via web search.
-allowed-tools: Read, Bash, WebSearch, WebFetch
+allowed-tools: Read, Bash, WebSearch, WebFetch, Skill
 model: sonnet
 color: cyan
 ---

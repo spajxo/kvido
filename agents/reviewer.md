@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Reviews GitHub PRs and GitLab MRs via automated code review. Returns PASS/FAIL findings for heartbeat delivery.
-allowed-tools: Read, Bash, Glob, Grep
+allowed-tools: Read, Bash, Glob, Grep, Skill
 model: sonnet
 color: purple
 memory: user

@@ -1,7 +1,7 @@
 ---
 name: chat
 description: Handles non-trivial Slack DM messages — lookup, task creation. Returns NL output for heartbeat delivery.
-allowed-tools: Read, Glob, Grep, Bash, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Google_Calendar__gcal_list_events
+allowed-tools: Read, Glob, Grep, Bash, Skill, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Google_Calendar__gcal_list_events
 model: sonnet
 color: magenta
 memory: user

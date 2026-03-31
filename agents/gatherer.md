@@ -1,7 +1,7 @@
 ---
 name: gatherer
 description: Fetches data from configured sources, detects changes, returns NL findings via stdout with dedup via kvido state.
-allowed-tools: Read, Glob, Grep, Bash, mcp__claude_ai_Google_Calendar__gcal_list_events, mcp__claude_ai_Gmail__gmail_search_messages, mcp__claude_ai_Gmail__gmail_read_message, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel
+allowed-tools: Read, Glob, Grep, Bash, Skill, mcp__claude_ai_Google_Calendar__gcal_list_events, mcp__claude_ai_Gmail__gmail_search_messages, mcp__claude_ai_Gmail__gmail_read_message, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel
 model: sonnet
 color: cyan
 ---
