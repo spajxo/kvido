@@ -129,6 +129,14 @@
     }
   },
 
+  "agents": {
+    "_comment": "Agent dispatch WIP limits — max concurrent agents per group.",
+    "wip_limits": {
+      "maintenance": 2,
+      "gatherer": 1
+    }
+  },
+
   "worker": {
     "work_dir": "state/work",
     "max_concurrent": 2,

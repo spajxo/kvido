@@ -155,9 +155,22 @@ If the planner returns nothing or "No dispatches needed.", skip planner-originat
 
 Parse planner output from Step 4 line by line. Handle each line type:
 
-### `DISPATCH <agent>` — parallel by default
+### `DISPATCH <agent>` — parallel by default, subject to WIP limits
 
-For each `DISPATCH` line, dispatch the agent with `run_in_background: true`:
+For each `DISPATCH` line, check WIP limits before dispatching:
+
+**WIP limit check for agent groups:** Some agents are subject to concurrent dispatch limits:
+- `maintenance` — default max 2 concurrent (configurable: `agents.wip_limits.maintenance`)
+- `gatherer` — default max 1 concurrent (configurable: `agents.wip_limits.gatherer`)
+
+If the agent group has reached its WIP limit:
+- Do NOT dispatch the agent
+- Create a `pending` task (via `TaskCreate` subject `<agent>:pending-<timestamp>` or equivalent tracking)
+- Set `addBlockedBy` to point to the in_progress task(s) of the same group
+- Log: `kvido log add heartbeat skip --message "<agent> WIP limit reached (<current>/<limit>)"`
+- Optionally notify via `NOTIFY agent-wip-limit-reached <agent>`
+
+If the agent group is below WIP limit:
 
 1. `TaskCreate` subject `<agent>` (or `worker:<id>`, `maintenance:<agent>`)
 2. `TaskUpdate` → `in_progress`
@@ -166,7 +179,7 @@ For each `DISPATCH` line, dispatch the agent with `run_in_background: true`:
 
 **Worker specifics:** `DISPATCH worker <id> [model=<model>]` — parse the numeric task ID and optional `model=` token from the DISPATCH line (default: `sonnet` if absent). Read task first (`kvido task read "$id"`), if SOURCE_REF is set send ack via `kvido slack reply`, then `kvido task move "$id" in-progress`. Pass the resolved model name as the `model` parameter to the Agent tool when dispatching the worker. Pass `TASK_ID` (numeric), `TASK_SLUG`, and `TITLE` (from task read output) to the worker agent.
 
-**Maintenance specifics:** If another `maintenance:*` task is pending/in_progress, set `addBlockedBy`.
+**Maintenance specifics:** Check WIP limit first (default: 2 concurrent). If below limit, dispatch. If another `maintenance:*` task is pending/in_progress and still below WIP limit, both can run in parallel. Use `blockedBy` only if WIP limit forces sequential execution.
 
 ### `DISPATCH_AFTER <agent> <after-agent>` — sequential
 
@@ -325,13 +338,55 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 
 ---
 
+## Agent WIP Limit Implementation
+
+When implementing Step 5 dispatch logic for agent groups with WIP limits, use this pattern:
+
+```bash
+# Helper function to check WIP limit for an agent group
+check_agent_wip_limit() {
+  local agent_group="$1"  # "maintenance", "gatherer", etc.
+  local current_count=$(TaskList | grep -c "subject=.*:${agent_group}.*status=in_progress" 2>/dev/null || echo 0)
+  local config_key="agents.wip_limits.${agent_group}"
+  local wip_limit=$(kvido config "$config_key" 2>/dev/null || echo "")
+  
+  if [[ -z "$wip_limit" ]]; then
+    return 0  # No limit configured, always allow
+  fi
+  
+  if (( current_count >= wip_limit )); then
+    return 1  # WIP limit reached
+  fi
+  
+  return 0  # Below limit, allow dispatch
+}
+
+# Usage in dispatch loop:
+if check_agent_wip_limit "maintenance"; then
+  # Dispatch maintenance agent
+  TaskCreate subject "maintenance:${agent_name}" ...
+  TaskUpdate status "in_progress"
+  Agent ... run_in_background=true
+else
+  # WIP limit reached — create pending task with blockedBy
+  active_task=$(TaskList | grep "subject=.*:maintenance.*status=in_progress" | head -1)
+  TaskCreate subject "maintenance:${agent_name}-pending-$(date +%s)" addBlockedBy="$active_task"
+  kvido log add heartbeat skip --message "maintenance:${agent_name} WIP limit reached"
+fi
+```
+
+For agents without explicit WIP limits (planner, triager, worker dispatches), use existing patterns (worker has a global WIP limit, chat uses single `blockedBy` per task).
+
+---
+
 ## Common Mistakes
 
 | Mistake | Fix |
 |---------|-----|
 | Passing message `ts` as `THREAD_TS` | `THREAD_TS` = `thread_ts` field (parent), never `ts` (message itself) |
 | Dispatching chat for trivial messages ("ok", "thanks") | Classify first — greetings, acks, sleep/turbo/cancel are always inline |
-| Dispatching agent when same-group task is pending/in_progress | Use `blockedBy` dependencies, dispatch skips blocked tasks |
+| Dispatching agent when same-group task is pending/in_progress | Check WIP limit via `agents.wip_limits.{group}` config. If at limit, create pending task with `blockedBy`. Don't exceed configured concurrency. |
+| Exceeding agent group WIP limits | maintenance (default 2), gatherer (default 1), chat (max 1). Use `blockedBy` to queue excess dispatches. |
 | Forgetting to mark orphaned tasks on recovery | All `in_progress` tasks from previous session must be cleaned up in Step 2 |
 | Outputting verbose text when nothing happened | Silent exit is default. No output = nothing to report. |
 | Not updating `last_chat_ts` after processing | Always `kvido state set heartbeat.last_chat_ts` after chat handling |
@@ -347,7 +402,7 @@ If `TARGET_PRESET != ACTIVE_PRESET`:
 - **State-first.** Read from files, write to files.
 - **Time from system.** `date -Iseconds`.
 - **Task tools (`TaskCreate`/`TaskList`/`TaskUpdate`) are the single source of truth** for dispatch tracking. No file-based locks.
-- **Concurrency via dependencies.** Same-group tasks use `blockedBy`. Max 1 concurrent per group (maintenance, worker, chat). Planner runs foreground. Other agents run in background.
+- **Concurrency via WIP limits.** Agent dispatch respects configured WIP limits per group: `maintenance` (default 2), `gatherer` (default 1), worker (enforced via WIP count), chat (max 1 via `blockedBy`). When a group's WIP limit is reached, queue pending tasks with `blockedBy` dependencies. Planner runs foreground. Other agents run in background.
 - **Notify TODOs are ephemeral.** Completed notify TODOs can be cleaned up after logging.
 - **Heartbeat owns ALL delivery.** No agent sends Slack messages directly. Chat delivery in Step 3/6, all other agent outputs in Step 6.
 - **No event bus.** No `kvido event emit/read/ack`.
