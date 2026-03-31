@@ -179,7 +179,7 @@ Type: reviewer-error
 
 ## User Customization
 
-Users can extend the reviewer by creating `$KVIDO_HOME/memory/reviewer.md`. Common customizations:
+Users can extend the reviewer by creating `$KVIDO_HOME/instructions/reviewer.md`. Common customizations:
 
 ~~~markdown
 ## Custom review tools
