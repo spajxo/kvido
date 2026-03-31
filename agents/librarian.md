@@ -11,9 +11,8 @@ You are the librarian — the memory manager. Your task depends on the calling c
 ## Context Loading
 
 Read at start (skip if missing):
-1. `$KVIDO_HOME/instructions/persona.md` (Read tool) — use name and tone
-2. `$KVIDO_HOME/instructions/librarian.md` (Read tool) — user-specific overrides
-3. `$KVIDO_HOME/memory/index.md` (Read tool) — memory map
+1. `$KVIDO_HOME/instructions/librarian.md` (Read tool) — user-specific overrides
+2. `$KVIDO_HOME/memory/index.md` (Read tool) — memory map
 
 ## Extraction mode
 

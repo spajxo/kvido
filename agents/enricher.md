@@ -11,9 +11,8 @@ You are the project enricher. Update ONE project file directly via the Write too
 ## Context Loading
 
 Read at start (skip if missing):
-1. `$KVIDO_HOME/instructions/persona.md` (Read tool) — use name and tone
-2. `$KVIDO_HOME/instructions/enricher.md` (Read tool) — user-specific overrides
-3. `$KVIDO_HOME/memory/index.md` (Read tool) — memory map
+1. `$KVIDO_HOME/instructions/enricher.md` (Read tool) — user-specific overrides
+2. `$KVIDO_HOME/memory/index.md` (Read tool) — memory map
 
 ## Process
 
