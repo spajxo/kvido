@@ -1,7 +1,7 @@
 ---
 name: improver
 description: Daily analysis of conversations and Slack DMs — pattern detection, assistant improvement proposals. Scoring/feedback loop + task pattern analysis.
-allowed-tools: Read, Glob, Grep, Bash, Write, Skill, mcp__claude_ai_Slack__slack_read_channel
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Skill, mcp__claude_ai_Slack__slack_read_channel, mcp__claude_ai_Slack__slack_search_public_and_private
 model: sonnet
 color: yellow
 memory: user
