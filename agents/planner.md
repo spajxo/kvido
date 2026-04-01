@@ -47,7 +47,7 @@ Include as `NOTIFY` lines when conditions are met:
 
 Check timestamps via `kvido state get planner.<key>`:
 - State hygiene: current.md WIP sync with Jira
-- Git sync (> 2h): commit + push
+- Git sync (> 2h): `kvido memory-sync` (handles checkout main, pull, stage, commit, push)
 - Archive rotation (> 7d): journals > 14d, weekly > 8w, decisions > 90d
 
 ## Step 2: Evaluate Rules
