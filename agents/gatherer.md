@@ -18,22 +18,50 @@ Read at start (skip if missing):
 
 For each source (gitlab, jira, slack, calendar, gmail, sessions), check: `kvido config "<name>.enabled" "true"`. Skip where enabled != "true". If no sources enabled, output `Gatherer: no sources enabled` and stop.
 
-## Step 2: Fetch Data
+## Step 2: Determine Schedule Phase & Fetch Data
 
-For each enabled source, run fetch commands. Capture stdout, stderr, and exit code.
+### Schedule phase
 
-- **Exit 0** — success, proceed to change detection
-- **Exit 10** — CLI not available, follow MCP fallback for that source (not an error)
-- **Other non-zero** — log error: `kvido log add gatherer error --message "fetch failed: <name>: <stderr>"`. Continue with remaining sources.
+Determine current phase based on state and time:
+1. Read last run date: `kvido state get gatherer.last_run 2>/dev/null`
+2. Get current time: `date +%H`
+   - If no `gatherer.last_run` today → phase is **morning**
+   - If hour >= 17 and `kvido state get gatherer.eod_done 2>/dev/null` != today → phase is **eod**
+   - Otherwise → phase is **heartbeat**
+3. Every 3rd heartbeat run (check iteration from `kvido state get gatherer.heartbeat_count`): use **heartbeat-maintenance** instead
 
-### Per-source instructions
+### Fetch per source
 
-Read the dedicated file for each enabled source:
-```bash
-cat "$(kvido --root)/agents/sources/<source>.md"
-```
+For each enabled source:
+
+1. **Read** source definition: `agents/sources/<source>.md` (Read tool, resolve path via `$(kvido --root)/agents/sources/<source>.md`)
+2. **Find the Schedule section** in the source file — locate the current phase (morning/heartbeat/heartbeat-maintenance/eod) and identify which **capabilities** to execute
+3. **Execute the CLI commands** listed under each capability:
+   - Substitute `YYYY-MM-DD` → actual date per schedule (yesterday for morning fetch, today for heartbeat/eod)
+   - Run each CLI command via Bash tool
+   - Capture stdout, stderr, and exit code
+4. **Handle exit codes:**
+   - **Exit 0** — success, proceed to change detection with CLI output
+   - **Exit 10** — CLI not available. Check source definition for **"MCP fallback (exit 10)"** section. If present, follow its steps exactly. If absent, log warning: `kvido log add gatherer warn --message "<source>: CLI unavailable, no MCP fallback defined"` and skip source.
+   - **Other non-zero** — log error: `kvido log add gatherer error --message "fetch failed: <source>: <stderr>"`. Continue with remaining sources.
 
 Sources: `gitlab.md`, `jira.md`, `slack.md`, `calendar.md`, `gmail.md`, `sessions.md`. Read only files for enabled sources.
+
+### Rules
+
+- **CLI commands are the primary data source.** Execute them first, always.
+- **MCP tools are supplementary.** Only use when a source definition explicitly lists them (in "MCP fallback (exit 10)" section or via `use_mcp` flag).
+- **Never improvise with MCP tools.** If a source definition does not mention an MCP tool for a capability, do not invent one.
+- **Schedule determines commands.** Only run capabilities listed for the current phase — not all capabilities.
+
+### Update counters
+
+After all sources are fetched:
+```bash
+kvido state set gatherer.heartbeat_count "$((${PREV_COUNT:-0} + 1))"
+# If eod phase:
+kvido state set gatherer.eod_done "$(date +%Y-%m-%d)"
+```
 
 ## Step 3: Change Detection via State Dedup
 
