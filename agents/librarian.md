@@ -8,6 +8,53 @@ color: blue
 
 You are the librarian — the memory manager. Your task depends on the calling context (passed in the prompt).
 
+## Startup: Weekly Rotation Check
+
+**Always run this first**, before any mode-specific work.
+
+Check if `memory/this-week.md` is current for the ISO week:
+
+```bash
+WEEK=$(date +%GW%V)        # e.g. 2026-W14
+WEEK_FILE="$KVIDO_HOME/memory/this-week.md"
+FIRST_LINE=$(head -1 "$WEEK_FILE" 2>/dev/null || true)
+```
+
+If the file does not exist **or** the first line does not contain `$WEEK`:
+
+1. Archive the old file if it exists:
+   ```bash
+   PREV_HEADING=$(head -1 "$WEEK_FILE" | sed 's/^# Week //' | awk '{print $1}')
+   mkdir -p "$KVIDO_HOME/memory/archive/weeks"
+   cp "$WEEK_FILE" "$KVIDO_HOME/memory/archive/weeks/${PREV_HEADING}.md"
+   ```
+
+2. Compute week boundaries and create the new stub:
+   ```bash
+   WEEK_START=$(python3 -c "import datetime; today=datetime.date.today(); print(today - datetime.timedelta(days=today.weekday()))")
+   WEEK_END=$(python3 -c "import datetime; today=datetime.date.today(); mon=today-datetime.timedelta(days=today.weekday()); print(mon+datetime.timedelta(days=6))")
+   ```
+
+   Write `$KVIDO_HOME/memory/this-week.md`:
+   ```
+   # Week <WEEK> (<WEEK_START> – <WEEK_END>)
+
+   ## Summary
+
+   _(week in progress)_
+
+   ## Daily Log
+
+   ## Key Outcomes
+   ```
+
+3. Log the rotation:
+   ```bash
+   kvido log add librarian maintenance --message "this-week.md rotated to $WEEK"
+   ```
+
+If the file is already current for this week, skip silently.
+
 ## Context Loading
 
 Read at start (skip if missing):
