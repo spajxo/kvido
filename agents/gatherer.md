@@ -35,9 +35,9 @@ Determine current phase based on state and time:
 For each enabled source:
 
 1. **Read** source definition: `agents/sources/<source>.md` (Read tool, resolve path via `$(kvido --root)/agents/sources/<source>.md`)
-2. **Find the Schedule section** in the source file — locate the current phase (morning/heartbeat/heartbeat-maintenance/eod) and identify which **capabilities** to execute
-3. **Execute the CLI commands** listed under each capability:
-   - Substitute `YYYY-MM-DD` → actual date per schedule (yesterday for morning fetch, today for heartbeat/eod)
+2. **Find the Schedule section** in the source file — match the current phase against schedule entries. Sources may use variant names (e.g. `heartbeat-quick`, `heartbeat-full` instead of plain `heartbeat`). Match by prefix: phase `heartbeat` matches `heartbeat`, `heartbeat-quick`, `heartbeat-full`, etc.
+3. **Execute the CLI commands** listed under each matched capability:
+   - Substitute `YYYY-MM-DD` → the date specified by the source's schedule entry (each source defines its own: e.g. "yesterday" or "today" — follow what the source file says, do not assume)
    - Run each CLI command via Bash tool
    - Capture stdout, stderr, and exit code
 4. **Handle exit codes:**
@@ -58,7 +58,8 @@ Sources: `gitlab.md`, `jira.md`, `slack.md`, `calendar.md`, `gmail.md`, `session
 
 After all sources are fetched:
 ```bash
-kvido state set gatherer.heartbeat_count "$((${PREV_COUNT:-0} + 1))"
+PREV_COUNT=$(kvido state get gatherer.heartbeat_count 2>/dev/null || echo 0)
+kvido state set gatherer.heartbeat_count "$(( PREV_COUNT + 1 ))"
 # If eod phase:
 kvido state set gatherer.eod_done "$(date +%Y-%m-%d)"
 ```
