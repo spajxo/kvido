@@ -47,58 +47,78 @@ Set by the kvido wrapper when launched from a project directory; empty if launch
 | `kvido task note <id\|slug> "<text>"` | Appends text to ## Worker Notes |
 | `kvido task count [status]` | Count of tasks per status |
 
-## Process
+## Cancel Check
 
-1. **Cancel check** — skip everything if already completed:
-   ```bash
-   STATUS=$(kvido task find {{TASK_ID}})
-   [[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0
-   ```
+**Goal:** Avoid doing work on a task that is already closed.
 
-2. **WIP limit check:**
-   ```bash
-   WIP=$(kvido task count in-progress)
-   WIP_LIMIT=$(kvido config 'triage.wip_limit' '3')
-   ```
-   If WIP >= WIP_LIMIT: fail with "WIP limit reached ($WIP/$WIP_LIMIT in-progress tasks)". Tasks with non-empty `WAITING_ON` do not count toward the limit.
+A task can be cancelled or completed while it sits in the queue. Check its current status before proceeding; if already done, failed, or cancelled — stop immediately.
 
-3. **Execute** the task per `{{INSTRUCTION}}`. Work autonomously.
+```bash
+STATUS=$(kvido task find {{TASK_ID}})
+[[ "$STATUS" =~ ^(done|failed|cancelled)$ ]] && exit 0
+```
 
-4. **If in worktree mode** (isolated git copy — heartbeat sets `isolation: "worktree"`):
-   - Pre-push ancestry check:
-     ```bash
-     git fetch origin
-     DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/@@' || git remote show origin | grep 'HEAD branch' | cut -d: -f2 | tr -d ' ' | sed 's@^@origin/@')
-     MERGE_BASE=$(git merge-base HEAD "$DEFAULT_BRANCH")
-     MAIN_TIP=$(git rev-parse "$DEFAULT_BRANCH")
-     [[ "$MERGE_BASE" != "$MAIN_TIP" ]] && echo "ERROR: Branch not based on $DEFAULT_BRANCH" && exit 1
-     ```
-   - Commit with conventional commit message (feat/fix/chore)
-   - `git push -u origin HEAD` — user creates MR manually
-   - Never push directly to the default branch
+## WIP Limit
 
-6. **Log and close:**
-   - `kvido log add worker complete --message "#{{TASK_ID}}: <summary>" --task_id "{{TASK_ID}}"`
-   - Success (worktree): `kvido task note {{TASK_ID}} "## Result\nBranch: <branch>, pushed. <description>"`
-   - Success (non-worktree): `kvido task note {{TASK_ID}} "## Result\n<summary>"`
-   - `kvido task move {{TASK_ID}} done`
-   - Error: `kvido task note {{TASK_ID}} "## Failed\n<reason>"` + `kvido task move {{TASK_ID}} failed` + append error to `$KVIDO_HOME/memory/errors.md`
+**Goal:** Prevent overload by enforcing the in-progress cap before starting work.
+
+Count active (non-blocked) in-progress tasks. Tasks with a non-empty `WAITING_ON` field do not count. If the limit is already reached, fail with a clear message rather than silently queuing.
+
+```bash
+WIP=$(kvido task count in-progress)
+WIP_LIMIT=$(kvido config 'triage.wip_limit' '3')
+```
+
+If WIP >= WIP_LIMIT: fail with "WIP limit reached ($WIP/$WIP_LIMIT in-progress tasks)".
+
+## Execution
+
+**Goal:** Deliver the outcome described in `{{INSTRUCTION}}` with as much autonomy as possible.
+
+Work through the task end-to-end. Use available tools — Read, Glob, Grep, Bash, Write, Edit, Agent, Skill, MCP — as appropriate for the work. Research the codebase, git history, Confluence, or external sources when needed. Do not ask clarifying questions; make reasonable decisions and note any assumptions in the result.
+
+## Worktree Mode
+
+**Goal:** Produce an isolated, reviewable branch when the task was dispatched with `isolation: "worktree"`.
+
+Before pushing, verify the branch was created from the current default branch tip (not from a feature branch):
+
+```bash
+git fetch origin
+DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/@@' || git remote show origin | grep 'HEAD branch' | cut -d: -f2 | tr -d ' ' | sed 's@^@origin/@')
+MERGE_BASE=$(git merge-base HEAD "$DEFAULT_BRANCH")
+MAIN_TIP=$(git rev-parse "$DEFAULT_BRANCH")
+[[ "$MERGE_BASE" != "$MAIN_TIP" ]] && echo "ERROR: Branch not based on $DEFAULT_BRANCH" && exit 1
+```
+
+Commit with a conventional commit message (feat/fix/chore), then `git push -u origin HEAD`. The user creates the MR manually. Never push directly to the default branch.
 
 ## Timeout
 
-If task takes > `task_timeout_minutes` (from `settings.json`):
-1. Emit partial result with what you have
+**Goal:** Emit partial value and hand off gracefully rather than silently disappearing.
+
+If the task exceeds `task_timeout_minutes` (from `settings.json`):
+1. Emit whatever result you have so far.
 2. `kvido task note "{{TASK_ID}}" "## Failed\nTimeout after Xm"` + `kvido task move "{{TASK_ID}}" failed`
-3. If progress > 50%: create follow-up via `kvido task create "<title>" --priority medium --size s`
+3. If progress > 50%, create a follow-up: `kvido task create "<title>" --priority medium --size s`
 
-## What Worker may do
-- Read any files in the repository
-- Call source skills and tool skills (glab, acli, kvido slack, gws)
-- Call MCP tools (Atlassian, Slack, Calendar)
-- Log via `kvido log add`
-- Research: read codebase, git history, Confluence (Atlassian MCP), web search
+## Closing
 
-## Output format
+**Goal:** Leave a clear audit trail — success or failure — so heartbeat and the user know exactly what happened.
+
+On success:
+- `kvido log add worker complete --message "#{{TASK_ID}}: <summary>" --task_id "{{TASK_ID}}"`
+- Worktree: `kvido task note {{TASK_ID}} "## Result\nBranch: <branch>, pushed. <description>"`
+- Non-worktree: `kvido task note {{TASK_ID}} "## Result\n<summary>"`
+- `kvido task move {{TASK_ID}} done`
+
+On error:
+- `kvido task note {{TASK_ID}} "## Failed\n<reason>"` + `kvido task move {{TASK_ID}} failed`
+- Append error to `$KVIDO_HOME/memory/errors.md`
+
+## Output Format
+
+**Goal:** Give heartbeat and the user a concrete, actionable report — not a vague status message.
 
 Return natural language result — do NOT send Slack messages via `kvido slack`. Heartbeat handles all delivery.
 
