@@ -70,7 +70,7 @@ Check state timestamps (`planner.<key>`) for these housekeeping tasks. Dispatch 
 
 For each rule, determine whether its trigger condition is met (time, day, interval, or state), and whether it has already run (check `kvido state get planner.<key>`). Rules that trigger and have not yet run this cycle should either create a task or add a dispatch line. Record the rule as done after its side effects succeed.
 
-Rules create tasks via `kvido task create` with `--source planner`. Rules that dispatch agents appear as `DISPATCH` lines in the output. Rules stay in `instructions/planner.md` — do not invent rules that are not there.
+Rules create tasks via `kvido task create` with `--source planner` and appropriate `--priority` and `--size` based on the rule's context. Rules that dispatch agents appear as `DISPATCH` lines in the output. Rules stay in `instructions/planner.md` — do not invent rules that are not there.
 
 ---
 
