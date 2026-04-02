@@ -102,34 +102,17 @@ Used in Steps 1, 1b, and 4. Before proposing anything:
 
 ### 1b. Read Claude Code Auto-Memory
 
-Read auto-memory files from `~/.claude/projects/*/memory/`. Use the Read tool — not shell loops. Start with `MEMORY.md` indexes to discover projects, then read individual files. Prioritize directories matching `*kvido*` or `*-home-*--config-kvido*`.
+**Goal:** Surface improvement signals already validated by the user — captured in Claude Code's auto-memory — that haven't yet made it into kvido instructions or memory.
 
-**Classify each file:**
-- `feedback_*.md` — high confidence (user already validated; counts as 3+ repetitions)
-- `MEMORY.md` — skip (index only)
-- User facts (name, timezone, preferences) — medium confidence
-- kvido/assistant references — high confidence
-- Architecture/strategy for non-kvido projects — skip
+Auto-memory lives under `~/.claude/projects/*/memory/`. It contains feedback, preferences, and behavioral rules the user has already accepted. Prioritize paths matching `*kvido*` or `*-home-*--config-kvido*` — these are most likely to be kvido-relevant.
 
-**For each relevant file:**
-1. Check against existing memory and instruction files (see Dedup Reference) — skip if already captured
-2. If kvido-relevant → candidate for instruction improvement (`AGENT` type task)
-3. If cross-project preference → candidate for kvido memory (`MEMORY` type task)
+Files classified as `feedback_*.md` carry high confidence (user already validated; treat as 3+ repetitions). User identity/preference files are medium confidence. Architecture or strategy files for non-kvido projects are out of scope — skip them. `MEMORY.md` index files tell you what exists but aren't themselves proposal sources.
 
-Use standard proposal format with source note:
-```bash
-kvido task create \
-  --title "[SELF-IMPROVE/MEMORY] <description>" \
-  --instruction "Auto-memory source: <project>/<filename>
+The outcome of reading auto-memory is a set of candidates for proposals:
+- Anything kvido-relevant that's not yet in instructions → `AGENT` type proposal
+- Any cross-project user preference not yet in memory → `MEMORY` type proposal
 
-<original feedback content>
-
-Proposed action: <what to add/update in kvido memory or instructions>
-
-File: instructions/<agent>.md OR memory/<key>" \
-  --source improver \
-  --priority low
-```
+Before creating a proposal, run the standard dedup check (see Dedup Reference). Use the same proposal format as other steps, adding the source note (file path) in the instruction body.
 
 Max 3 additional proposals from auto-memory per run (on top of the adaptive limit from Step 0).
 
