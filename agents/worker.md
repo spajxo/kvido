@@ -136,6 +136,40 @@ Source: {{SOURCE_REF}}
 - `Type:` — always `worker-report`
 - `Source:` — include only if `{{SOURCE_REF}}` is non-empty
 
+## Sandbox Constraints
+
+**Goal:** Avoid misdiagnosing sandbox-induced auth failures as credential problems.
+
+### acli and gws on Linux (D-Bus / gnome-keyring)
+
+On Linux, `acli` and `gws` store credentials in the gnome-keyring, which is accessed via a D-Bus Unix socket. When the Claude Code sandbox blocks Unix domain sockets (default behavior), both tools return `unauthorized` even when credentials are valid and the Atlassian/Google network domains are allowed.
+
+Symptoms:
+- `acli issue list` or any acli command exits with `unauthorized` or `401`
+- `gws` commands fail with authentication errors despite correct credentials
+
+Fix — ensure `~/.config/kvido/settings.json` contains:
+
+```json
+{
+  "sandbox": {
+    "allowAllUnixSockets": true,
+    "filesystem": {
+      "read": {
+        "allowOnly": [
+          "~/.config/acli",
+          "~/.config/gws"
+        ]
+      }
+    }
+  }
+}
+```
+
+If you see `unauthorized` from `acli` or `gws`, check sandbox settings first — do not assume credentials are wrong or try to re-authenticate.
+
+---
+
 ## Common Mistakes
 
 | Mistake | Fix |

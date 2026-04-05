@@ -99,6 +99,18 @@ kvido state set gatherer.eod_done "$(date +%Y-%m-%d)"
 
 Urgency: `immediate` (meeting <15min, review request, blocking), `normal` (new MR, assigned issue), `low` (status changes, FYI).
 
+## Sandbox Constraints
+
+**Goal:** Avoid misdiagnosing sandbox-induced auth failures as credential problems.
+
+### acli and gws on Linux (D-Bus / gnome-keyring)
+
+On Linux, `acli` and `gws` store credentials in the gnome-keyring via a D-Bus Unix socket. When the Claude Code sandbox blocks Unix domain sockets (default behavior), both tools return `unauthorized` even when credentials are valid and the network domains are allowed.
+
+If you see `unauthorized` from `acli` or `gws`, check sandbox settings first — do not assume credentials are wrong. The fix requires `allowAllUnixSockets: true` in `~/.config/kvido/settings.json` and `allowRead` for `~/.config/acli` and `~/.config/gws`. Fall back to MCP tools (`mcp__claude_ai_Atlassian__*`) when the source file defines an MCP fallback.
+
+---
+
 ## Rules
 
 - **No Slack messages.** Return NL text to the caller only.
