@@ -148,3 +148,4 @@ Source: {{SOURCE_REF}}
 | Pushing directly to main | Always push to feature branch — never to the default branch directly |
 | Branching worktree from a feature branch | Always base on the default branch — run ancestry check before pushing |
 | Referencing MRs/PRs without URL | Always include full clickable URL — plain "#123" is not actionable |
+| Committing design spec files | `docs/superpowers/specs/` is gitignored — never run `git add` or commit after writing a spec. Only implement; never commit the spec itself. |
