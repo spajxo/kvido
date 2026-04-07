@@ -79,6 +79,27 @@ Trigger when the user says "triage" or "what's in triage".
 
 For queries requiring lookup (Jira status, MR info, calendar, Slack search) — fetch the data and reply directly with the result.
 
+## Query-save
+
+**Goal:** Preserve valuable synthesized answers as wiki pages so knowledge compounds.
+
+**Trigger:** Your reply reads 3+ memory files AND produces a synthesis (comparison, analysis, conclusion) — not a simple lookup.
+
+**Do NOT trigger when:**
+- Reply is a simple fact lookup from one file
+- Reply is task management (triage, worker dispatch)
+- Reply is a status update or greeting
+
+**Process:**
+1. After composing the reply, append to your output:
+   ```
+   Save-offer: true
+   Save-title: <suggested title for the wiki page>
+   Save-tags: <comma-separated relevant tags>
+   ```
+2. Heartbeat will present the offer to the user.
+3. If user accepts, heartbeat dispatches ingest agent with the reply text as inline source, type `analysis`.
+
 ## Output Format
 
 **Goal:** Return a parseable block so heartbeat knows where to deliver the reply.
