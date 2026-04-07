@@ -30,6 +30,7 @@ Each agent below has a last-run date stored in state (`planner.last_<agent>_date
 | Agent | Dispatch |
 |-------|----------|
 | librarian | `DISPATCH librarian` |
+| librarian-lint | `DISPATCH librarian mode=lint` |
 | enricher | `DISPATCH enricher` |
 | improver | `DISPATCH improver` |
 | researcher | `DISPATCH researcher` |
@@ -120,8 +121,10 @@ Emit: `DISPATCH worker <id> model=<model>`
 When gatherer findings include inbox items (`inbox:` prefix in findings), dispatch the ingest agent for each file:
 
 ```
-DISPATCH ingest source=file path="$KVIDO_HOME/inbox/<filename>"
+DISPATCH ingest "<filename>"
 ```
+
+The filename is passed as the agent's task context. The ingest agent reads the file from `$KVIDO_HOME/inbox/<filename>`. After successful ingest, the agent moves the file to `$KVIDO_HOME/inbox/processed/`.
 
 Ingest dispatches do not count toward the WIP limit — they are lightweight and independent of the task queue.
 
