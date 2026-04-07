@@ -6,7 +6,7 @@ model: sonnet
 color: purple
 ---
 
-Read a single source and integrate its knowledge into `$KVIDO_HOME/memory/`.
+Read sources and integrate knowledge into `$KVIDO_HOME/memory/`.
 
 ## Startup
 
@@ -16,8 +16,17 @@ Read a single source and integrate its knowledge into `$KVIDO_HOME/memory/`.
 
 ## Input
 
-**Goal:** Accept exactly one source.
+**Goal:** Determine what to ingest.
 
+When dispatched with a specific source (URL, file path, or inline text), process that source.
+
+When dispatched without a specific source (e.g., from planner), check the inbox:
+```bash
+INBOX_PATH=$(kvido config 'inbox.path' "$KVIDO_HOME/inbox")
+```
+Then `Glob("$INBOX_PATH/*")` — process each file found.
+
+Source types:
 - **URL** — fetch with WebFetch, extract content.
 - **File path** — read with Read tool (markdown, PDF, text).
 - **Inline text** — content provided directly in the prompt.
@@ -72,11 +81,14 @@ Slug rules for new files: lowercase, hyphens, no special chars, max 50 chars.
 
 ### Step 5: Move inbox file (if applicable)
 
-If the source was a file from `$KVIDO_HOME/inbox/`:
+If the source was a file from the inbox:
 ```bash
-mkdir -p "$KVIDO_HOME/inbox/processed"
-mv "$KVIDO_HOME/inbox/<filename>" "$KVIDO_HOME/inbox/processed/<filename>"
+INBOX_PATH=$(kvido config 'inbox.path' "$KVIDO_HOME/inbox")
+mkdir -p "$INBOX_PATH/processed"
+mv "$INBOX_PATH/<filename>" "$INBOX_PATH/processed/<filename>"
 ```
+
+After processing all inbox files, clear the state: `kvido state delete gatherer.inbox_pending`.
 
 ## Output
 
@@ -89,7 +101,7 @@ INGESTED: <title>
 
 ## Critical Rules
 
-- One source per invocation. Never batch.
+- When given a specific source, process that one source. When checking inbox, process all pending files.
 - Never modify the original source file (except moving from inbox to processed).
 - Never create duplicate content — check index and existing files first. Update existing pages rather than creating parallel ones.
 - Log: `kvido log add ingest complete --message "<title>"`.

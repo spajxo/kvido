@@ -115,17 +115,17 @@ Emit: `DISPATCH worker <id> model=<model>`
 
 ## Ingest Dispatch
 
-**Goal:** Process files detected in the inbox by the gatherer.
+**Goal:** Process files waiting in the inbox.
 
-When gatherer findings include inbox items (`inbox:` prefix in findings), dispatch the ingest agent for each file:
+Check inbox state: `kvido state get gatherer.inbox_pending`. If non-empty (gatherer detected files), dispatch:
 
 ```
-DISPATCH ingest "<filename>"
+DISPATCH ingest
 ```
 
-The filename is passed as the agent's task context. The ingest agent reads the file from `$KVIDO_HOME/inbox/<filename>`. After successful ingest, the agent moves the file to `$KVIDO_HOME/inbox/processed/`.
+The ingest agent reads the inbox directory itself and processes all pending files. No filename argument needed.
 
-Ingest dispatches do not count toward the WIP limit — they are lightweight and independent of the task queue.
+Ingest dispatches do not count toward the WIP limit.
 
 ---
 
