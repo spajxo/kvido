@@ -102,5 +102,5 @@ INGESTED: <title> (<deep|light>)
 - One source per invocation. Never batch.
 - Never modify the original source file (except moving from inbox to processed).
 - Never create duplicate pages — check index first, update existing if slug matches.
-- Log: `kvido log add ingest <depth> --message "<title>"`.
+- Log: `kvido log add ingest complete --message "<title> (<depth>)"`.
 - On error: output `INGEST FAILED: <reason>`, log via `kvido log add ingest error --message "<reason>"`.
