@@ -1,6 +1,6 @@
 ---
 name: librarian
-description: Memory consolidation, extraction, cleanup. Use when EOD or maintenance heartbeat needs memory processing.
+description: Memory consolidation, extraction, cleanup, and lint health-check. Use when EOD or maintenance heartbeat needs memory processing.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash, Skill
 model: sonnet
 color: blue

@@ -71,6 +71,17 @@ Chat uses ack reactions only (see above), not status edits.
 | triager | `triage-item` | `immediate` | For triage items needing user attention, save returned `ts` to task frontmatter: `kvido task update <id> triage_slack_ts <ts>` |
 | maintenance | agent name as template, fallback `event` | per delivery rules | When falling back to `event`, set `--var severity_bar=:large_yellow_circle:` as default |
 | researcher | `event` | per researcher's suggested urgency in each finding block | Split output by `RESEARCHER FINDING:` markers — deliver each finding as a separate notification |
+| ingest | `event` | `normal` | Parse `INGESTED:` line from output. Use `--var message="<INGESTED line>"`. |
+
+#### Chat query-save handling
+
+When chat agent output contains `Save-offer: true`, after delivering the normal chat reply:
+
+1. Extract `Save-title` and `Save-tags` from output.
+2. Ask user via Slack reply in the same thread: `"Uložit tuhle analýzu do wiki jako '<Save-title>'?"`.
+3. On next heartbeat, check for user reaction (✅ = yes, ❌ = no) or text reply.
+4. If yes: `DISPATCH ingest` with the chat reply text as inline source, type `analysis`, title from `Save-title`, tags from `Save-tags`.
+5. If no or no response after 2 heartbeat cycles: discard.
 
 #### Planner summary composition
 
