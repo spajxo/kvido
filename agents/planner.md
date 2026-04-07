@@ -113,6 +113,22 @@ Emit: `DISPATCH worker <id> model=<model>`
 
 ---
 
+## Ingest Dispatch
+
+**Goal:** Process files waiting in the inbox.
+
+Check inbox state: `kvido state get gatherer.inbox_pending`. If non-empty (gatherer detected files), dispatch:
+
+```
+DISPATCH ingest
+```
+
+The ingest agent reads the inbox directory itself and processes all pending files. No filename argument needed.
+
+Ingest dispatches do not count toward the WIP limit.
+
+---
+
 ## Output
 
 **Goal:** Produce clean, actionable dispatch lines and save run state.
