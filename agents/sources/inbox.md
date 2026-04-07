@@ -5,10 +5,11 @@
 #### Capabilities
 
 **check:**
-```bash
-kvido inbox
+Use Glob/Read tools directly — no CLI needed:
 ```
-Lists files in `$KVIDO_HOME/inbox/` waiting for ingest processing. No external CLI required.
+Glob("$KVIDO_HOME/inbox/*")
+```
+Lists files in `$KVIDO_HOME/inbox/` waiting for ingest processing.
 
 **triage-detect:** Each file is a pending ingest item. Gatherer returns one finding per file with urgency `normal`. Planner dispatches ingest agent per file.
 
