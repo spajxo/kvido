@@ -30,7 +30,6 @@ Each agent below has a last-run date stored in state (`planner.last_<agent>_date
 | Agent | Dispatch |
 |-------|----------|
 | librarian | `DISPATCH librarian` |
-| librarian-lint | `DISPATCH librarian mode=lint` |
 | enricher | `DISPATCH enricher` |
 | improver | `DISPATCH improver` |
 | researcher | `DISPATCH researcher` |
