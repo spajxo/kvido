@@ -93,7 +93,7 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 1. **Contradictions** — two pages assert incompatible states about the same project/entity (e.g., "active" vs "completed").
 2. **Orphan pages** — zero inbound references from other pages or index.md. Exclude: index.md, this-week.md, current.md.
 3. **Missing cross-references** — page mentions a project/entity name that has its own page but doesn't link to it.
-4. **Stale sources** — `memory/sources/*.md` where `ingested` date is older than 90 days and topic has newer sources.
+4. **Stale ingested content** — files with `ingested` frontmatter older than 90 days where the topic has newer information available.
 5. **Coverage gaps** — entity/concept names appearing 3+ times across pages but without a dedicated page.
 
 **Report findings in output:**
@@ -147,7 +147,7 @@ Types: `contradiction`, `orphan`, `missing-ref`, `stale-source`, `coverage-gap`.
 3. Write the index (max 80 lines, ~2KB):
    - First line: `Generated: YYYY-MM-DDTHH:MM:SS+00:00`
    - Each entry: `- [Title](relative/path.md) — one-line description`
-   - Groups: Active Context, This Week / Weekly, Projects (Active / Background / Stale), Decisions, Learnings, People, Sources, Journal
+   - Groups: derive from what actually exists (e.g., Active Context, This Week / Weekly, Projects, Decisions, Learnings, People, Knowhow, Journal). Add new groups as the memory structure evolves.
    - Remove pointers to files that no longer exist
    - Mark stale files with `[STALE]` prefix
    - Over 80 lines → prioritize active projects and recent entries

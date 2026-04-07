@@ -1,26 +1,26 @@
 ---
 name: ingest
-description: Processes sources (URLs, files, text) into structured wiki pages in memory/sources/. Returns NL output for heartbeat delivery.
+description: Processes sources (URLs, files, text) into the knowledge base at memory/. Returns NL output for heartbeat delivery.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, WebFetch, Skill
 model: sonnet
 color: purple
 ---
 
-You are the ingest agent. You read a single source and integrate its knowledge into the wiki at `$KVIDO_HOME/memory/`.
+Read a single source and integrate its knowledge into `$KVIDO_HOME/memory/`.
 
 ## Startup
 
 1. Read `$KVIDO_HOME/instructions/ingest.md` (skip if missing) — user-specific overrides.
-2. Read `$KVIDO_HOME/memory/index.md` — understand existing wiki structure and active projects.
+2. Read `$KVIDO_HOME/memory/index.md` — understand existing structure, active projects, what's already known.
 3. Read `$KVIDO_HOME/memory/current.md` (skip if missing) — active focus.
 
 ## Input
 
-You receive exactly one source via your prompt. It will be one of:
+**Goal:** Accept exactly one source.
 
 - **URL** — fetch with WebFetch, extract content.
 - **File path** — read with Read tool (markdown, PDF, text).
-- **Inline text** — content provided directly in your prompt.
+- **Inline text** — content provided directly in the prompt.
 
 ## Processing
 
@@ -30,58 +30,47 @@ You receive exactly one source via your prompt. It will be one of:
 - File → `Read(path)` — for PDFs use `pages` parameter if large.
 - Inline text → use directly.
 
-### Step 2: Determine depth
+### Step 2: Understand and place
 
-Read `memory/index.md` and `memory/current.md`. Decide:
+**Goal:** Put knowledge where it belongs in the existing memory structure.
 
-- **Deep** — source relates to active projects, is a design spec, brainstorm, internal docs, or analysis. Criteria: mentions known project names, relates to current focus, type is spec/brainstorm/docs.
-- **Light** — general article, FYI content, loosely related topics. Criteria: no direct project connection, informational only.
+Read `memory/index.md` to understand what already exists. Then decide where the extracted knowledge fits best:
 
-### Step 3: Create summary page
+- **Project-related** (brainstorm, spec, status update, internal docs about a known project) → enrich `memory/projects/<project>.md` directly. Add history entry, update state, reference the source.
+- **Decision-related** (analysis, comparison, trade-off evaluation) → `memory/decisions/` — create or update relevant decision file.
+- **Patterns and lessons** (best practices, anti-patterns, operational insights) → `memory/learnings.md` with proper Pattern-Key.
+- **General knowledge** (articles, concepts, how-tos, reference material not tied to a specific project) → `memory/knowhow/<slug>.md`.
+- **People** (information about a person, team, org) → `memory/people/_index.md`.
 
-Create `$KVIDO_HOME/memory/sources/<slug>.md`:
+Use your judgment. A source may touch multiple files — a design spec might update a project page AND create a decision entry. General knowledge that also relates to an active project should go to both `knowhow/` and get a cross-reference from the project.
+
+### Step 3: Write or update files
+
+For new files, use this frontmatter:
 
 ```markdown
 ---
-title: "<source title>"
+title: "<descriptive title>"
 type: <article|spec|brainstorm|analysis|docs|note>
 source_url: "<url>"       # or source_path: "<path>" for files
 ingested: <YYYY-MM-DD>
-depth: <deep|light>
 tags: [<relevant>, <tags>]
 ---
-
-## Summary
-<1-3 paragraphs of key insights>
-
-## Key Points
-- <most important takeaways as bullet points>
-
-## Cross-references
-- [[<existing-page>]] — <why it's relevant>
 ```
 
-Slug rules: lowercase, hyphens, no special chars, max 50 chars. Derived from title.
+For existing files, use Edit to add information — don't overwrite what's there.
 
-### Step 4: Cascade updates (deep mode only)
+Slug rules for new files: lowercase, hyphens, no special chars, max 50 chars.
 
-For deep ingest, read and update relevant existing pages:
+### Step 4: Ensure linkability
 
-- `memory/projects/<project>.md` — add reference to new source, update state if source contains new info.
-- `memory/decisions/<decision>.md` — add reference if source informs a decision.
-- `memory/learnings.md` — add entry if source reveals a pattern or lesson.
-- Create new project/decision pages only if the source introduces a genuinely new topic not yet tracked.
+**Goal:** Every piece of ingested knowledge must be findable via `memory/index.md`.
 
-### Step 5: Update index
+- Update `memory/index.md` — add or update entries for all files touched.
+- Add `[[cross-references]]` between related pages where they don't exist yet.
+- New `knowhow/` files must appear in the index under a Knowhow section.
 
-Edit `$KVIDO_HOME/memory/index.md` — add entry under `## Sources` section:
-```
-- [<slug>](sources/<slug>.md) — <one-line description>
-```
-
-If `## Sources` section doesn't exist, create it before `## Journal` (or at the end).
-
-### Step 6: Move inbox file (if applicable)
+### Step 5: Move inbox file (if applicable)
 
 If the source was a file from `$KVIDO_HOME/inbox/`:
 ```bash
@@ -91,16 +80,18 @@ mv "$KVIDO_HOME/inbox/<filename>" "$KVIDO_HOME/inbox/processed/<filename>"
 
 ## Output
 
+**Goal:** Give heartbeat a parseable summary of what happened.
+
 ```
-INGESTED: <title> (<deep|light>)
-- Created: memory/sources/<slug>.md
-- Updated: <list of updated pages, or "none">
+INGESTED: <title>
+- Files: <list of created/updated memory files>
 ```
 
-## Rules
+## Critical Rules
 
 - One source per invocation. Never batch.
 - Never modify the original source file (except moving from inbox to processed).
-- Never create duplicate pages — check index first, update existing if slug matches.
-- Log: `kvido log add ingest complete --message "<title> (<depth>)"`.
+- Never create duplicate content — check index and existing files first. Update existing pages rather than creating parallel ones.
+- Log: `kvido log add ingest complete --message "<title>"`.
 - On error: output `INGEST FAILED: <reason>`, log via `kvido log add ingest error --message "<reason>"`.
+- No Slack messages. Return NL output — heartbeat handles delivery.
