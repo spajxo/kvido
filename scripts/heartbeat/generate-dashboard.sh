@@ -633,6 +633,7 @@ footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20p
 .kanban-card-meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .kanban-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 .kanban-card-slug { color: var(--muted); font-size: 0.68em; letter-spacing: 0.02em; }
+.kanban-card-id { color: var(--accent); font-weight: 600; font-size: 0.68em; }
 .kanban-card-time { color: var(--muted); font-size: 0.68em; font-variant-numeric: tabular-nums; }
 /* Priority left-edge indicator */
 .kanban-card[data-priority="urgent"] { border-left: 3px solid var(--error); }
@@ -647,6 +648,7 @@ footer { text-align: center; color: var(--muted); font-size: 0.7em; padding: 20p
 
 .detail-header { margin-bottom: 20px; }
 .detail-header h2 { color: var(--text-bright); font-size: 1.2em; font-weight: 600; margin-bottom: 8px; border: none; padding: 0; text-transform: none; letter-spacing: normal; }
+.detail-task-id { color: var(--accent); font-size: 0.85em; font-weight: 600; display: block; margin-bottom: 4px; }
 .detail-meta {
   display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; margin-bottom: 20px;
   background: var(--card); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 14px;
@@ -932,7 +934,7 @@ function renderKanban() {
       if (t.size) html += '<span class="badge badge-size">' + esc(t.size) + '</span>';
       if (t.source) html += '<span class="badge">' + esc(t.source) + '</span>';
       html += '</div>';
-      html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + esc(t.slug) + '</span><span class="kanban-card-time">' + relTime(t.updated_at) + '</span></div>';
+      html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + (t.task_id ? '<span class="kanban-card-id">#' + esc(t.task_id) + '</span> ' : '') + esc(t.slug) + '</span><span class="kanban-card-time">' + relTime(t.updated_at) + '</span></div>';
       html += '</div>';
     });
     html += '</div></div>';
@@ -949,7 +951,7 @@ function renderKanban() {
     items.slice(0, 20).forEach(function(t) {
       html += '<div class="kanban-card" onclick="event.stopPropagation(); location.hash=\'task/' + t.slug + '\'">';
       html += '<div class="kanban-card-title">' + esc(t.title) + '</div>';
-      html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + esc(t.slug) + '</span><span class="kanban-card-time">' + relTime(t.updated_at) + '</span></div>';
+      html += '<div class="kanban-card-footer"><span class="kanban-card-slug">' + (t.task_id ? '<span class="kanban-card-id">#' + esc(t.task_id) + '</span> ' : '') + esc(t.slug) + '</span><span class="kanban-card-time">' + relTime(t.updated_at) + '</span></div>';
       html += '</div>';
     });
     html += '</div></div>';
@@ -981,7 +983,7 @@ function renderDetail(slug) {
   ];
 
   var html = '<a class="back-btn" href="#tasks">&larr; Tasks</a>';
-  html += '<div class="detail-header"><h2>' + esc(t.title) + '</h2></div>';
+  html += '<div class="detail-header">' + (t.task_id ? '<span class="detail-task-id">#' + esc(t.task_id) + '</span>' : '') + '<h2>' + esc(t.title) + '</h2></div>';
   html += '<div class="detail-meta">';
   metaFields.forEach(function(f) {
     var val = f[1] || '';
