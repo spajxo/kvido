@@ -113,6 +113,20 @@ Emit: `DISPATCH worker <id> model=<model>`
 
 ---
 
+## Ingest Dispatch
+
+**Goal:** Process files detected in the inbox by the gatherer.
+
+When gatherer findings include inbox items (`inbox:` prefix in findings), dispatch the ingest agent for each file:
+
+```
+DISPATCH ingest source=file path="$KVIDO_HOME/inbox/<filename>"
+```
+
+Ingest dispatches do not count toward the WIP limit — they are lightweight and independent of the task queue.
+
+---
+
 ## Output
 
 **Goal:** Produce clean, actionable dispatch lines and save run state.
