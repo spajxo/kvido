@@ -76,6 +76,53 @@ Scan memory files and remove/archive:
 
 ---
 
+### LINT MODE
+
+**Goal:** Health-check the wiki for structural issues. Run periodically (1x daily via planner) or on demand.
+
+**Process:**
+
+1. **Glob** all memory files: `$KVIDO_HOME/memory/**/*.md`
+2. For each file, read content and extract:
+   - All `[[...]]` cross-references
+   - All mentions of known project/entity names (from index.md)
+   - Frontmatter metadata (dates, tags, type)
+
+3. **Check contradictions:**
+   - Compare state/status claims across pages mentioning the same project or entity.
+   - Flag when two pages assert incompatible states (e.g., "active" vs "completed").
+
+4. **Check orphan pages:**
+   - Pages with zero inbound references from other pages or index.md.
+   - Exclude: index.md itself, this-week.md, current.md.
+
+5. **Check missing cross-references:**
+   - Page mentions a project/entity name that has its own page but doesn't link to it.
+
+6. **Check stale sources:**
+   - `memory/sources/*.md` where `ingested` date is older than 90 days and topic has newer sources.
+
+7. **Check coverage gaps:**
+   - Entity/concept names appearing 3+ times across pages but without a dedicated page.
+
+**Output:**
+
+```
+LINT: <N> issues found
+- [<type>] <description>
+```
+
+Types: `contradiction`, `orphan`, `missing-ref`, `stale-source`, `coverage-gap`.
+
+If no issues: `LINT: clean`
+
+**Actions:**
+- `orphan`, `missing-ref` → fix in next CONSOLIDATION run automatically.
+- `contradiction`, `coverage-gap` → report to user via heartbeat NOTIFY.
+- `stale-source` → suggest re-ingest or archive.
+
+---
+
 ### This-week rotation
 
 **Goal:** When a new ISO week starts, archive the old `this-week.md` and create a fresh one.
@@ -112,7 +159,7 @@ Determine the current ISO week from today's date. Read `memory/this-week.md` and
 3. Write the index (max 80 lines, ~2KB):
    - First line: `Generated: YYYY-MM-DDTHH:MM:SS+00:00` timestamp
    - Each entry: `- [Title](relative/path.md) — one-line description` (paths relative to `memory/`)
-   - Group by category: Active Context, This Week / Weekly, Projects (Active), Projects (Background / Stale), Decisions, Learnings, People, Journal
+   - Group by category: Active Context, This Week / Weekly, Projects (Active), Projects (Background / Stale), Decisions, Learnings, People, Sources (memory/sources/*.md), Journal
    - Remove pointers to files that no longer exist
    - Mark stale files with `[STALE]` prefix
    - If over 80 lines, prioritize active projects and recent entries
