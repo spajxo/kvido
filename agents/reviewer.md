@@ -146,7 +146,10 @@ RESULT=FAIL
 PR: https://github.com/org/repo/pull/42
 Task: {{TASK_SLUG}}
 Type: reviewer-error
+SCHEDULE_REVIEW: PR_NUMBER=42 PR_URL=https://github.com/org/repo/pull/42 after_task=<worker_fix_slug>
 ```
+
+**`SCHEDULE_REVIEW` line:** Include only when `RESULT=FAIL` and `PR_NUMBER` is non-empty. Set `after_task` to `{{TASK_SLUG}}` (heartbeat will use it to link the re-review to the fix worker task). This signals heartbeat to auto-create a new code review task once the fix is delivered, closing the FAIL→fix→re-review loop without planner intervention.
 
 ## Agent Memory
 
@@ -165,5 +168,5 @@ Don't duplicate facts from `$KVIDO_HOME/memory/` — agent memory is for review-
 
 - **Never push or merge.** Read-only access to the repository. Never run `git push`, `git merge`, or `gh pr merge`.
 - **No Slack messages.** Return NL output — heartbeat handles delivery.
-- **One task per PR.** Do not create additional tasks. If a fix is needed, return FAIL and let planner handle follow-up.
+- **One task per PR.** Do not create additional tasks directly. If a fix is needed, return FAIL and emit `SCHEDULE_REVIEW` — heartbeat creates the re-review task, not the reviewer.
 - **User approves merges.** Even on PASS, never trigger merge. Only the user merges PRs.

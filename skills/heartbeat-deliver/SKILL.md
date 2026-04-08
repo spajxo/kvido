@@ -73,6 +73,25 @@ Chat uses ack reactions only (see above), not status edits.
 | researcher | `event` | per researcher's suggested urgency in each finding block | Split output by `RESEARCHER FINDING:` markers — deliver each finding as a separate notification |
 | ingest | `event` | `normal` | Parse `INGESTED:` line from output. Use `--var message="<INGESTED line>"`. |
 
+#### Reviewer SCHEDULE_REVIEW handling
+
+When a reviewer agent completes with `RESULT=FAIL`, scan the output for a `SCHEDULE_REVIEW:` line:
+
+```
+SCHEDULE_REVIEW: PR_NUMBER=<N> PR_URL=<url> after_task=<slug>
+```
+
+If found:
+
+1. Parse `PR_NUMBER`, `PR_URL`, and `after_task` from the line.
+2. Create a new code review task: `kvido task create --title "Code review: PR #<PR_NUMBER>" --instruction "Review PR #<PR_NUMBER> at <PR_URL> after fix by <after_task>. PR_NUMBER=<N> PR_URL=<url>" --source reviewer --priority medium --size s`
+3. Move the task directly to `todo` (skip triage): `kvido task move <new-slug> todo`
+4. Log: `kvido log add heartbeat schedule-review --message "PR #<N>: re-review task <new-slug> created, waiting for fix <after_task>"`
+
+**Timing:** The new review task is created immediately when the FAIL result is delivered — the planner will schedule it naturally when the referenced fix worker task completes (it will see the todo task and the merged/closed PR). No blocking dependency is set in the task system; the planner observes PR state and task state as usual.
+
+**Only on FAIL:** If reviewer output has `RESULT=PASS`, ignore any `SCHEDULE_REVIEW` line (should not be present, but guard defensively).
+
 #### Chat query-save handling
 
 When chat agent output contains `Save-offer: true`, after delivering the normal chat reply:
