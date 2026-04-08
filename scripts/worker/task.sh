@@ -22,7 +22,7 @@ set -euo pipefail
 
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 TASKS_DIR="${TASKS_DIR:-${KVIDO_HOME}/tasks}"
-STATUSES="triage todo in-progress done failed cancelled"
+STATUSES="triage todo in-progress done failed cancelled archive"
 
 # shellcheck source=../lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
@@ -569,7 +569,7 @@ Subcommands:
   read <id|slug>              Print frontmatter fields as KEY="value" (consistently quoted)
   read-raw <id|slug>          Print raw markdown file
   update <id|slug> <field> <value>  Update a frontmatter field
-  move <id|slug> <status>     Move task (triage|todo|in-progress|done|failed|cancelled)
+  move <id|slug> <status>     Move task (triage|todo|in-progress|done|failed|cancelled|archive)
   list <status> [--sort priority] [--source SRC] [--format human|raw|slug-title]  List tasks
   find <id|slug>              Print current status of task
   note <id|slug> "<text>"     Append text to ## Worker Notes
