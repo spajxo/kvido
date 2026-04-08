@@ -71,6 +71,8 @@ For each enabled source, verify required config keys exist via `kvido config`. S
 mkdir -p $KVIDO_HOME/memory/{journal,weekly,projects,people,decisions,archive/{journal,weekly,decisions}}
 mkdir -p $KVIDO_HOME/instructions
 mkdir -p $KVIDO_HOME/tasks/{triage,todo,in-progress,done,failed,cancelled}
+mkdir -p $KVIDO_HOME/inbox
+mkdir -p $KVIDO_HOME/knowhow
 ```
 
 Create missing files with minimal content:
