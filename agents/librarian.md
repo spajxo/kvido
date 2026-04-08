@@ -83,6 +83,30 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 
 ---
 
+### Task Archival
+
+**Goal:** Keep `tasks/done/` small by moving old completed tasks to `tasks/archive/`.
+
+**When:** Always run as part of the maintenance cycle — after Cleanup, before Index.
+
+**How:**
+
+Run the archival script:
+
+```bash
+bash "$KVIDO_ROOT/scripts/maintenance/archive-done-tasks.sh" 7
+```
+
+The script:
+1. Reads `updated_at` from each task's frontmatter in `tasks/done/`.
+2. Falls back to file modification time when the field is missing.
+3. Moves tasks older than 7 days to `tasks/archive/` via `kvido task move`.
+4. Prints a summary line: `ARCHIVE_DONE_TASKS: archived=N skipped=M days=7`.
+
+**Report the summary line in your output** so the caller knows what was archived.
+
+---
+
 ### Lint
 
 **Goal:** Health-check the wiki for structural issues.
