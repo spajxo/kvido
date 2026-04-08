@@ -17,6 +17,11 @@ DONE_DIR="$TASKS_DIR/done"
 ARCHIVE_DIR="$TASKS_DIR/archive"
 DAYS="${1:-7}"
 
+if ! [[ "$DAYS" =~ ^[0-9]+$ ]]; then
+  echo "Error: DAYS must be a positive integer" >&2
+  exit 1
+fi
+
 # Resolve the task.sh helper (prefer KVIDO_ROOT / script-relative path)
 _resolve_task_sh() {
   # Try KVIDO_ROOT (set when running inside Claude Code plugin context)
@@ -69,7 +74,7 @@ for f in "$DONE_DIR"/*.md; do
 
   if [[ -z "$file_epoch" ]]; then
     echo "WARN: could not determine age of $(basename "$f"), skipping" >&2
-    (( skipped++ )) || true
+    (( ++skipped ))
     continue
   fi
 
@@ -82,10 +87,10 @@ for f in "$DONE_DIR"/*.md; do
 
     if "$TASK_SH" move "$identifier" archive >/dev/null 2>&1; then
       echo "archived: $(basename "$f")"
-      (( archived++ )) || true
+      (( ++archived ))
     else
       echo "WARN: failed to archive $(basename "$f")" >&2
-      (( skipped++ )) || true
+      (( ++skipped ))
     fi
   fi
 done
