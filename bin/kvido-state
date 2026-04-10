@@ -3,5 +3,6 @@
 # Registered automatically via CC v2.1.91+ bin/ plugin directory.
 set -euo pipefail
 KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
 export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 exec bash "$KVIDO_ROOT/scripts/state/state.sh" "$@"

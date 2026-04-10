@@ -31,6 +31,7 @@ set -euo pipefail
 
 # bin/ is one level inside the plugin root — no path discovery needed.
 KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
 export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 
 _exec_claude_prompt() {
