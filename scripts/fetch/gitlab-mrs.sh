@@ -73,12 +73,12 @@ process_repo() {
 
   if [[ "$authored_count" -gt 0 ]]; then
     echo "My MRs:"
-    echo "$authored" | jq -r '.[] | "  !\(.iid): \(if .draft then "DRAFT " else "" end)\(.title) [CI: \((.head_pipeline // {}).status // "no pipeline"), \(if .approved then "approved" elif (.reviewers // []) | length > 0 then "\(.reviewers | length) reviewer(s)" else "no reviewers" end)]"' 2>/dev/null || echo "ERROR: failed to format authored MRs for $name (exit $?)" >&2
+    echo "$authored" | jq -r '.[] | "  !\(.iid): \(if .draft then "DRAFT " else "" end)\(.title) [CI: \((.head_pipeline // {}).status // "no pipeline"), \(if .approved then "approved" elif (.reviewers // []) | length > 0 then "\(.reviewers | length) reviewer(s)" else "no reviewers" end)] URL: \(.web_url)"' 2>/dev/null || echo "ERROR: failed to format authored MRs for $name (exit $?)" >&2
   fi
 
   if [[ "$reviewing_count" -gt 0 ]]; then
     echo "Reviewing:"
-    echo "$reviewing" | jq -r '.[] | "  !\(.iid): \(.title) (by \((.author // {}).username // "?")) [CI: \((.head_pipeline // {}).status // "no pipeline")]"' 2>/dev/null || echo "ERROR: failed to format reviewing MRs for $name (exit $?)" >&2
+    echo "$reviewing" | jq -r '.[] | "  !\(.iid): \(.title) (by \((.author // {}).username // "?")) [CI: \((.head_pipeline // {}).status // "no pipeline")] URL: \(.web_url)"' 2>/dev/null || echo "ERROR: failed to format reviewing MRs for $name (exit $?)" >&2
   fi
 
   echo ""
