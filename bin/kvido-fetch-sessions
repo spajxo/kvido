@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# fetch.sh — Claude Code session parser, pure bash (no Python dependency)
+# kvido-fetch-sessions — Claude Code session parser, pure bash (no Python dependency)
 #
-# Usage: fetch.sh [YYYY-MM-DD]
+# Usage: kvido fetch-sessions [YYYY-MM-DD]
 # Default: yesterday
 #
 # Dependencies: jq, date, grep

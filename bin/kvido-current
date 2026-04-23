@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# current.sh — DEPRECATED: agents should use Read/Write/Edit tools directly
+# kvido-current — DEPRECATED: agents should use Read/Write/Edit tools directly
 # with $KVIDO_HOME/memory/current.md
 #
 # All subcommands (get, dump, summary, set, append, clear) are deprecated.
@@ -8,7 +8,9 @@
 
 set -euo pipefail
 
-KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 
 cmd="${1:-}"
 

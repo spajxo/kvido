@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# fetch-mrs.sh — aggregate open MR status across monitored repos
+# kvido-fetch-gitlab-mrs — aggregate open MR status across monitored repos
 #
-# Usage: fetch-mrs.sh [--priority high|normal|low]
+# Usage: kvido fetch-gitlab-mrs [--priority high|normal|low]
 # Reads repos from central settings.json via kvido config
 # Output: plain text summary of open MRs (authored + reviewing) with CI status
 #

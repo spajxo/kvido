@@ -6,7 +6,7 @@
 
 **fetch:**
 ```bash
-kvido gmail
+kvido fetch-gmail
 ```
 Returns formatted summary of unread emails (from, subject, date, snippet).
 

@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # =============================================================================
-# config.sh — Unified config loader for assistant (jq wrapper)
+# kvido-config — Unified config loader for assistant (jq wrapper)
+# Registered automatically via CC v2.1.91+ bin/ plugin directory.
 # =============================================================================
-# Usage: config.sh 'key'
-#   config.sh 'gitlab.repos.group-project.path'
-#   config.sh 'worker.task_timeout_minutes'
-#   config.sh 'dashboard.enabled' 'true'    # with default
-#   config.sh --keys 'gitlab.repos'         # list child keys
-#   config.sh --validate                            # check config format
+# Usage: kvido config 'key'
+#   kvido config 'gitlab.repos.group-project.path'
+#   kvido config 'worker.task_timeout_minutes'
+#   kvido config 'dashboard.enabled' 'true'    # with default
+#   kvido config --keys 'gitlab.repos'         # list child keys
+#   kvido config --validate                    # check config format
 #
 # Reads KVIDO_HOME/settings.json (standard JSON via jq).
 # Dot-notation keys map to nested JSON paths: 'a.b.c' → .a.b.c
@@ -24,7 +25,9 @@
 
 set -euo pipefail
 
-KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 CONFIG_FILE="${KVIDO_HOME}/settings.json"
 ENV_FILE="${KVIDO_HOME}/.env"
 

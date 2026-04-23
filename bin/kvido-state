@@ -1,8 +1,134 @@
 #!/usr/bin/env bash
-# kvido-state — thin wrapper for scripts/state/state.sh
+# kvido-state — Unified key-value state store
+# Storage: $KVIDO_HOME/state/state.json (flat JSON, dot-notation keys)
+# Concurrency: flock for writes, atomic mv
 # Registered automatically via CC v2.1.91+ bin/ plugin directory.
+#
+# Usage:
+#   kvido-state get <key>           → print value (string), exit 1 if missing
+#   kvido-state get-json <key>      → print JSON value
+#   kvido-state set <key> <value>   → set string value
+#   kvido-state set-json <key> <json> → set JSON value
+#   kvido-state increment <key>     → atomic increment (counter)
+#   kvido-state delete <key>        → delete key
+#   kvido-state list [<prefix>]     → list keys, optionally filtered
+
 set -euo pipefail
+
 KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export KVIDO_ROOT
 export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-exec bash "$KVIDO_ROOT/scripts/state/state.sh" "$@"
+STATE_FILE="${KVIDO_HOME}/state/state.json"
+LOCK_FILE="${STATE_FILE}.lock"
+LOCK_TIMEOUT=10
+
+# shellcheck source=../scripts/lib.sh
+source "$KVIDO_ROOT/scripts/lib.sh"
+
+_ensure_file() {
+  if [[ ! -f "$STATE_FILE" ]]; then
+    mkdir -p "$(dirname "$STATE_FILE")"
+    echo '{}' > "$STATE_FILE"
+  fi
+}
+
+_atomic_write() {
+  local content="$1"
+  local tmp
+  tmp="$(_make_tmp "$STATE_FILE")"
+  echo "$content" > "$tmp"
+  mv "$tmp" "$STATE_FILE"
+}
+
+_locked_write() {
+  local jq_filter="$1"
+  shift
+  (
+    _lock_acquire "$LOCK_FILE" "$LOCK_TIMEOUT"
+    _ensure_file
+    updated=$(jq "$@" "$jq_filter" "$STATE_FILE")
+    _atomic_write "$updated"
+  )
+}
+
+CMD="${1:-}"
+
+case "$CMD" in
+  --help|-h)
+    cat <<'HELP'
+kvido state — unified key-value state store
+
+Usage: kvido state <subcommand> [args...]
+
+Subcommands:
+  get <key>              Print string value (exit 1 if missing)
+  get-json <key>         Print JSON value
+  set <key> <value>      Set string value
+  set-json <key> <json>  Set JSON value
+  increment <key>        Atomically increment counter (starts at 0)
+  delete <key>           Delete a key
+  list [prefix]          List keys, optionally filtered by prefix
+
+Examples:
+  kvido state set heartbeat.last_run "$(date -Iseconds)"
+  kvido state get heartbeat.last_run
+  kvido state list heartbeat
+HELP
+    ;;
+  get)
+    key="${2:?Usage: kvido state get <key>}"
+    _ensure_file
+    val="$(jq -r --arg k "$key" '.[$k] // empty' "$STATE_FILE")"
+    if [[ -z "$val" ]]; then
+      exit 1
+    fi
+    echo "$val"
+    ;;
+
+  get-json)
+    key="${2:?Usage: kvido state get-json <key>}"
+    _ensure_file
+    if ! jq -e "has(\$k)" --arg k "$key" "$STATE_FILE" > /dev/null 2>&1; then
+      exit 1
+    fi
+    jq --arg k "$key" '.[$k]' "$STATE_FILE"
+    ;;
+
+  set)
+    key="${2:?Usage: kvido state set <key> <value>}"
+    value="${3?Usage: kvido state set <key> <value>}"
+    _locked_write '.[$k] = $v' --arg k "$key" --arg v "$value"
+    ;;
+
+  set-json)
+    key="${2:?Usage: kvido state set-json <key> <json>}"
+    raw="${3?Usage: kvido state set-json <key> <json>}"
+    _locked_write '.[$k] = $v' --arg k "$key" --argjson v "$raw"
+    ;;
+
+  increment)
+    key="${2:?Usage: kvido state increment <key>}"
+    _locked_write '.[$k] = ((.[$k] // 0) | tonumber + 1)' --arg k "$key"
+    ;;
+
+  delete)
+    key="${2:?Usage: kvido state delete <key>}"
+    _locked_write 'del(.[$k])' --arg k "$key"
+    ;;
+
+  list)
+    prefix="${2:-}"
+    _ensure_file
+    if [[ -z "$prefix" ]]; then
+      jq -r 'keys[]' "$STATE_FILE"
+    else
+      jq -r --arg p "$prefix" '[keys[] | select(startswith($p))] | .[]' "$STATE_FILE"
+    fi
+    ;;
+
+  *)
+    echo "Usage: kvido state <get|get-json|set|set-json|increment|delete|list> [args...]" >&2
+    echo "Run 'kvido state --help' for details." >&2
+    exit 1
+    ;;
+esac

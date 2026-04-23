@@ -12,9 +12,9 @@
 # Usage:
 #   kvido                                     # launch Claude with /loop 10m /kvido:heartbeat
 #   kvido heartbeat                           # run heartbeat data gather
-#   kvido task list todo                      # shortcut for scripts/worker/task.sh
-#   kvido state set heartbeat.key value       # shortcut for scripts/state/state.sh
-#   kvido config 'sources.gitlab.repos'       # shortcut for scripts/config.sh
+#   kvido task list todo                      # delegates to bin/kvido-task
+#   kvido state set heartbeat.key value       # delegates to bin/kvido-state
+#   kvido config 'sources.gitlab.repos'       # delegates to bin/kvido-config
 #   kvido --root                              # print plugin root path
 #   kvido --install                           # install wrapper to ~/.local/bin/kvido
 #   kvido --help|-h                           # show this help
@@ -254,15 +254,18 @@ WRAPPER
     exec bash "$TARGET" "$@"
     ;;
   *)
-    # Try auto-resolve as short command name → scripts/*.sh
-    # Checks $KVIDO_HOME/scripts/ first (personal overrides), then $KVIDO_ROOT/scripts/ (plugin).
+    # Try auto-resolve as short command name:
+    #   1. Personal override: $KVIDO_HOME/scripts/<name>.sh
+    #   2. Plugin binary: $KVIDO_ROOT/bin/kvido-<name> (replaces scripts/<name>.sh)
+    #   3. Plugin scripts: $KVIDO_ROOT/scripts/<name>.sh or scripts/<name>/<name>.sh
+    #   4. Deep-search inside $KVIDO_ROOT/scripts
     if [[ $# -gt 0 ]]; then
       _RESOLVED=""
       _NAME="${1%.sh}"
-      # 1. Personal override: $KVIDO_HOME/scripts/<name>.sh
       if [[ -f "$KVIDO_HOME/scripts/$_NAME.sh" ]]; then
         _RESOLVED="$KVIDO_HOME/scripts/$_NAME.sh"
-      # 2. Plugin scripts: flat, nested, or deep-search
+      elif [[ -x "$KVIDO_ROOT/bin/kvido-$_NAME" ]]; then
+        _RESOLVED="$KVIDO_ROOT/bin/kvido-$_NAME"
       elif [[ -f "$KVIDO_ROOT/scripts/$_NAME.sh" ]]; then
         _RESOLVED="$KVIDO_ROOT/scripts/$_NAME.sh"
       elif [[ -f "$KVIDO_ROOT/scripts/$_NAME/$_NAME.sh" ]]; then

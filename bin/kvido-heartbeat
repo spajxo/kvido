@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# heartbeat.sh — Pure data gathering: time, zone, adaptive interval, Slack DM read, state update.
+# kvido-heartbeat — Pure data gathering: time, zone, adaptive interval, Slack DM read, state update.
+# Registered automatically via CC v2.1.91+ bin/ plugin directory.
 # Orchestration logic (dispatch tracking, dependencies) is in heartbeat.md via TaskCreate/TaskUpdate.
 # Output: key=value lines + CHAT_MESSAGES block for LLM consumption.
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
+PLUGIN_ROOT="$KVIDO_ROOT"
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 
 # Lazy migration — runs once if old state files exist
 kvido migrate 2>/dev/null || echo "ERROR: kvido migrate failed (exit $?)" >&2
@@ -81,8 +83,8 @@ if [[ "$SLEEP_ACTIVE" == "false" ]]; then
   fi
 fi
 
-# Load adaptive rules from central settings.json via config.sh
-CONFIG="$PLUGIN_ROOT/scripts/config.sh"
+# Load adaptive rules from central settings.json via kvido-config
+CONFIG="$KVIDO_ROOT/bin/kvido-config"
 
 WH_START=$($CONFIG 'heartbeat.wh_start')
 WH_END=$($CONFIG 'heartbeat.wh_end')
@@ -156,10 +158,10 @@ fi
 # Read last 15 Slack DM messages in heartbeat format (compact key=value lines)
 # Format per top-level msg: ts=... user=... text="..." [reactions=emoji1,emoji2] [reply_count=N] [latest_reply=...]
 # Thread replies (qualifying threads): indented with "  ┗ ts=... user=... text="..." [reactions=...]"
-# Pass --oldest with last_chat_ts so slack.sh knows which threads qualify for reply fetching
-SLACK_SH="$PLUGIN_ROOT/scripts/slack/slack.sh"
+# Pass --oldest with last_chat_ts so kvido-slack knows which threads qualify for reply fetching
+SLACK_SH="$PLUGIN_ROOT/bin/kvido-slack"
 LAST_CHAT_TS=$(kvido state get heartbeat.last_chat_ts 2>/dev/null || echo "")
-# Pass last_chat_ts via --last-chat-ts so slack.sh can qualify threads with new replies
+# Pass last_chat_ts via --last-chat-ts so kvido-slack can qualify threads with new replies
 # (threads where latest_reply > last_chat_ts get their replies fetched inline)
 # Note: --last-chat-ts does NOT filter history API — all 15 messages are returned,
 # but only threads with new replies are expanded.
@@ -207,7 +209,7 @@ fi
 # Dashboard generation (non-fatal — log errors to stderr)
 DASH_ENABLED=$($CONFIG 'dashboard.enabled' 'true')
 if [[ "$DASH_ENABLED" != "false" ]]; then
-  "$SCRIPT_DIR/generate-dashboard.sh" 2>/dev/null || echo "ERROR: generate-dashboard.sh failed (exit $?)" >&2
+  "$KVIDO_ROOT/scripts/heartbeat/generate-dashboard.sh" 2>/dev/null || echo "ERROR: generate-dashboard.sh failed (exit $?)" >&2
 fi
 
 # --- Output ---

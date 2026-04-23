@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# source-calendar/fetch.sh — fetch calendar events via gws CLI
-# Usage: ./fetch.sh [YYYY-MM-DD]
+# kvido-fetch-calendar — fetch calendar events via gws CLI
+# Usage: kvido fetch-calendar [YYYY-MM-DD]
 # Output: formatted summary with categorized events + meeting/free time
 
 set -euo pipefail
