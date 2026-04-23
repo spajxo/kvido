@@ -68,8 +68,8 @@ fi
 # Auto-sleep detection — trigger sleep mode after hours when idle long enough
 AUTO_SLEEP_TRIGGERED="false"
 if [[ "$SLEEP_ACTIVE" == "false" ]]; then
-  AUTO_SLEEP_AFTER_HOUR=$(kvido config get heartbeat.auto_sleep.after_hour 2>/dev/null || echo "21")
-  AUTO_SLEEP_IDLE_MIN=$(kvido config get heartbeat.auto_sleep.idle_minutes 2>/dev/null || echo "60")
+  AUTO_SLEEP_AFTER_HOUR=$(kvido config 'heartbeat.auto_sleep.after_hour' 2>/dev/null || echo "21")
+  AUTO_SLEEP_IDLE_MIN=$(kvido config 'heartbeat.auto_sleep.idle_minutes' 2>/dev/null || echo "60")
   # Normalize: strip non-numeric (fallback to defaults if empty/null)
   [[ -z "$AUTO_SLEEP_AFTER_HOUR" || "$AUTO_SLEEP_AFTER_HOUR" == "null" ]] && AUTO_SLEEP_AFTER_HOUR=21
   [[ -z "$AUTO_SLEEP_IDLE_MIN" || "$AUTO_SLEEP_IDLE_MIN" == "null" ]] && AUTO_SLEEP_IDLE_MIN=60
