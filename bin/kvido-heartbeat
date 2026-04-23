@@ -67,6 +67,12 @@ if [[ -n "$SLEEP_UNTIL" && "$SLEEP_UNTIL" != "null" ]]; then
   fi
 fi
 
+# Load adaptive rules from central settings.json via kvido-config
+CONFIG="$KVIDO_ROOT/bin/kvido-config"
+
+WH_START=$($CONFIG 'heartbeat.wh_start')
+[[ -z "$WH_START" || "$WH_START" == "null" ]] && WH_START=6
+
 # Auto-sleep detection — trigger sleep mode after hours when idle long enough
 AUTO_SLEEP_TRIGGERED="false"
 if [[ "$SLEEP_ACTIVE" == "false" ]]; then
@@ -76,17 +82,13 @@ if [[ "$SLEEP_ACTIVE" == "false" ]]; then
   [[ -z "$AUTO_SLEEP_AFTER_HOUR" || "$AUTO_SLEEP_AFTER_HOUR" == "null" ]] && AUTO_SLEEP_AFTER_HOUR=21
   [[ -z "$AUTO_SLEEP_IDLE_MIN" || "$AUTO_SLEEP_IDLE_MIN" == "null" ]] && AUTO_SLEEP_IDLE_MIN=60
   if (( HOUR >= AUTO_SLEEP_AFTER_HOUR && INTERACTION_AGO_MIN >= AUTO_SLEEP_IDLE_MIN )); then
-    SLEEP_UNTIL=$(date -d 'tomorrow 06:00' -Iseconds)
+    SLEEP_UNTIL=$(date -d "tomorrow ${WH_START}:00" -Iseconds)
     kvido state set heartbeat.sleep_until "$SLEEP_UNTIL"
     SLEEP_ACTIVE="true"
     AUTO_SLEEP_TRIGGERED="true"
   fi
 fi
 
-# Load adaptive rules from central settings.json via kvido-config
-CONFIG="$KVIDO_ROOT/bin/kvido-config"
-
-WH_START=$($CONFIG 'heartbeat.wh_start')
 WH_END=$($CONFIG 'heartbeat.wh_end')
 WH_INTERACTION_WINDOW=$($CONFIG 'heartbeat.wh_interaction_window_minutes')
 WH_AFTER_INTERACTION=$($CONFIG 'heartbeat.wh_after_interaction')
