@@ -61,7 +61,7 @@ All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
 - `tasks/` — task queue (`<status>/<id>-<slug>.md` files, task_counter)
 - `instructions/` — per-agent instruction files (Read tool)
 - `memory/` — persistent, unstructured (memory.md, current.md, journals, projects, weekly, learnings)
-- `settings.json` — configuration (parsed via `scripts/config.sh`)
+- `settings.json` — configuration (parsed via `bin/kvido-config`, invoked as `kvido config`)
 - `.env` — secrets (Slack tokens, channel IDs)
 
 ## KVIDO_WORKDIR

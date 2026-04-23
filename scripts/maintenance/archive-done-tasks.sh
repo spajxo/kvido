@@ -22,26 +22,11 @@ if ! [[ "$DAYS" =~ ^[0-9]+$ ]]; then
   exit 1
 fi
 
-# Resolve the task.sh helper (prefer KVIDO_ROOT / script-relative path)
-_resolve_task_sh() {
-  # Try KVIDO_ROOT (set when running inside Claude Code plugin context)
-  if [[ -n "${KVIDO_ROOT:-}" && -f "$KVIDO_ROOT/scripts/worker/task.sh" ]]; then
-    echo "$KVIDO_ROOT/scripts/worker/task.sh"
-    return
-  fi
-  # Try relative to this script's location
-  local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local candidate="$script_dir/../worker/task.sh"
-  if [[ -f "$candidate" ]]; then
-    echo "$(cd "$(dirname "$candidate")" && pwd)/$(basename "$candidate")"
-    return
-  fi
-  echo "task.sh not found" >&2
+TASK_SH="${KVIDO_ROOT:+$KVIDO_ROOT/bin/kvido-task}"
+if [[ -z "${TASK_SH:-}" || ! -x "$TASK_SH" ]]; then
+  echo "kvido-task not found (KVIDO_ROOT=${KVIDO_ROOT:-unset})" >&2
   exit 1
-}
-
-TASK_SH="$(_resolve_task_sh)"
+fi
 
 [[ ! -d "$DONE_DIR" ]] && exit 0
 
