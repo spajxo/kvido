@@ -6,7 +6,7 @@
 
 **fetch:**
 ```bash
-kvido fetch-jira [--since YYYY-MM-DD] [--project KEY]
+kvido-fetch-jira [--since YYYY-MM-DD] [--project KEY]
 ```
 Output: plain text, one block per project.
 

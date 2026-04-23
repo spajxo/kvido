@@ -6,7 +6,7 @@
 
 **fetch:**
 ```bash
-kvido fetch-sessions [YYYY-MM-DD]
+kvido-fetch-sessions [YYYY-MM-DD]
 ```
 Default: yesterday. Parses JSONL session files. Output per project:
 ```
@@ -16,7 +16,7 @@ Default: yesterday. Parses JSONL session files. Output per project:
 
 **fetch-messages:**
 ```bash
-kvido fetch-sessions-messages [YYYY-MM-DD]
+kvido-fetch-sessions-messages [YYYY-MM-DD]
 ```
 Default: today. Extracts user messages + retry patterns. Max ~2000 lines. For improver agent.
 
