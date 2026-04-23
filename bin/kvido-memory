@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# memory.sh — Memory file access for agents and scripts
+# kvido-memory — Memory file access for agents and scripts
+# Registered automatically via CC v2.1.91+ bin/ plugin directory.
 # Storage: $KVIDO_HOME/memory/ (markdown files)
 #
 # Usage:
-#   memory.sh search <query>         → grep all .md files for query, show matches
-#   memory.sh list [--type <type>]   → list memory files, optionally filter by frontmatter type
+#   kvido memory search <query>         → grep all .md files for query, show matches
+#   kvido memory list [--type <type>]   → list memory files, optionally filter by frontmatter type
 #
 # Note: 'read', 'write', 'append', 'tree' subcommands removed — agents should
 #       use the Read/Write tools and Glob tool directly with $KVIDO_HOME/memory/ paths.
 
 set -euo pipefail
 
-KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 MEMORY_DIR="${KVIDO_HOME}/memory"
 
 # Resolve name → absolute path (auto-append .md if no extension)

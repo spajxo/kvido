@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# source-gmail/fetch.sh — fetch unread emails via gws CLI
-# Usage: ./fetch.sh [--watch]
+# kvido-fetch-gmail — fetch unread emails via gws CLI
+# Usage: kvido fetch-gmail [--watch]
 # Output: formatted summary of unread emails
 
 set -euo pipefail

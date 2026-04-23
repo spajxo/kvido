@@ -1,6 +1,6 @@
 # Slack CLI Reference
 
-Slack is the primary communication channel. All messages go through `kvido slack` (wraps `slack.sh` over the Slack Web API with curl + jq and a bot token).
+Slack is the primary communication channel. All messages go through `kvido slack` (which dispatches to `bin/kvido-slack`, a curl + jq wrapper over the Slack Web API using a bot token).
 Delivery ownership is defined in the Orchestration Contract (session context). `kvido slack` is the LLM-facing Slack interface.
 
 ## Usage

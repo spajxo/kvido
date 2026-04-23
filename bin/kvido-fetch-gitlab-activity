@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# fetch-activity.sh — aggregate git activity across monitored repos for a given day
+# kvido-fetch-gitlab-activity — aggregate git activity across monitored repos for a given day
 #
-# Usage: fetch-activity.sh [YYYY-MM-DD] [--priority high|normal|low]
+# Usage: kvido fetch-gitlab-activity [YYYY-MM-DD] [--priority high|normal|low]
 # Reads repos from central settings.json via kvido config
 # Output: plain text summary of git activity per repo
 

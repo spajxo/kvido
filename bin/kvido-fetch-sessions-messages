@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# fetch-messages.sh — Extract user messages and error patterns from Claude Code sessions
+# kvido-fetch-sessions-messages — Extract user messages and error patterns from Claude Code sessions
 #
-# Usage: fetch-messages.sh [YYYY-MM-DD]
+# Usage: kvido fetch-sessions-messages [YYYY-MM-DD]
 # Default: today
 #
 # Output: Plain text with session markers, max ~2000 lines (newest first, truncate oldest)

@@ -6,13 +6,13 @@
 
 **fetch-activity:**
 ```bash
-kvido gitlab-activity YYYY-MM-DD [--priority high]
+kvido-fetch-gitlab-activity YYYY-MM-DD [--priority high]
 ```
 `--priority high` filters only repos with `priority: high`.
 
 **fetch-mrs:**
 ```bash
-kvido gitlab-mrs [--priority high]
+kvido-fetch-gitlab-mrs [--priority high]
 ```
 Repos with `type: knowledge-base` are always skipped (no MRs).
 

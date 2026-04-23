@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
-# instructions.sh — Per-agent instruction file access
+# kvido-instructions — Per-agent instruction file access
+# Registered automatically via CC v2.1.91+ bin/ plugin directory.
 # Storage: $KVIDO_HOME/instructions/ (markdown files)
 #
 # Usage:
-#   instructions.sh write <name>           → stdin → file (creates parent dirs)
-#   instructions.sh list                   → list instruction files
-#   instructions.sh tree                   → tree structure with absolute root path
+#   kvido instructions write <name>           → stdin → file (creates parent dirs)
+#   kvido instructions list                   → list instruction files
+#   kvido instructions tree                   → tree structure with absolute root path
 #
 # Note: 'read' subcommand removed — agents should use the Read tool directly
 #       with path $KVIDO_HOME/instructions/<name>.md
 
 set -euo pipefail
 
-KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 INSTRUCTIONS_DIR="${KVIDO_HOME}/instructions"
 
 # Resolve name → absolute path (auto-append .md if no extension)

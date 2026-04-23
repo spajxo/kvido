@@ -1,24 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Slack Web API wrapper — Block Kit messaging via curl + jq
+# kvido-slack — Slack Web API wrapper (Block Kit messaging via curl + jq)
+# Registered automatically via CC v2.1.91+ bin/ plugin directory.
+#
 # Usage:
-#   slack.sh send [channel] <template|-> [--var key=value]...
-#   slack.sh reply [channel] <thread_ts> <template|-> [--var key=value]...
-#   slack.sh edit [channel] <message_ts> <template|-> [--var key=value]...
-#   slack.sh read [channel] [--limit N] [--oldest ts] [--thread ts] [--text]
-#   slack.sh react <ts> <emoji> [channel]
-#   slack.sh unreact <ts> <emoji> [channel]
-#   slack.sh reactions <message_ts> [channel]
-#   slack.sh delete [channel] <message_ts>
-#   slack.sh download <url_private> [output_dir]
-#   slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]
-# Channel is optional — defaults to slack.dm_channel_id from settings.json
-# Channel may also be the literal string 'dm' as a shorthand for the configured DM channel
+#   kvido-slack send [channel] <template|-> [--var key=value]...
+#   kvido-slack reply [channel] <thread_ts> <template|-> [--var key=value]...
+#   kvido-slack edit [channel] <message_ts> <template|-> [--var key=value]...
+#   kvido-slack read [channel] [--limit N] [--oldest ts] [--thread ts] [--text]
+#   kvido-slack react <ts> <emoji> [channel]
+#   kvido-slack unreact <ts> <emoji> [channel]
+#   kvido-slack reactions <message_ts> [channel]
+#   kvido-slack delete [channel] <message_ts>
+#   kvido-slack download <url_private> [output_dir]
+#   kvido-slack upload [channel] <file_path> [--title '...'] [--thread <ts>]
+#
+# Channel is optional — defaults to slack.dm_channel_id from settings.json.
+# Channel may also be the literal string 'dm' as a shorthand for the configured DM channel.
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-TEMPLATES_DIR="$SCRIPT_DIR/templates"
+KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+TEMPLATES_DIR="$KVIDO_ROOT/scripts/slack/templates"
 
 SLACK_API="https://slack.com/api"
 ACTION="${1:-}"
@@ -193,7 +197,7 @@ Examples:
 HELP
     ;;
   send)
-    [[ $# -lt 1 ]] && { echo "Usage: slack.sh send [channel] <template> [--var ...]" >&2; exit 1; }
+    [[ $# -lt 1 ]] && { echo "Usage: kvido slack send [channel] <template> [--var ...]" >&2; exit 1; }
     resolve_channel "$1"
     CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     TEMPLATE="$1"; shift
@@ -203,7 +207,7 @@ HELP
     slack_message "chat.postMessage" "$PAYLOAD"
     ;;
   reply)
-    [[ $# -lt 2 ]] && { echo "Usage: slack.sh reply [channel] <thread_ts> <template> [--var ...]" >&2; exit 1; }
+    [[ $# -lt 2 ]] && { echo "Usage: kvido slack reply [channel] <thread_ts> <template> [--var ...]" >&2; exit 1; }
     resolve_channel "$1"
     CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     THREAD_TS="$1"; shift
@@ -214,7 +218,7 @@ HELP
     slack_message "chat.postMessage" "$PAYLOAD"
     ;;
   edit)
-    [[ $# -lt 2 ]] && { echo "Usage: slack.sh edit [channel] <message_ts> <template> [--var ...]" >&2; exit 1; }
+    [[ $# -lt 2 ]] && { echo "Usage: kvido slack edit [channel] <message_ts> <template> [--var ...]" >&2; exit 1; }
     resolve_channel "$1"
     CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     MESSAGE_TS="$1"; shift
@@ -310,7 +314,7 @@ HELP
               | .[1:]
               | .[-5:]
               | .[]
-              | "  \u250b ts=" + .ts
+              | "  ┋ ts=" + .ts
                 + " user=" + (.user // "unknown")
                 + " text=\"" + ((.text // "") | gsub("\n"; " ") | gsub("\""; "\\\"")) + "\""
                 + (if (.reactions // []) | length > 0 then " reactions=" + ([.reactions[].name] | join(",")) else "" end)
@@ -325,10 +329,9 @@ HELP
     fi
     ;;
   react)
-    # Usage: slack.sh react <ts> <emoji> [channel]
     # Adds a reaction to a message. Emoji without colons (e.g. "eyes", "white_check_mark").
     # Channel defaults to slack.dm_channel_id from settings.json.
-    [[ $# -lt 2 ]] && { echo "Usage: slack.sh react <ts> <emoji> [channel]" >&2; exit 1; }
+    [[ $# -lt 2 ]] && { echo "Usage: kvido slack react <ts> <emoji> [channel]" >&2; exit 1; }
     REACT_TS="$1"; shift
     REACT_EMOJI="$1"; shift
     # Strip surrounding colons if provided (e.g. :eyes: → eyes)
@@ -352,10 +355,9 @@ HELP
     fi
     ;;
   unreact)
-    # Usage: slack.sh unreact <ts> <emoji> [channel]
     # Removes a reaction from a message. Emoji without colons (e.g. "eyes").
     # Idempotent: no_reaction is treated as success.
-    [[ $# -lt 2 ]] && { echo "Usage: slack.sh unreact <ts> <emoji> [channel]" >&2; exit 1; }
+    [[ $# -lt 2 ]] && { echo "Usage: kvido slack unreact <ts> <emoji> [channel]" >&2; exit 1; }
     REACT_TS="$1"; shift
     REACT_EMOJI="$1"; shift
     REACT_EMOJI="${REACT_EMOJI#:}"; REACT_EMOJI="${REACT_EMOJI%:}"
@@ -377,9 +379,8 @@ HELP
     fi
     ;;
   reactions)
-    # Usage: slack.sh reactions <message_ts> [channel]
     # Returns JSON: {"white_check_mark": true/false, "x": true/false}
-    [[ $# -lt 1 ]] && { echo "Usage: slack.sh reactions <message_ts> [channel]" >&2; exit 1; }
+    [[ $# -lt 1 ]] && { echo "Usage: kvido slack reactions <message_ts> [channel]" >&2; exit 1; }
     REACTIONS_TS="$1"; shift
     resolve_channel "${1:-}"
     CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
@@ -399,7 +400,7 @@ HELP
     }'
     ;;
   delete)
-    [[ $# -lt 1 ]] && { echo "Usage: slack.sh delete [channel] <message_ts>" >&2; exit 1; }
+    [[ $# -lt 1 ]] && { echo "Usage: kvido slack delete [channel] <message_ts>" >&2; exit 1; }
     resolve_channel "$1"
     CHANNEL="$RESOLVED_CHANNEL"; [[ "$CHANNEL_SHIFTED" == "true" ]] && shift
     MESSAGE_TS="$1"; shift
@@ -408,7 +409,7 @@ HELP
     slack_message "chat.delete" "$PAYLOAD" "false"
     ;;
   download)
-    [[ $# -lt 1 ]] && { echo "Usage: slack.sh download <url_private> [output_dir]" >&2; exit 1; }
+    [[ $# -lt 1 ]] && { echo "Usage: kvido slack download <url_private> [output_dir]" >&2; exit 1; }
     URL_PRIVATE="$1"; shift
     OUTPUT_DIR="${1:-/tmp}"; shift 2>/dev/null || true  # shift may fail if no output_dir arg; default already captured
     FILENAME=$(basename "$URL_PRIVATE" | cut -d'?' -f1)
@@ -425,10 +426,9 @@ HELP
     echo "$OUTPUT_PATH"
     ;;
   upload)
-    # Usage: slack.sh upload [channel] <file_path> [--title "..."] [--thread <ts>]
     # Uploads a file to Slack using files.getUploadURLExternal + files.completeUploadExternal.
     # Returns the file permalink on stdout.
-    [[ $# -lt 1 ]] && { echo "Usage: slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
+    [[ $# -lt 1 ]] && { echo "Usage: kvido slack upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
     # Disambiguate [channel] from <file_path>: if there are 2+ positional args
     # (next arg is not a flag) and arg1 looks like a Slack channel ID or
     # the 'dm' alias, treat arg1 as channel. Otherwise use default channel.
@@ -438,7 +438,7 @@ HELP
       resolve_channel ""
       UPLOAD_CHANNEL="$RESOLVED_CHANNEL"
     fi
-    [[ $# -lt 1 ]] && { echo "Usage: slack.sh upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
+    [[ $# -lt 1 ]] && { echo "Usage: kvido slack upload [channel] <file_path> [--title '...'] [--thread <ts>]" >&2; exit 1; }
     UPLOAD_FILE="$1"; shift
     UPLOAD_TITLE=""
     UPLOAD_THREAD=""
@@ -499,7 +499,7 @@ HELP
     echo "$PERMALINK"
     ;;
   *)
-    echo "Usage: slack.sh {send|reply|edit|read|react|unreact|reactions|delete|download|upload} ..." >&2
+    echo "Usage: kvido slack {send|reply|edit|read|react|unreact|reactions|delete|download|upload} ..." >&2
     echo "Run 'kvido slack --help' for details." >&2
     exit 1
     ;;

@@ -16,7 +16,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
-STATE_SH="$(cd "$SCRIPT_DIR/../.." && pwd)/scripts/state/state.sh"
+STATE_SH="$(cd "$SCRIPT_DIR/../.." && pwd)/bin/kvido-state"
 CONFIG_KEYS_SH="$SCRIPT_DIR/config-keys.sh"
 FILE_MIGRATIONS_SH="$SCRIPT_DIR/file-migrations.sh"
 

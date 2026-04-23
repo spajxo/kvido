@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# task.sh — Central helper for managing local tasks
+# kvido-task — Central helper for managing local tasks
+# Registered automatically via CC v2.1.91+ bin/ plugin directory.
 #
-# Usage: task.sh <command> [args...]
+# Usage: kvido task <command> [args...]
 #
 # Task files are named <id>-<slug>.md (e.g. 42-fix-auth-bug.md).
 # All commands accept either numeric ID or slug as identifier.
@@ -20,12 +21,14 @@
 
 set -euo pipefail
 
-KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 TASKS_DIR="${TASKS_DIR:-${KVIDO_HOME}/tasks}"
 STATUSES="triage todo in-progress done failed cancelled archive"
 
-# shellcheck source=../lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
+# shellcheck source=../scripts/lib.sh
+source "$KVIDO_ROOT/scripts/lib.sh"
 
 # --- Helpers ---
 
@@ -297,7 +300,7 @@ _kv_out() {
 
 cmd_read() {
   local slug="${1:-}"
-  [[ -z "$slug" ]] && { echo "Usage: task.sh read <id|slug>" >&2; exit 1; }
+  [[ -z "$slug" ]] && { echo "Usage: kvido task read <id|slug>" >&2; exit 1; }
   slug=$(_resolve_identifier "$slug") || exit 1
 
   local file
@@ -328,7 +331,7 @@ cmd_read() {
 
 cmd_read_raw() {
   local slug="${1:-}"
-  [[ -z "$slug" ]] && { echo "Usage: task.sh read-raw <id|slug>" >&2; exit 1; }
+  [[ -z "$slug" ]] && { echo "Usage: kvido task read-raw <id|slug>" >&2; exit 1; }
   slug=$(_resolve_identifier "$slug") || exit 1
 
   local file
@@ -338,7 +341,7 @@ cmd_read_raw() {
 
 cmd_update() {
   local slug="${1:-}" key="${2:-}" value="${3:-}"
-  [[ -z "$slug" || -z "$key" ]] && { echo "Usage: task.sh update <id|slug> <key> <value>" >&2; exit 1; }
+  [[ -z "$slug" || -z "$key" ]] && { echo "Usage: kvido task update <id|slug> <key> <value>" >&2; exit 1; }
   slug=$(_resolve_identifier "$slug") || exit 1
 
   local file
@@ -349,7 +352,7 @@ cmd_update() {
 
 cmd_move() {
   local slug="${1:-}" target="${2:-}"
-  [[ -z "$slug" || -z "$target" ]] && { echo "Usage: task.sh move <id|slug> <status>" >&2; exit 1; }
+  [[ -z "$slug" || -z "$target" ]] && { echo "Usage: kvido task move <id|slug> <status>" >&2; exit 1; }
   slug=$(_resolve_identifier "$slug") || exit 1
 
   local current
@@ -373,7 +376,7 @@ cmd_list() {
   local status="${1:-}" sort_mode="" source_filter="" format="human"
   shift || true  # shift may fail if no args; handled by empty check below
 
-  [[ -z "$status" ]] && { echo "Usage: task.sh list <status> [--sort priority] [--source SRC] [--format human|raw|slug-title]" >&2; exit 1; }
+  [[ -z "$status" ]] && { echo "Usage: kvido task list <status> [--sort priority] [--source SRC] [--format human|raw|slug-title]" >&2; exit 1; }
 
   local dir="$TASKS_DIR/$status"
   [[ ! -d "$dir" ]] && exit 0
@@ -467,7 +470,7 @@ cmd_list() {
 
 cmd_find() {
   local slug="${1:-}"
-  [[ -z "$slug" ]] && { echo "Usage: task.sh find <id|slug>" >&2; exit 1; }
+  [[ -z "$slug" ]] && { echo "Usage: kvido task find <id|slug>" >&2; exit 1; }
   slug=$(_resolve_identifier "$slug") || exit 1
 
   _find_task "$slug" || { echo "Error: task '$slug' not found" >&2; exit 1; }
@@ -475,7 +478,7 @@ cmd_find() {
 
 cmd_note() {
   local slug="${1:-}" message="${2:-}"
-  [[ -z "$slug" || -z "$message" ]] && { echo "Usage: task.sh note <id|slug> <message>" >&2; exit 1; }
+  [[ -z "$slug" || -z "$message" ]] && { echo "Usage: kvido task note <id|slug> <message>" >&2; exit 1; }
   slug=$(_resolve_identifier "$slug") || exit 1
 
   local file
@@ -488,7 +491,7 @@ cmd_note() {
 
 cmd_count() {
   local status="${1:-}"
-  [[ -z "$status" ]] && { echo "Usage: task.sh count <status>" >&2; exit 1; }
+  [[ -z "$status" ]] && { echo "Usage: kvido task count <status>" >&2; exit 1; }
 
   local dir="$TASKS_DIR/$status"
   if [[ ! -d "$dir" ]]; then
@@ -593,7 +596,7 @@ HELP
   count)       cmd_count "$@" ;;
   migrate-ids) cmd_migrate "$@" ;;
   *)
-    echo "Usage: task.sh <create|read|read-raw|update|move|list|find|note|count|migrate-ids> [args...]" >&2
+    echo "Usage: kvido task <create|read|read-raw|update|move|list|find|note|count|migrate-ids> [args...]" >&2
     echo "Run 'kvido task --help' for details." >&2
     exit 1
     ;;

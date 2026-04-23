@@ -6,7 +6,7 @@
 
 **fetch:**
 ```bash
-kvido calendar [YYYY-MM-DD]
+kvido-fetch-calendar [YYYY-MM-DD]
 ```
 Returns categorized events + total meeting/free-work time.
 

@@ -18,16 +18,24 @@ skills/
 ├── heartbeat-planner.md           ← Step 4: planner dispatch (lazy-loaded)
 ├── heartbeat-dispatch.md          ← Step 5: agent dispatch (lazy-loaded)
 └── heartbeat-deliver.md           ← Step 6: output collection & delivery (lazy-loaded)
+bin/                               ← LLM-facing executables auto-added to PATH by CC (v2.1.91+)
+├── kvido                          ← main CLI dispatcher (claude launcher + command router)
+├── kvido-config                   ← settings.json reader (dot-notation, env var resolution)
+├── kvido-state                    ← unified key-value state store
+├── kvido-task                     ← task queue management
+├── kvido-log                      ← activity logging
+├── kvido-memory                   ← persistent memory file access
+├── kvido-instructions             ← per-agent instruction file access
+├── kvido-slack                    ← Slack Web API wrapper (Block Kit messaging)
+├── kvido-heartbeat                ← heartbeat data gather (time, zone, chat, state)
+├── kvido-fetch-<source>           ← source fetchers (calendar, gmail, jira, gitlab-activity, gitlab-mrs, sessions, sessions-messages)
+└── kvido-current                  ← DEPRECATED (use Read/Write on memory/current.md)
 scripts/
-├── config.sh                      ← configuration reader (dot-notation, env var resolution)
-├── fetch/                         ← source fetch scripts (gitlab, jira, calendar, gmail, sessions)
-├── heartbeat/                     ← heartbeat data scripts
-├── slack/                         ← Slack messaging + templates
-├── worker/                        ← task management (task.sh)
-├── state/                         ← unified state store
-├── log/                           ← activity logging
-└── migrate/                       ← state migration
-kvido                              ← CLI entry point
+├── lib.sh                         ← shared helpers (flock, atomic writes)
+├── heartbeat/                     ← internal heartbeat helpers (triage-poll, generate-dashboard)
+├── slack/templates/               ← Slack Block Kit message templates (JSON)
+└── migrate/                       ← lazy state migration (runs from kvido-heartbeat)
+kvido                              ← backward-compat shim → bin/kvido
 settings.json.example              ← config reference template
 ```
 
@@ -53,7 +61,7 @@ All runtime files live in `$KVIDO_HOME` (default: `~/.config/kvido`):
 - `tasks/` — task queue (`<status>/<id>-<slug>.md` files, task_counter)
 - `instructions/` — per-agent instruction files (Read tool)
 - `memory/` — persistent, unstructured (memory.md, current.md, journals, projects, weekly, learnings)
-- `settings.json` — configuration (parsed via `scripts/config.sh`)
+- `settings.json` — configuration (parsed via `bin/kvido-config`, invoked as `kvido config`)
 - `.env` — secrets (Slack tokens, channel IDs)
 
 ## KVIDO_WORKDIR

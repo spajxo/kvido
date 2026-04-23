@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# fetch.sh — aggregate Jira issues across monitored projects
+# kvido-fetch-jira — aggregate Jira issues across monitored projects
 #
-# Usage: fetch.sh [--since YYYY-MM-DD] [--project KEY]
+# Usage: kvido fetch-jira [--since YYYY-MM-DD] [--project KEY]
 # Reads projects from central settings.json via kvido config
 # Output: plain text summary of open issues per project
 #

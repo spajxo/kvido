@@ -1,26 +1,29 @@
 #!/usr/bin/env bash
-# state.sh — Unified key-value state store
+# kvido-state — Unified key-value state store
 # Storage: $KVIDO_HOME/state/state.json (flat JSON, dot-notation keys)
 # Concurrency: flock for writes, atomic mv
+# Registered automatically via CC v2.1.91+ bin/ plugin directory.
 #
 # Usage:
-#   state.sh get <key>           → print value (string), exit 1 if missing
-#   state.sh get-json <key>      → print JSON value
-#   state.sh set <key> <value>   → set string value
-#   state.sh set-json <key> <json> → set JSON value
-#   state.sh increment <key>     → atomic increment (counter)
-#   state.sh delete <key>        → delete key
-#   state.sh list [<prefix>]     → list keys, optionally filtered
+#   kvido-state get <key>           → print value (string), exit 1 if missing
+#   kvido-state get-json <key>      → print JSON value
+#   kvido-state set <key> <value>   → set string value
+#   kvido-state set-json <key> <json> → set JSON value
+#   kvido-state increment <key>     → atomic increment (counter)
+#   kvido-state delete <key>        → delete key
+#   kvido-state list [<prefix>]     → list keys, optionally filtered
 
 set -euo pipefail
 
-KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
+KVIDO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export KVIDO_ROOT
+export KVIDO_HOME="${KVIDO_HOME:-$HOME/.config/kvido}"
 STATE_FILE="${KVIDO_HOME}/state/state.json"
 LOCK_FILE="${STATE_FILE}.lock"
 LOCK_TIMEOUT=10
 
-# shellcheck source=../lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
+# shellcheck source=../scripts/lib.sh
+source "$KVIDO_ROOT/scripts/lib.sh"
 
 _ensure_file() {
   if [[ ! -f "$STATE_FILE" ]]; then
@@ -73,7 +76,7 @@ Examples:
 HELP
     ;;
   get)
-    key="${2:?Usage: state.sh get <key>}"
+    key="${2:?Usage: kvido state get <key>}"
     _ensure_file
     val="$(jq -r --arg k "$key" '.[$k] // empty' "$STATE_FILE")"
     if [[ -z "$val" ]]; then
@@ -83,7 +86,7 @@ HELP
     ;;
 
   get-json)
-    key="${2:?Usage: state.sh get-json <key>}"
+    key="${2:?Usage: kvido state get-json <key>}"
     _ensure_file
     if ! jq -e "has(\$k)" --arg k "$key" "$STATE_FILE" > /dev/null 2>&1; then
       exit 1
@@ -92,24 +95,24 @@ HELP
     ;;
 
   set)
-    key="${2:?Usage: state.sh set <key> <value>}"
-    value="${3?Usage: state.sh set <key> <value>}"
+    key="${2:?Usage: kvido state set <key> <value>}"
+    value="${3?Usage: kvido state set <key> <value>}"
     _locked_write '.[$k] = $v' --arg k "$key" --arg v "$value"
     ;;
 
   set-json)
-    key="${2:?Usage: state.sh set-json <key> <json>}"
-    raw="${3?Usage: state.sh set-json <key> <json>}"
+    key="${2:?Usage: kvido state set-json <key> <json>}"
+    raw="${3?Usage: kvido state set-json <key> <json>}"
     _locked_write '.[$k] = $v' --arg k "$key" --argjson v "$raw"
     ;;
 
   increment)
-    key="${2:?Usage: state.sh increment <key>}"
+    key="${2:?Usage: kvido state increment <key>}"
     _locked_write '.[$k] = ((.[$k] // 0) | tonumber + 1)' --arg k "$key"
     ;;
 
   delete)
-    key="${2:?Usage: state.sh delete <key>}"
+    key="${2:?Usage: kvido state delete <key>}"
     _locked_write 'del(.[$k])' --arg k "$key"
     ;;
 
@@ -124,7 +127,7 @@ HELP
     ;;
 
   *)
-    echo "Usage: state.sh <get|get-json|set|set-json|increment|delete|list> [args...]" >&2
+    echo "Usage: kvido state <get|get-json|set|set-json|increment|delete|list> [args...]" >&2
     echo "Run 'kvido state --help' for details." >&2
     exit 1
     ;;
