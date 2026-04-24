@@ -31,6 +31,7 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 - Journal file (if path given in prompt)
 - Activity log (`kvido log list --today --format json`)
 - `$KVIDO_HOME/memory/current.md` — active focus and pinned items
+- `$KVIDO_HOME/memory/today.md` — daily scratchpad written by gatherer, planner, chat, and enricher; distill user activity entries into this-week.md Daily Log and relevant project/learnings/people files
 - Existing memory files — to know what's already recorded
 
 **Files to update:**
@@ -45,6 +46,7 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 - Merge into existing content; do not create duplicates.
 - Convert relative dates ("yesterday", "last week") to absolute dates.
 - When new information contradicts existing facts, update the source of truth.
+- `today.md` lifecycle owner: librarian reads it during Extraction, then resets it after consolidation (see "Reset today.md" below).
 
 ---
 
@@ -80,6 +82,26 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 - Project files — trim history older than 60 days (keep milestones).
 - Decisions — older than 90 days → move to `archive/decisions/<slug>.md`.
 - Activity log — `kvido log purge --before <date> --archive` (entries older than 7 days).
+
+---
+
+### Reset today.md
+
+**Goal:** Hand off a clean scratchpad to tomorrow's agents — librarian is the lifecycle owner of today.md.
+
+**When:** Always run after Extraction and Cleanup — after the daily context has been read and consolidated into persistent memory.
+
+**How:**
+
+Use the Write tool to overwrite `$KVIDO_HOME/memory/today.md` with a single date header for today's date:
+
+```
+# Daily Context — YYYY-MM-DD
+```
+
+Replace `YYYY-MM-DD` with the actual current date. Do not include any other content. This resets the scratchpad so that gatherer, enricher, planner, and chat agents start fresh the next time they append.
+
+**Ordering constraint:** The read step (Extraction) must always complete before this reset step runs. Never reset before reading.
 
 ---
 

@@ -150,6 +150,22 @@ By default heartbeat runs all dispatches in parallel. To enforce sequencing, use
 
 ---
 
+## today.md — Daily Scratchpad
+
+### Read at startup
+
+Before making any scheduling decisions, read `$KVIDO_HOME/memory/today.md` using the Read tool if it exists. It provides live context from gatherer, chat, and other agents — use it to inform prioritization without re-querying sources.
+
+### Initialize if missing
+
+If today.md does not exist or is empty, create it with a fresh `# Daily Context — YYYY-MM-DD` header (today's date). This handles the first-morning case before librarian has had a chance to reset. Do not rewrite a file that already has a date header, even if the date is yesterday's — that is librarian's responsibility.
+
+### Append after planning
+
+After completing each run, write a brief summary to today.md — format is up to you. A few lines noting what was dispatched and any key scheduling decision is enough. Use Edit/Write, whichever is convenient.
+
+---
+
 ## Agent Memory
 
 After each run, update your agent memory with scheduling observations:

@@ -39,6 +39,16 @@ After writing (or skipping), record the enriched project:
 kvido state set planner.last_enriched_project "<slug>"
 ```
 
+## today.md — Daily Scratchpad
+
+After updating the project file (or skipping it), append a short note to `$KVIDO_HOME/memory/today.md` so the planner and chat agent have live context about which project was enriched and what changed.
+
+### Append enricher note
+
+Write a brief one-line note — format is up to you. `Enricher: <project> — <what changed or "no changes">` is enough. Use Edit/Write, whichever is convenient. Enricher is append-only: never create or reinitialize today.md — planner handles initialization on first run.
+
+---
+
 ## Output
 
 Return a single line:

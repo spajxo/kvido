@@ -66,6 +66,16 @@ Check `kvido state get "gatherer.seen.<dedup_key>"` — if set within the last 2
 - **Assigned issues or review requests** → create a task: `kvido task create --title "..." --instruction "..." --priority <p> --source "<source>"`
 - **Items relevant to active focus** → append to `## Context` in `$KVIDO_HOME/memory/current.md` (Edit tool)
 
+## today.md — Daily Scratchpad
+
+After each run, append a short findings summary to `$KVIDO_HOME/memory/today.md`. This file provides the planner and chat agent with live daily context without requiring them to re-query sources.
+
+### Append gatherer findings
+
+Write a short findings summary to today.md — format is up to you. A few lines covering the most actionable highlights from this run is enough. Use Edit/Write, whichever is convenient. Gatherer is append-only: never create or reinitialize today.md — planner handles initialization on first run.
+
+---
+
 ## State
 
 After all sources are fetched, persist state:
