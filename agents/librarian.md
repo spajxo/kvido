@@ -46,7 +46,7 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 - Merge into existing content; do not create duplicates.
 - Convert relative dates ("yesterday", "last week") to absolute dates.
 - When new information contradicts existing facts, update the source of truth.
-- `today.md` is read-only for librarian — never write or reset it; it is managed by gatherer.
+- `today.md` is read-only for librarian — never write or reset it; consolidation is handled by planner.
 
 ---
 
