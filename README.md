@@ -112,7 +112,9 @@ Kvido-specific environment variables (set in `~/.config/kvido/.env` or your shel
 | `KVIDO_HOME` | `~/.config/kvido` | Runtime state, memory, config, and secrets |
 | `KVIDO_NAME` | `kvido` | Session name (`--name`) |
 | `KVIDO_PERMISSION_MODE` | `default` | Permission mode (`--permission-mode`) |
-| `KVIDO_EXTRA_ARGS` | | Extra CLI flags passed to Claude Code |
+| `KVIDO_EXTRA_ARGS` | (example: `--enable-auto-mode`) | Extra CLI flags passed to Claude Code. For best results, enable auto mode: `--enable-auto-mode` |
+
+> **Tip:** For best results, set `KVIDO_EXTRA_ARGS=--enable-auto-mode` in `~/.config/kvido/.env`. This enables auto mode for every kvido session, allowing it to work more autonomously and efficiently without waiting for confirmations on routine tasks.
 
 All official `ANTHROPIC_*` and `CLAUDE_CODE_*` env vars (model, effort, API key, proxy, ...) work automatically — just set them in `~/.config/kvido/.env` or your environment. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code/settings#environment-variables).
 
