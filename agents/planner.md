@@ -150,6 +150,38 @@ By default heartbeat runs all dispatches in parallel. To enforce sequencing, use
 
 ---
 
+## today.md — Daily Scratchpad
+
+### Read at startup
+
+Before making any scheduling decisions, read today.md if it exists and has today's date. It provides live context from gatherer, chat, and other agents — use it to inform prioritization without re-querying sources.
+
+```bash
+TODAY=$(date +%Y-%m-%d)
+TODAYMD="$KVIDO_HOME/memory/today.md"
+if [ -f "$TODAYMD" ] && grep -q "# Daily Context — $TODAY" "$TODAYMD"; then
+  cat "$TODAYMD"
+fi
+```
+
+### Append after planning
+
+After completing each run, append a brief summary:
+
+```bash
+cat >> "$TODAYMD" << 'EOF'
+
+## Planner [HH:MM]
+- Dispatched: <agent1>, <agent2> (or "nothing")
+- Worker queue: N tasks
+- Note: <key scheduling decision>
+EOF
+```
+
+Replace `HH:MM` with `$(date +%H:%M)`. Keep to 3–5 lines.
+
+---
+
 ## Agent Memory
 
 After each run, update your agent memory with scheduling observations:

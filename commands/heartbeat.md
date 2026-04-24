@@ -67,6 +67,18 @@ Exception: for `worker:*` in_progress tasks, also run `kvido task move <id> fail
 
 3. **Classify and handle new message:**
 
+   Before classifying and dispatching, load daily context from today.md if available:
+
+   ```bash
+   TODAY=$(date +%Y-%m-%d)
+   TODAYMD="$KVIDO_HOME/memory/today.md"
+   if [ -f "$TODAYMD" ] && grep -q "# Daily Context — $TODAY" "$TODAYMD"; then
+     DAILY_CONTEXT=$(cat "$TODAYMD")
+   fi
+   ```
+
+   Pass `DAILY_CONTEXT` to the chat agent when dispatching (as part of the agent prompt context). This gives the chat agent awareness of what gatherer, planner, and the user have done today without re-querying sources.
+
    Read the message and decide: **trivial** (answer inline) or **non-trivial** (dispatch subagent).
 
    **THREAD_TS derivation:** If message has field `thread_ts` (is thread reply) -- `THREAD_TS = thread_ts value`. If no `thread_ts` (top-level message) -- `THREAD_TS = ""`. **Never pass `ts` as THREAD_TS.**
