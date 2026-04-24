@@ -45,9 +45,7 @@ After updating the project file (or skipping it), append a short note to `$KVIDO
 
 ### Append enricher note
 
-Write a brief one-line note — format is up to you. `Enricher: <project> — <what changed or "no changes">` is enough. Use Edit/Write, whichever is convenient.
-
-If today.md does not yet have a header for today's date, start the file fresh with a `# Daily Context — YYYY-MM-DD` heading and a brief comment line before appending your note. Do not use shell commands — use the Write or Edit tool directly.
+Write a brief one-line note — format is up to you. `Enricher: <project> — <what changed or "no changes">` is enough. Use Edit/Write, whichever is convenient. Enricher is append-only: never create or reinitialize today.md — planner handles initialization on first run.
 
 ---
 

@@ -46,7 +46,7 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 - Merge into existing content; do not create duplicates.
 - Convert relative dates ("yesterday", "last week") to absolute dates.
 - When new information contradicts existing facts, update the source of truth.
-- `today.md` is read-only for librarian — never write or reset it; consolidation is handled by planner.
+- `today.md` lifecycle owner: librarian reads it during Extraction, then resets it after consolidation (see "Reset today.md" below).
 
 ---
 
@@ -82,6 +82,26 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 - Project files — trim history older than 60 days (keep milestones).
 - Decisions — older than 90 days → move to `archive/decisions/<slug>.md`.
 - Activity log — `kvido log purge --before <date> --archive` (entries older than 7 days).
+
+---
+
+### Reset today.md
+
+**Goal:** Hand off a clean scratchpad to tomorrow's agents — librarian is the lifecycle owner of today.md.
+
+**When:** Always run after Extraction and Cleanup — after the daily context has been read and consolidated into persistent memory.
+
+**How:**
+
+Use the Write tool to overwrite `$KVIDO_HOME/memory/today.md` with a single date header for today's date:
+
+```
+# Daily Context — YYYY-MM-DD
+```
+
+Replace `YYYY-MM-DD` with the actual current date. Do not include any other content. This resets the scratchpad so that gatherer, enricher, planner, and chat agents start fresh the next time they append.
+
+**Ordering constraint:** The read step (Extraction) must always complete before this reset step runs. Never reset before reading.
 
 ---
 

@@ -72,9 +72,7 @@ After each run, append a short findings summary to `$KVIDO_HOME/memory/today.md`
 
 ### Append gatherer findings
 
-Write a short findings summary to today.md — format is up to you. A few lines covering the most actionable highlights from this run is enough. Use Edit/Write, whichever is convenient.
-
-If today.md does not yet have a header for today's date, start the file fresh with a `# Daily Context — YYYY-MM-DD` heading and a brief comment line before appending your findings. Do not use shell commands to do this — just use the Write or Edit tool directly.
+Write a short findings summary to today.md — format is up to you. A few lines covering the most actionable highlights from this run is enough. Use Edit/Write, whichever is convenient. Gatherer is append-only: never create or reinitialize today.md — planner handles initialization on first run.
 
 ---
 
