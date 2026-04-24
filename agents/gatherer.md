@@ -82,18 +82,9 @@ if ! grep -q "# Daily Context — $TODAY" "$TODAYMD" 2>/dev/null; then
 fi
 ```
 
-### Append gatherer section
+### Append gatherer findings
 
-```bash
-cat >> "$TODAYMD" << 'EOF'
-
-## Gatherer [HH:MM]
-- <finding 1> [score:high/medium/low]
-- <finding 2>
-EOF
-```
-
-Replace `HH:MM` with `$(date +%H:%M)`. Write 3–8 bullet points covering the most actionable highlights from this run. Keep each bullet to one line.
+After the reset check, write a short findings summary to today.md — format is up to you. A few lines covering the most actionable highlights from this run is enough. Use Edit/Write or bash append, whichever is convenient.
 
 ### File size management
 

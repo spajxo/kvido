@@ -166,19 +166,7 @@ fi
 
 ### Append after planning
 
-After completing each run, append a brief summary:
-
-```bash
-cat >> "$TODAYMD" << 'EOF'
-
-## Planner [HH:MM]
-- Dispatched: <agent1>, <agent2> (or "nothing")
-- Worker queue: N tasks
-- Note: <key scheduling decision>
-EOF
-```
-
-Replace `HH:MM` with `$(date +%H:%M)`. Keep to 3–5 lines.
+After completing each run, write a brief summary to today.md — format is up to you. A few lines noting what was dispatched and any key scheduling decision is enough. Use Edit/Write or bash append, whichever is convenient.
 
 ---
 
