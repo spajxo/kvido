@@ -31,6 +31,7 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 - Journal file (if path given in prompt)
 - Activity log (`kvido log list --today --format json`)
 - `$KVIDO_HOME/memory/current.md` — active focus and pinned items
+- `$KVIDO_HOME/memory/today.md` — daily scratchpad written by gatherer, planner, chat, and enricher; distill user activity entries into this-week.md Daily Log and relevant project/learnings/people files
 - Existing memory files — to know what's already recorded
 
 **Files to update:**
@@ -45,6 +46,7 @@ Assess the current state — what's fresh, what's stale, what's missing — and 
 - Merge into existing content; do not create duplicates.
 - Convert relative dates ("yesterday", "last week") to absolute dates.
 - When new information contradicts existing facts, update the source of truth.
+- `today.md` is read-only for librarian — never write or reset it; it is managed by gatherer.
 
 ---
 
